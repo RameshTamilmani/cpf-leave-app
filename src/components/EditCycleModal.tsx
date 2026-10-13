@@ -382,22 +382,37 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
             </div>
 
             {previewSaturdayHolidays.length > 0 ? (
-              <div className="flex flex-col gap-1.5 pt-1.5 border-t border-surface-container">
+              <div className="flex flex-col gap-2 pt-1.5 border-t border-surface-container">
                 <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
                   Saturday Public Holidays Detected in Cycle:
                 </span>
-                {previewSaturdayHolidays.map((h) => (
-                  <div key={h.date} className="flex items-center justify-between text-body-sm py-0.5">
-                    <span className="text-on-surface font-medium flex items-center gap-1.5">
-                      <span>{h.emoji || '🇸🇬'}</span>
-                      <span>{h.name}</span>
-                      <span className="text-[11px] text-on-surface-variant">({h.date})</span>
-                    </span>
-                    <span className="font-label-sm text-label-sm text-leave-compoff font-semibold">
-                      +1 Comp-off
-                    </span>
-                  </div>
-                ))}
+                {previewSaturdayHolidays.map((h) => {
+                  const isCNY = h.name.toLowerCase().includes('chinese new year');
+                  return (
+                    <div key={h.date} className="flex flex-col gap-1 p-2 rounded-lg bg-surface-container/30 border border-surface-container/50">
+                      <div className="flex items-center justify-between text-body-sm">
+                        <span className="text-on-surface font-medium flex items-center gap-1.5">
+                          <span>{h.emoji || '🇸🇬'}</span>
+                          <span>{h.name}</span>
+                          {isCNY && (
+                            <span className="text-[10px] bg-primary-fixed text-on-primary-fixed px-1.5 py-0.2 rounded-full font-semibold">
+                              CNY 2027
+                            </span>
+                          )}
+                          <span className="text-[11px] text-on-surface-variant">({h.date})</span>
+                        </span>
+                        <span className="font-label-sm text-label-sm text-leave-compoff font-semibold">
+                          +1 Comp-off
+                        </span>
+                      </div>
+                      {isCNY && (
+                        <p className="text-[11px] text-on-surface-variant leading-snug">
+                          Occurs in February 2027 (inside the 2nd half of this cycle). CNY 2026 was in February 2026 before this cycle began.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-[12px] text-on-surface-variant pt-1 border-t border-surface-container leading-tight">

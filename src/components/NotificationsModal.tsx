@@ -56,14 +56,14 @@ export const NotificationsModal: React.FC = () => {
 
           {/* Notification 3 */}
           <div className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container flex items-start gap-3">
-            <span className="material-symbols-outlined text-[22px] text-secondary shrink-0 mt-0.5">history_edu</span>
+            <span className="material-symbols-outlined text-[22px] text-secondary shrink-0 mt-0.5">policy</span>
             <div>
               <div className="flex items-center justify-between">
-                <span className="font-title-sm text-title-sm font-semibold text-on-surface">Retroactive MC Logging Enabled</span>
-                <span className="text-[10px] text-on-surface-variant">FY 2026</span>
+                <span className="font-title-sm text-title-sm font-semibold text-on-surface">MOM Leave Compliance Active</span>
+                <span className="text-[10px] text-on-surface-variant">Active Cycle</span>
               </div>
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 leading-snug">
-                You can retroactively record certified clinic medical slips for any date in FY 2026 to keep HR records audit-compliant.
+                Leave deductions strictly match selected working business days with half-day adjustments supported per Singapore MOM guidelines.
               </p>
             </div>
           </div>

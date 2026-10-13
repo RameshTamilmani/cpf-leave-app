@@ -47,9 +47,8 @@ export const Header: React.FC = () => {
                 <span className="font-title-sm text-title-sm text-on-surface-variant hidden sm:inline">{getSubtitle()}</span>
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="w-2 h-2 rounded-full bg-leave-compoff animate-pulse" />
                 <span className="font-label-sm text-label-sm text-on-surface-variant">
-                  {settings.lastSynced.includes('Just now') ? 'Synced data.gov.sg • Just now' : 'Synced data.gov.sg • 2h ago'}
+                  Singapore MOM Leave Planner
                 </span>
               </div>
             </div>
@@ -67,9 +66,16 @@ export const Header: React.FC = () => {
             <button
               onClick={() => setCurrentTab('settings')}
               aria-label="User profile"
-              className="w-8 h-8 rounded-full bg-primary flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
+              className="w-9 h-9 rounded-full bg-primary flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity overflow-hidden border border-primary-fixed shadow-xs"
+              title={`${settings.userName || 'Employee'} (${settings.employeeId || 'Settings'})`}
             >
-              <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+              {settings.avatarUrl ? (
+                <img src={settings.avatarUrl} alt="User" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-on-primary font-bold text-sm">
+                  {(settings.userName || 'E').slice(0, 1).toUpperCase()}
+                </span>
+              )}
             </button>
           </div>
         </div>

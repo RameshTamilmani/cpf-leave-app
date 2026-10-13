@@ -8,8 +8,7 @@ export const SettingsScreen: React.FC = () => {
     triggerSync,
     isSyncing,
     exportCSV,
-    backupJSON,
-    restoreJSON,
+    restoreCSV,
     resetAllData,
     setIsHolidaysModalOpen,
     setIsEditCycleModalOpen,
@@ -24,7 +23,8 @@ export const SettingsScreen: React.FC = () => {
   } = useLeave();
 
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const handleAlChange = (delta: number) => {
     const next = settings.alEntitlement + delta;
@@ -54,61 +54,210 @@ export const SettingsScreen: React.FC = () => {
     showToast(`Sick Leave set to ${next} days`);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
       if (content) {
-        restoreJSON(content);
+        restoreCSV(content);
       }
     };
     reader.readAsText(file);
     e.target.value = '';
   };
 
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('Profile photo must be under 2MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        updateSettings({ avatarUrl: dataUrl });
+        showToast('Profile picture updated successfully!');
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const activeYearSpan = `${cycleStartDateStr.slice(0, 4)}–${cycleEndDateStr.slice(0, 4)}`;
+
   return (
     <div className="flex flex-col w-full px-margin space-y-space-md max-w-xl mx-auto pb-8">
-      {/* Sub-header profile / context banner */}
-      <div className="relative overflow-hidden rounded-xl bg-surface-container p-space-md shadow-xs border border-surface-container">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-space-sm min-w-0">
-            <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary-fixed flex items-center justify-center shrink-0 shadow-xs">
-              <span className="material-symbols-outlined text-[26px]">manage_accounts</span>
+      {/* Employee Profile & Identity Configuration */}
+      <section className="space-y-space-xs">
+        <div className="px-1 flex items-center justify-between">
+          <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase">
+            Employee Profile &amp; Identity
+          </h2>
+          <span className="font-label-sm text-label-sm text-primary font-semibold">
+            {activeYearSpan}
+          </span>
+        </div>
+        <div className="rounded-2xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-space-md">
+          {/* Avatar & Photo Upload */}
+          <div className="flex items-start gap-4">
+            <div className="relative shrink-0 mt-1">
+              {settings.avatarUrl ? (
+                <img
+                  src={settings.avatarUrl}
+                  alt="Avatar"
+                  className="w-16 h-16 rounded-full object-cover border-2 border-primary shadow-xs"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-primary-container text-on-primary-fixed flex items-center justify-center font-bold text-2xl shadow-xs">
+                  {(settings.userName || 'E').slice(0, 1).toUpperCase()}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-xs hover:opacity-90 cursor-pointer"
+                title="Upload Photo File"
+              >
+                <span className="material-symbols-outlined text-[14px]">photo_camera</span>
+              </button>
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-title-md text-title-md text-on-surface truncate font-semibold">Settings &amp; Policy</span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold">
-                  FY 2026
+
+            <div className="flex-1 flex flex-col gap-2 min-w-0">
+              <span className="font-title-sm text-title-sm font-semibold text-on-surface">
+                Profile Picture
+              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="px-3 py-1 rounded-full bg-primary text-on-primary font-label-sm text-label-sm font-semibold hover:opacity-95 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                >
+                  <span className="material-symbols-outlined text-[14px]">upload</span>
+                  <span>Upload File</span>
+                </button>
+                {settings.avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateSettings({ avatarUrl: '' });
+                      showToast('Profile picture removed');
+                    }}
+                    className="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm hover:bg-surface-container-high transition-colors cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                )}
+                <input
+                  type="file"
+                  ref={avatarInputRef}
+                  onChange={handleAvatarUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+              </div>
+
+              {/* Direct Profile Picture URL Input */}
+              <div>
+                <label className="text-[11px] text-on-surface-variant font-medium block mb-0.5">
+                  Or enter image URL:
+                </label>
+                <input
+                  type="url"
+                  value={settings.avatarUrl || ''}
+                  onChange={(e) => updateSettings({ avatarUrl: e.target.value })}
+                  placeholder="https://example.com/photo.jpg"
+                  className="w-full px-3 py-1.5 rounded-lg border border-surface-outline bg-surface-container-lowest text-on-surface text-[12px] focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              {/* Quick Preset Avatars */}
+              <div className="flex items-center gap-1.5 pt-0.5">
+                <span className="text-[11px] text-on-surface-variant">Presets:</span>
+                {['👤', '👔', '👩‍💼', '👨‍💻', '🧑‍💼'].map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => {
+                      const canvas = document.createElement('canvas');
+                      canvas.width = 120;
+                      canvas.height = 120;
+                      const ctx = canvas.getContext('2d');
+                      if (ctx) {
+                        ctx.fillStyle = '#E8F5E9';
+                        ctx.beginPath();
+                        ctx.arc(60, 60, 60, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.font = '64px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(emoji, 60, 65);
+                        const url = canvas.toDataURL();
+                        updateSettings({ avatarUrl: url });
+                        showToast(`Set avatar preset: ${emoji}`);
+                      }
+                    }}
+                    className="w-7 h-7 rounded-full bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-sm cursor-pointer transition-transform hover:scale-110 active:scale-95"
+                    title={`Select ${emoji}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="h-[1px] bg-surface-container" />
+
+          {/* Employee ID & Name Inputs */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
+                EMPLOYEE ID
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={settings.employeeId || ''}
+                  onChange={(e) => updateSettings({ employeeId: e.target.value })}
+                  placeholder="e.g. EMP-1103118"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono font-medium text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <span className="material-symbols-outlined absolute left-2.5 top-2.5 text-[18px] text-on-surface-variant">
+                  badge
                 </span>
               </div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">
-                Personal Leave Profile • Singapore MOM EA
-              </p>
+            </div>
+
+            <div>
+              <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
+                FULL NAME
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={settings.userName || ''}
+                  onChange={(e) => updateSettings({ userName: e.target.value })}
+                  placeholder="e.g. Ramesh"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-medium text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <span className="material-symbols-outlined absolute left-2.5 top-2.5 text-[18px] text-on-surface-variant">
+                  person
+                </span>
+              </div>
             </div>
           </div>
-          <div className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-primary shrink-0">
-            <span className="material-symbols-outlined text-[20px]">verified_user</span>
-          </div>
         </div>
-
-        {/* Mini statutory health pill */}
-        <div className="mt-space-sm pt-2 flex items-center justify-between border-t border-surface-container-highest/60 text-on-surface-variant font-label-sm text-label-sm">
-          <span className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-[15px] text-primary">gavel</span>
-            MOM Employment Act Sec 88 Compliant
-          </span>
-          <span className="text-primary font-semibold">Ready</span>
-        </div>
-      </div>
+      </section>
 
       {/* Section 1: Leave Entitlements Configuration */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
           <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase">
-            Leave Entitlements (FY 2026)
+            Leave Entitlements ({activeYearSpan})
           </h2>
           <span className="font-label-sm text-label-sm text-primary font-medium">Auto-Prorated</span>
         </div>
@@ -516,98 +665,71 @@ export const SettingsScreen: React.FC = () => {
             </label>
           </div>
 
-          <div className="h-[1px] bg-surface-container" />
-
-          {/* Toggle 3 */}
-          <div className="flex items-center justify-between gap-space-sm">
-            <div className="flex items-center gap-space-sm min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[22px]">battery_alert</span>
-              </div>
-              <div className="min-w-0">
-                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Low Leave Balance Warning</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant truncate">Warn when remaining Annual Leave ≤ 2 days</p>
-              </div>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer shrink-0">
-              <input
-                type="checkbox"
-                checked={settings.lowBalanceWarningEnabled}
-                onChange={(e) => {
-                  updateSettings({ lowBalanceWarningEnabled: e.target.checked });
-                  showToast(e.target.checked ? 'Low balance warning turned on' : 'Low balance warning turned off');
-                }}
-                className="sr-only peer"
-              />
-              <div className="w-12 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
-            </label>
-          </div>
         </div>
       </section>
 
-      {/* Section 5: Data Management & Backup */}
+      {/* Section 5: Data Management & CSV Export/Restore (Mandatory Data Only) */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
           <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase">
-            Data &amp; Storage
+            Data Management (CSV Only)
           </h2>
-          <span className="font-label-sm text-label-sm text-on-surface-variant">Local SQLite / Offline</span>
+          <span className="font-label-sm text-label-sm text-on-surface-variant">Strict Validation</span>
         </div>
         <div className="rounded-xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-space-sm">
-          {/* Export CSV */}
-          <button
-            onClick={exportCSV}
-            className="w-full flex items-center justify-between py-2 text-left group cursor-pointer"
-          >
-            <div className="flex items-center gap-space-sm">
-              <div className="w-10 h-10 rounded-lg bg-surface-container text-on-surface-variant group-hover:bg-primary-container group-hover:text-on-primary-fixed transition-colors flex items-center justify-center shrink-0">
+          {/* Informational Privacy & Mandatory Data Pill */}
+          <div className="p-2.5 rounded-lg bg-surface-container-low text-body-sm text-on-surface-variant flex items-center gap-2 border border-surface-container">
+            <span className="material-symbols-outlined text-[18px] text-primary shrink-0">security</span>
+            <span className="text-[12px] leading-tight">
+              Export and restore operations process <strong>mandatory fields only</strong> (Type, Title, Start Date, End Date, Days, Status). Internal IDs and unnecessary metadata are excluded. Strict duplicate validation is enforced on import.
+            </span>
+          </div>
+
+          {/* Export CSV (Mandatory Data Only) */}
+          <div className="flex items-center justify-between py-2">
+            <div className="flex items-center gap-space-sm min-w-0">
+              <div className="w-10 h-10 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-[22px]">download</span>
               </div>
               <div>
                 <p className="font-title-sm text-title-sm text-on-surface font-semibold">Export Leave Records (CSV)</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Compatible with Microsoft Excel &amp; Google Sheets</p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">Mandatory columns only (Type, Title, Dates, Days, Status)</p>
               </div>
             </div>
-            <span className="material-symbols-outlined text-on-surface-variant text-[20px]">chevron_right</span>
-          </button>
+            <button
+              onClick={exportCSV}
+              className="px-3.5 py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md font-semibold hover:opacity-95 active:scale-95 transition-all cursor-pointer shadow-2xs shrink-0"
+            >
+              Export CSV
+            </button>
+          </div>
 
           <div className="h-[1px] bg-surface-container" />
 
-          {/* Backup & Restore */}
-          <div className="flex items-center justify-between py-2 text-left group">
-            <button
-              onClick={backupJSON}
-              className="flex items-center gap-space-sm flex-1 cursor-pointer text-left"
-            >
-              <div className="w-10 h-10 rounded-lg bg-surface-container text-on-surface-variant group-hover:bg-primary-container group-hover:text-on-primary-fixed transition-colors flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[22px]">settings_backup_restore</span>
+          {/* Restore CSV (Mandatory Data Only with Strict Duplicate Validation) */}
+          <div className="flex items-center justify-between py-2">
+            <div className="flex items-center gap-space-sm min-w-0">
+              <div className="w-10 h-10 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[22px]">upload_file</span>
               </div>
               <div>
-                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Backup &amp; Restore</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Save encrypted JSON snapshot or restore</p>
+                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Restore Leave Records (CSV)</p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">Import standard CSV file with strict duplicate validation</p>
               </div>
-            </button>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={backupJSON}
-                className="px-2.5 py-1 rounded-full bg-surface-container text-on-surface font-label-sm text-label-sm hover:bg-surface-container-high transition-colors cursor-pointer"
-              >
-                Backup
-              </button>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm hover:bg-primary-fixed-dim transition-colors cursor-pointer"
-              >
-                Restore
-              </button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                accept=".json"
-                className="hidden"
-              />
             </div>
+            <button
+              onClick={() => csvInputRef.current?.click()}
+              className="px-3.5 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-md text-label-md font-semibold hover:bg-primary-fixed-dim transition-colors cursor-pointer shrink-0"
+            >
+              Import CSV
+            </button>
+            <input
+              type="file"
+              ref={csvInputRef}
+              onChange={handleCsvUpload}
+              accept=".csv"
+              className="hidden"
+            />
           </div>
 
           <div className="h-[1px] bg-surface-container" />
@@ -624,7 +746,7 @@ export const SettingsScreen: React.FC = () => {
               <div>
                 <p className="font-title-sm text-title-sm text-error font-semibold">Reset All Leave Data</p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Erase FY 2026 logs, balance credits, and custom events
+                  Erase leave logs, balance credits, and custom events
                 </p>
               </div>
             </div>
@@ -633,15 +755,33 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* Section 6: About & Version Footer */}
+      {/* Section 6: About CutiSG & Singapore Leave Policy */}
+      <section className="rounded-2xl bg-surface-container-lowest p-space-md border border-surface-container space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-[22px] text-primary">info</span>
+          <h3 className="font-title-sm text-title-sm text-on-surface font-semibold">
+            About CutiSG &amp; Singapore Leave Policy
+          </h3>
+        </div>
+        <div className="text-body-sm text-on-surface-variant space-y-2 leading-relaxed text-[12px]">
+          <p>
+            <strong>Why &ldquo;CutiSG&rdquo;?</strong> &ldquo;Cuti&rdquo; (/tʃuːti/) is the colloquial Malay and Singlish word for <em>leave</em> or <em>vacation</em> widely used across Singaporean workplaces (e.g., &ldquo;apply cuti&rdquo;, &ldquo;on cuti&rdquo;). Paired with &ldquo;SG&rdquo;, <strong>CutiSG</strong> provides a dedicated personal leave planner tailored to Singapore MOM statutory rules.
+          </p>
+          <p>
+            <strong>Year-Over-Year Automatic Policy Updates:</strong> CutiSG automatically tracks gazetted Singapore public holidays, calculates long weekends with 0 leave deducted, and applies the MOM Employment Act Section 88 rule (awarding +1 day off-in-lieu comp-off whenever a gazetted holiday falls on a Saturday).
+          </p>
+        </div>
+      </section>
+
+      {/* Version Footer */}
       <div className="py-space-md text-center space-y-1">
         <div className="flex items-center justify-center gap-1.5 text-on-surface-variant">
           <span className="font-label-md text-label-md font-semibold text-on-surface">CutiSG</span>
           <span className="text-on-surface-variant">•</span>
-          <span className="font-label-md text-label-md">v1.0.0 (Build 2026.04)</span>
+          <span className="font-label-md text-label-md">v1.0.0 (Singapore Edition)</span>
         </div>
         <p className="font-body-sm text-body-sm text-on-surface-variant">
-          Singapore Personal Edition • Made for SG Professionals
+          Made for Singapore Professionals • MOM Employment Act Compliant
         </p>
         <div className="pt-2 flex items-center justify-center gap-4 text-primary font-label-sm text-label-sm font-medium">
           <button onClick={() => showToast('Singapore MOM Data Protection & Privacy Standard')} className="hover:underline cursor-pointer">
@@ -650,10 +790,6 @@ export const SettingsScreen: React.FC = () => {
           <span>•</span>
           <button onClick={() => showToast('MOM Employment Act Sec 88: Gazetted Public Holidays Compliance')} className="hover:underline cursor-pointer">
             MOM EA Guidelines
-          </button>
-          <span>•</span>
-          <button onClick={() => showToast('Built with React 19, Tailwind CSS and Material You Design tokens')} className="hover:underline cursor-pointer">
-            Open Source Licenses
           </button>
         </div>
       </div>

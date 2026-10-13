@@ -123,13 +123,13 @@ export const CalendarScreen: React.FC = () => {
       inspectorBadgeClass = 'bg-leave-annual-container text-leave-annual';
       inspectorDeduction = `${bookedRecord.days.toFixed(1)} Day Balance`;
       inspectorRule = 'Standard Approved';
-      inspectorExplanation = `Booked Annual Vacation (${bookedRecord.status}). Ref: ${bookedRecord.refNo || 'AL-2026'}.`;
+      inspectorExplanation = `Booked Annual Vacation (${bookedRecord.status}).`;
     } else if (bookedRecord.type === 'SL') {
       inspectorCategory = 'Medical Outpatient';
       inspectorBadgeClass = 'bg-leave-sick-container text-leave-sick';
       inspectorDeduction = `${bookedRecord.days.toFixed(1)} MC Day`;
-      inspectorRule = 'DigiMC Synced';
-      inspectorExplanation = `Certified Medical Leave. Clinic Ref: ${bookedRecord.refNo || 'MC-SG-2026'}.`;
+      inspectorRule = 'MOM Medical Leave';
+      inspectorExplanation = `Certified Outpatient Medical Leave pursuant to MOM Employment Act.`;
     } else {
       inspectorCategory = 'Comp-Off Spent';
       inspectorBadgeClass = 'bg-leave-compoff-container text-leave-compoff';
@@ -463,11 +463,11 @@ export const CalendarScreen: React.FC = () => {
                 </button>
               ) : selectedIsWeekend ? (
                 <button
-                  onClick={() => openApplyModal({ initialType: 'CO', initialDate: selectedCalendarDate })}
-                  className="flex-1 h-11 rounded-full bg-primary-fixed text-on-primary-fixed font-label-md text-label-md flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-xs"
+                  disabled
+                  className="flex-1 h-11 rounded-full bg-surface-container-highest text-on-surface-variant font-label-md text-label-md flex items-center justify-center gap-2 cursor-not-allowed opacity-80"
                 >
-                  <span className="material-symbols-outlined text-[18px]">more_time</span>
-                  <span>+ Log Weekend Duty / Overtime</span>
+                  <span className="material-symbols-outlined text-[18px]">weekend</span>
+                  <span>Rest Day (Non-Working Day)</span>
                 </button>
               ) : (
                 <button

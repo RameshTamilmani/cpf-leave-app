@@ -286,25 +286,19 @@ export const HistoryScreen: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 bg-surface-container-low/50 px-2.5 py-1.5 rounded-lg text-label-sm">
-                  <div className="flex items-center gap-1.5 text-on-surface-variant">
-                    <span className="material-symbols-outlined text-[16px] text-primary">
-                      account_balance_wallet
-                    </span>
-                    <span>
-                      Entitlement Impact: <strong className="text-on-surface">-{Number(record.days).toFixed(1)} {record.type}</strong>
-                    </span>
-                  </div>
-                  {record.refNo ? (
-                    <span className="font-label-sm text-label-sm text-on-surface-variant font-mono">
-                      Ref: {record.refNo}
-                    </span>
-                  ) : (
+                  <div className="flex items-center justify-between pt-2 bg-surface-container-low/50 px-2.5 py-1.5 rounded-lg text-label-sm">
+                    <div className="flex items-center gap-1.5 text-on-surface-variant">
+                      <span className="material-symbols-outlined text-[16px] text-primary">
+                        account_balance_wallet
+                      </span>
+                      <span>
+                        Entitlement Impact: <strong className="text-on-surface">-{Number(record.days).toFixed(1)} {record.type}</strong>
+                      </span>
+                    </div>
                     <span className="font-label-sm text-label-sm text-leave-compoff font-medium">
                       ✓ Deducted from quota
                     </span>
-                  )}
-                </div>
+                  </div>
               </div>
             );
           })}
@@ -328,24 +322,17 @@ export const HistoryScreen: React.FC = () => {
             No leave entries logged yet for 2026
           </h2>
           <p className="font-body-md text-body-md text-on-surface-variant mt-1.5 max-w-xs leading-relaxed">
-            Your clean slate awaits! Record approved PTO, planned vacations, or retroactively log medical slips (MCs) to keep statutory balances compliant.
+            Your clean slate awaits! Record approved annual vacations, medical leaves, or comp-off days to keep statutory balances compliant.
           </p>
 
-          {/* Quick Entry CTAs */}
-          <div className="flex flex-col sm:flex-row items-center gap-2.5 mt-5 w-full max-w-xs">
+          {/* Quick Entry CTA */}
+          <div className="flex items-center justify-center mt-5 w-full max-w-xs">
             <button
               onClick={() => openApplyModal({ initialType: 'AL' })}
               className="w-full py-2.5 px-4 rounded-full bg-primary text-on-primary font-label-lg text-label-lg shadow-xs hover:opacity-95 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px]">add_circle</span>
-              <span>Apply New Leave</span>
-            </button>
-            <button
-              onClick={() => openApplyModal({ initialType: 'SL', initialStatus: 'retroactive' })}
-              className="w-full py-2.5 px-4 rounded-full bg-surface-container-high text-on-surface font-label-lg text-label-lg hover:bg-surface-variant active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[18px] text-leave-sick">medical_services</span>
-              <span>Log Past MC</span>
+              <span>Apply Leave</span>
             </button>
           </div>
         </div>
@@ -402,18 +389,6 @@ export const HistoryScreen: React.FC = () => {
             >
               <span className="material-symbols-outlined text-[20px] text-primary">edit</span>
               <span>Edit Leave Details</span>
-            </button>
-
-            <button
-              onClick={() => {
-                const title = selectedRecordForSheet.title;
-                setSelectedRecordForSheet(null);
-                showToast(`Clinic receipt / MC PDF attached for ${title}`);
-              }}
-              className="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface text-left font-label-lg text-label-lg transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[20px] text-secondary">file_present</span>
-              <span>Attach Clinic Receipt / MC PDF</span>
             </button>
 
             <button

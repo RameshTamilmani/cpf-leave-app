@@ -11,7 +11,6 @@ export interface LeaveRecord {
   days: number;
   halfDay?: 'full' | 'am' | 'pm';
   status: LeaveStatus;
-  refNo?: string;
   notes?: string;
   createdAt: string;
 }
@@ -41,6 +40,9 @@ export interface SpecialHoliday extends PublicHoliday {
 }
 
 export interface UserSettings {
+  userName?: string;
+  employeeId?: string;
+  avatarUrl?: string;
   alEntitlement: number;
   slEntitlement: number;
   cycle: string;
@@ -52,6 +54,7 @@ export interface UserSettings {
   compOffValidityDays: number;
   phAlertsEnabled: boolean;
   expiryAlertsEnabled: boolean;
-  lowBalanceWarningEnabled: boolean;
   lastSynced: string;
+  excludedHolidayDates?: string[];
+  carryForwardCompOff?: number;
 }

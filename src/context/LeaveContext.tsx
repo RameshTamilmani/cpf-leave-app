@@ -38,6 +38,10 @@ interface LeaveContextType {
   cycleEndDateStr: string;
   saturdayCompOffHolidays: PublicHoliday[];
   autoCompOffEarned: number;
+  excludedHolidayDates: string[];
+  toggleHolidayCompOff: (date: string) => void;
+  carryForwardCompOff: number;
+  setCarryForwardCompOff: (days: number) => void;
   manualCompOffCredits: number;
   addManualCompOffCredit: (reason?: string) => void;
   
@@ -83,14 +87,16 @@ interface LeaveContextType {
   triggerSync: () => Promise<void>;
   isSyncing: boolean;
   exportCSV: () => void;
-  backupJSON: () => void;
-  restoreJSON: (jsonStr: string) => boolean;
+  restoreCSV: (csvStr: string) => boolean;
   resetAllData: () => void;
 }
 
 const defaultSettings: UserSettings = {
+  userName: 'Employee',
+  employeeId: 'EMP-1103118',
+  avatarUrl: '',
   alEntitlement: 12,
-  slEntitlement: 12,
+  slEntitlement: 14,
   cycle: 'Jun 13 – Jun 12 (Next Year)',
   cycleStartMonth: 6,
   cycleStartDay: 13,
@@ -100,7 +106,6 @@ const defaultSettings: UserSettings = {
   compOffValidityDays: 90,
   phAlertsEnabled: true,
   expiryAlertsEnabled: true,
-  lowBalanceWarningEnabled: false,
   lastSynced: 'Today, 09:41 AM (2h ago)'
 };
 
@@ -135,7 +140,14 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [settings, setSettings] = useState<UserSettings>(() => {
     try {
       const saved = localStorage.getItem('cutisg_settings');
-      return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.alEntitlement === 14) {
+          parsed.alEntitlement = 12;
+        }
+        return { ...defaultSettings, ...parsed };
+      }
+      return defaultSettings;
     } catch {
       return defaultSettings;
     }
@@ -336,6 +348,24 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const cycleStartDateStr = `${activeStartYear}-${String(startMonth).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`;
   const cycleEndDateStr = `${activeEndYear}-${String(endMonth).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
 
+  // Excluded holiday dates and carried forward credits from user settings
+  const excludedHolidayDates = settings.excludedHolidayDates || [];
+  const carryForwardCompOff = settings.carryForwardCompOff || 0;
+
+  const toggleHolidayCompOff = (date: string) => {
+    const isExcluded = excludedHolidayDates.includes(date);
+    const updated = isExcluded
+      ? excludedHolidayDates.filter((d) => d !== date)
+      : [...excludedHolidayDates, date];
+    updateSettings({ excludedHolidayDates: updated });
+    showToast(isExcluded ? `Re-included ${date} in Comp-Off calculation` : `Excluded ${date} from Comp-Off calculation`);
+  };
+
+  const setCarryForwardCompOff = (days: number) => {
+    updateSettings({ carryForwardCompOff: Math.max(0, days) });
+    showToast(`Updated prior-cycle comp-off carry forward: ${days} day(s)`);
+  };
+
   // Holidays falling within active leave cycle
   const holidaysInCycle = allHolidays.filter(
     (h) => h.date >= cycleStartDateStr && h.date <= cycleEndDateStr
@@ -349,8 +379,13 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return isSat || Boolean(h.isCompOffEligible);
   });
 
-  const autoCompOffEarned = saturdayCompOffHolidays.length;
-  const totalCompOffPool = autoCompOffEarned + manualCompOffCredits;
+  // Only non-excluded Saturday holidays accrue comp-off days
+  const activeSaturdayCompOffHolidays = saturdayCompOffHolidays.filter(
+    (h) => !excludedHolidayDates.includes(h.date)
+  );
+
+  const autoCompOffEarned = activeSaturdayCompOffHolidays.length;
+  const totalCompOffPool = autoCompOffEarned + manualCompOffCredits + carryForwardCompOff;
 
   // Balances calculation
   const alUsed = records
@@ -382,63 +417,147 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast('Updated gazetted public holidays from data.gov.sg!');
   };
 
+  // Export CSV with ONLY mandatory data: Type, Title, Start Date, End Date, Days, Status
   const exportCSV = () => {
-    const headers = ['ID', 'Type', 'Title', 'Start Date', 'End Date', 'Days', 'Status', 'Ref No', 'Notes', 'Created At'];
+    const headers = ['Type', 'Title', 'Start Date', 'End Date', 'Days', 'Status'];
     const rows = records.map((r) => [
-      `"${r.id}"`,
       `"${r.type}"`,
       `"${r.title.replace(/"/g, '""')}"`,
       `"${r.startDate}"`,
       `"${r.endDate}"`,
       r.days,
-      `"${r.status}"`,
-      `"${r.refNo || ''}"`,
-      `"${(r.notes || '').replace(/"/g, '""')}"`,
-      `"${r.createdAt}"`
+      `"${r.status}"`
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `CutiSG_Leave_Export_FY2026.csv`);
+    link.setAttribute('download', `SG_Leave_Export_${cycleStartDateStr.slice(0, 4)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showToast(`Exported ${records.length} leave record${records.length !== 1 ? 's' : ''} to CSV`);
+    showToast(`Exported ${records.length} mandatory leave record${records.length !== 1 ? 's' : ''} to CSV`);
   };
 
-  const backupJSON = () => {
-    const data = {
-      app: 'CutiSG',
-      version: '1.0.0 (Build 2026.04)',
-      exportedAt: new Date().toISOString(),
-      settings,
-      records,
-      specialHolidays,
-      manualCompOffCredits
-    };
-    const jsonStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data, null, 2));
-    const link = document.createElement('a');
-    link.setAttribute('href', jsonStr);
-    link.setAttribute('download', `CutiSG_Backup_FY2026_${new Date().toISOString().slice(0, 10)}.json`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('Saved encrypted JSON snapshot to device');
-  };
-
-  const restoreJSON = (jsonStr: string): boolean => {
+  // Restore CSV containing mandatory data with strict duplicate validation
+  const restoreCSV = (csvStr: string): boolean => {
     try {
-      const parsed = JSON.parse(jsonStr);
-      if (parsed.settings) setSettings(parsed.settings);
-      if (Array.isArray(parsed.records)) setRecords(parsed.records);
-      if (Array.isArray(parsed.specialHolidays)) setSpecialHolidays(parsed.specialHolidays);
-      if (typeof parsed.manualCompOffCredits === 'number') setManualCompOffCredits(parsed.manualCompOffCredits);
-      showToast('Successfully restored backup snapshot!');
+      const lines = csvStr.trim().split(/\r?\n/).filter(Boolean);
+      if (lines.length < 2) {
+        showToast('CSV is empty or missing data rows');
+        return false;
+      }
+      const headerLine = lines[0].toLowerCase();
+      const headers = headerLine.split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
+
+      const typeIdx = headers.findIndex((h) => h.includes('type'));
+      const titleIdx = headers.findIndex((h) => h.includes('title') || h.includes('reason'));
+      const startIdx = headers.findIndex((h) => h.includes('start'));
+      const endIdx = headers.findIndex((h) => h.includes('end'));
+      const daysIdx = headers.findIndex((h) => h.includes('day'));
+      const statusIdx = headers.findIndex((h) => h.includes('status'));
+
+      const validRows: {
+        type: LeaveType;
+        title: string;
+        startDate: string;
+        endDate: string;
+        days: number;
+        status: LeaveStatus;
+      }[] = [];
+
+      let duplicateCount = 0;
+      let invalidCount = 0;
+
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        const cols: string[] = [];
+        let inQuotes = false;
+        let current = '';
+        for (let c = 0; c < line.length; c++) {
+          const char = line[c];
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            cols.push(current.trim().replace(/^"|"$/g, ''));
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        cols.push(current.trim().replace(/^"|"$/g, ''));
+
+        const typeRaw = cols[typeIdx >= 0 ? typeIdx : 0]?.toUpperCase() || 'AL';
+        const type: LeaveType = typeRaw === 'SL' ? 'SL' : typeRaw === 'CO' ? 'CO' : 'AL';
+        const title = cols[titleIdx >= 0 ? titleIdx : 1] || 'Leave';
+        const startDate = cols[startIdx >= 0 ? startIdx : 2] || todayDateStr;
+        const endDate = cols[endIdx >= 0 ? endIdx : 3] || startDate;
+        const days = Math.max(0.5, Number(cols[daysIdx >= 0 ? daysIdx : 4]) || 1.0);
+        const statusRaw = cols[statusIdx >= 0 ? statusIdx : 5]?.toLowerCase();
+        const status: LeaveStatus = statusRaw === 'taken' ? 'taken' : 'planned';
+
+        // Basic date consistency
+        if (!startDate || !endDate || endDate < startDate) {
+          invalidCount++;
+          continue;
+        }
+
+        // Rule: 0.5 days is allowed only if start date and end date are the same
+        if (startDate !== endDate && days < 1.0) {
+          invalidCount++;
+          continue;
+        }
+
+        // Strict duplicate and overlap validation:
+        // 1. Check against records already added in this import batch
+        const isInternalDuplicate = validRows.some((existing) => {
+          const overlaps = startDate <= existing.endDate && endDate >= existing.startDate;
+          return overlaps;
+        });
+
+        if (isInternalDuplicate) {
+          duplicateCount++;
+          continue;
+        }
+
+        validRows.push({
+          type,
+          title,
+          startDate,
+          endDate,
+          days,
+          status
+        });
+      }
+
+      if (validRows.length === 0) {
+        if (duplicateCount > 0) {
+          showToast(`Restore blocked: Found ${duplicateCount} duplicate or overlapping entries in CSV.`);
+        } else {
+          showToast(`Restore failed: ${invalidCount} invalid rows found, no valid records.`);
+        }
+        return false;
+      }
+
+      const imported: LeaveRecord[] = validRows.map((row, idx) => ({
+        id: 'cuti_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 4),
+        ...row,
+        createdAt: new Date().toISOString()
+      }));
+
+      setRecords(imported);
+      localStorage.setItem('cutisg_records', JSON.stringify(imported));
+
+      if (duplicateCount > 0) {
+        showToast(`Restored ${imported.length} mandatory records (${duplicateCount} duplicate entries blocked).`);
+      } else {
+        showToast(`Successfully restored ${imported.length} mandatory leave record${imported.length !== 1 ? 's' : ''} from CSV!`);
+      }
       return true;
-    } catch {
-      showToast('Error restoring file: Invalid JSON format');
+    } catch (e) {
+      console.error(e);
+      showToast('Error restoring CSV: invalid format');
       return false;
     }
   };
@@ -484,6 +603,10 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         cycleEndDateStr,
         saturdayCompOffHolidays,
         autoCompOffEarned,
+        excludedHolidayDates,
+        toggleHolidayCompOff,
+        carryForwardCompOff,
+        setCarryForwardCompOff,
         manualCompOffCredits,
         addManualCompOffCredit,
         todayDateStr,
@@ -510,8 +633,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         triggerSync,
         isSyncing,
         exportCSV,
-        backupJSON,
-        restoreJSON,
+        restoreCSV,
         resetAllData
       }}
     >

@@ -8,6 +8,8 @@ export const HomeScreen: React.FC = () => {
     coAvailable,
     saturdayCompOffHolidays,
     autoCompOffEarned,
+    excludedHolidayDates,
+    carryForwardCompOff,
     upcomingHolidays,
     todayDateStr,
     cycleStartDateStr,
@@ -19,8 +21,6 @@ export const HomeScreen: React.FC = () => {
     setIsCompOffModalOpen,
     setIsAddSpecialHolidayOpen,
     setIsEditCycleModalOpen,
-    triggerSync,
-    isSyncing,
     setSelectedCalendarDate
   } = useLeave();
 
@@ -36,32 +36,46 @@ export const HomeScreen: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full px-margin pb-6 gap-space-md max-w-xl mx-auto">
-      {/* 1. Top Government Sync Banner (MD3 Tonal Surface) */}
-      <section aria-live="polite" className="w-full bg-surface-container-high rounded-xl p-3 shadow-xs flex items-center justify-between gap-space-sm" role="status">
-        <div className="flex items-start gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-full bg-primary-fixed flex items-center justify-center shrink-0 mt-0.5 text-on-primary-fixed">
-            <span className="material-symbols-outlined text-[16px]">verified</span>
+      {/* 1. Employee Profile & Cycle Header */}
+      <section className="w-full bg-surface-container rounded-2xl p-3.5 shadow-xs flex items-center justify-between gap-space-sm border border-surface-container">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="relative">
+            {settings.avatarUrl ? (
+              <img
+                src={settings.avatarUrl}
+                alt="Profile"
+                className="w-12 h-12 rounded-full object-cover border-2 border-primary-fixed shadow-xs"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary-fixed font-bold text-lg flex items-center justify-center shadow-xs">
+                {(settings.userName || 'E').slice(0, 1).toUpperCase()}
+              </div>
+            )}
+            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary border-2 border-surface-card flex items-center justify-center">
+              <span className="material-symbols-outlined text-[10px] text-on-primary">verified</span>
+            </div>
           </div>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-label-md text-label-md text-on-surface font-semibold tracking-tight">Singapore Public Holidays</span>
-              <span className="font-label-sm text-label-sm px-1.5 py-0.2 rounded-full bg-surface-container-lowest text-on-surface-variant font-medium">MOM Official</span>
+              <span className="font-title-sm text-title-sm text-on-surface font-bold truncate">
+                {settings.userName || 'Employee'}
+              </span>
+              <span className="font-label-sm text-label-sm px-2 py-0.2 rounded-full bg-surface-container-highest text-on-surface font-mono font-semibold">
+                {settings.employeeId || 'EMP-ID'}
+              </span>
             </div>
             <p className="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">
-              Synced with data.gov.sg • Offline Cache Ready • Active Cycle Sync
+              Cycle: {settings.cycle} ({cycleStartDateStr} – {cycleEndDateStr})
             </p>
           </div>
         </div>
         <button
-          onClick={triggerSync}
-          disabled={isSyncing}
-          aria-label="Refresh government data cache"
+          onClick={() => setCurrentTab('settings')}
+          aria-label="Edit Profile & Settings"
           className="w-9 h-9 rounded-full bg-surface-container-lowest flex items-center justify-center text-on-surface-variant hover:bg-surface-variant active:scale-90 transition-all shrink-0 cursor-pointer shadow-xs"
-          id="sync-refresh-btn"
+          title="Profile & Settings"
         >
-          <span className={`material-symbols-outlined text-[18px] ${isSyncing ? 'animate-spin text-primary' : ''}`} id="sync-icon">
-            sync
-          </span>
+          <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
         </button>
       </section>
 
@@ -72,55 +86,54 @@ export const HomeScreen: React.FC = () => {
           <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Active Cycle</span>
         </div>
         <div className="flex flex-col gap-space-sm">
-          {/* Annual Leave Card */}
-          <article
-            onClick={() => openApplyModal({ initialType: 'AL' })}
-            className="w-full bg-leave-annual-container rounded-xl p-4 shadow-xs flex items-center justify-between text-leave-annual-on-container transition-transform active:scale-[0.99] cursor-pointer"
-          >
+          {/* Annual Leave Card - Informational Only */}
+          <article className="w-full bg-leave-annual-container rounded-xl p-4 shadow-xs flex items-center justify-between text-leave-annual-on-container">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-surface-container-lowest/80 flex items-center justify-center text-leave-annual shrink-0">
                 <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>beach_access</span>
               </div>
               <div>
                 <h3 className="font-title-md text-title-md font-semibold text-leave-annual-on-container leading-tight">Annual Leave (AL)</h3>
-                <span className="font-label-sm text-label-sm opacity-80">Available</span>
+                <span className="font-label-sm text-label-sm opacity-80">
+                  {Number.isInteger(alAvailable) ? alAvailable : alAvailable.toFixed(1)} / {settings.alEntitlement} Days Available
+                </span>
               </div>
             </div>
-            <div className="flex items-baseline gap-1.5 text-right">
+            <div className="flex items-baseline gap-1 text-right">
               <span className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-leave-annual-on-container leading-none">
                 {Number.isInteger(alAvailable) ? alAvailable : alAvailable.toFixed(1)}
               </span>
-              <span className="font-title-sm text-title-sm font-semibold text-leave-annual-on-container opacity-90">Days</span>
+              <span className="font-title-sm text-title-sm font-semibold text-leave-annual-on-container opacity-90">
+                /{settings.alEntitlement}
+              </span>
             </div>
           </article>
 
-          {/* Sick Leave Card */}
-          <article
-            onClick={() => openApplyModal({ initialType: 'SL', initialStatus: 'retroactive' })}
-            className="w-full bg-leave-sick-container rounded-xl p-4 shadow-xs flex items-center justify-between text-leave-sick-on-container transition-transform active:scale-[0.99] cursor-pointer"
-          >
+          {/* Sick Leave Card - Informational Only */}
+          <article className="w-full bg-leave-sick-container rounded-xl p-4 shadow-xs flex items-center justify-between text-leave-sick-on-container">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-surface-container-lowest/80 flex items-center justify-center text-leave-sick shrink-0">
                 <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>medical_services</span>
               </div>
               <div>
                 <h3 className="font-title-md text-title-md font-semibold text-leave-sick-on-container leading-tight">Sick Leave (SL)</h3>
-                <span className="font-label-sm text-label-sm opacity-80">Available</span>
+                <span className="font-label-sm text-label-sm opacity-80">
+                  {Number.isInteger(slAvailable) ? slAvailable : slAvailable.toFixed(1)} / {settings.slEntitlement} Days Available
+                </span>
               </div>
             </div>
-            <div className="flex items-baseline gap-1.5 text-right">
+            <div className="flex items-baseline gap-1 text-right">
               <span className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-leave-sick-on-container leading-none">
                 {Number.isInteger(slAvailable) ? slAvailable : slAvailable.toFixed(1)}
               </span>
-              <span className="font-title-sm text-title-sm font-semibold text-leave-sick-on-container opacity-90">Days</span>
+              <span className="font-title-sm text-title-sm font-semibold text-leave-sick-on-container opacity-90">
+                /{settings.slEntitlement}
+              </span>
             </div>
           </article>
 
-          {/* Comp-off Leave Card (Auto-calculated from Saturday holidays in cycle + manual credits) */}
-          <article
-            onClick={() => setIsCompOffModalOpen(true)}
-            className="w-full bg-leave-compoff-container rounded-xl p-4 shadow-xs flex items-center justify-between text-leave-compoff-on-container transition-transform active:scale-[0.99] cursor-pointer"
-          >
+          {/* Comp-off Leave Card - Informational Only */}
+          <article className="w-full bg-leave-compoff-container rounded-xl p-4 shadow-xs flex items-center justify-between text-leave-compoff-on-container">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-surface-container-lowest/80 flex items-center justify-center text-leave-compoff shrink-0">
                 <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>update</span>
@@ -214,28 +227,6 @@ export const HomeScreen: React.FC = () => {
             </div>
           </button>
         </div>
-
-        {/* Past & Retroactive Leave Banner */}
-        <div className="w-full bg-surface-container-lowest rounded-xl p-3 shadow-xs flex items-center justify-between gap-space-sm mt-1 border border-surface-container">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-primary shrink-0">
-              <span className="material-symbols-outlined text-[20px]">edit_calendar</span>
-            </div>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-title-sm text-title-sm font-semibold text-on-surface leading-tight">Past &amp; Retroactive Leave</span>
-                <span className="font-label-sm text-label-sm px-1.5 py-0.2 rounded-full bg-primary-fixed text-on-primary-fixed font-medium">Enabled</span>
-              </div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">Log past MCs or future requests for any date in active cycle</p>
-            </div>
-          </div>
-          <button
-            onClick={() => openApplyModal({ initialType: 'SL', initialStatus: 'retroactive' })}
-            className="font-label-md text-label-md text-primary font-semibold hover:underline shrink-0 pr-1 cursor-pointer"
-          >
-            Log
-          </button>
-        </div>
       </section>
 
       {/* 4. Comp-off Expiry Alerts & Saturday Policy Card */}
@@ -269,26 +260,43 @@ export const HomeScreen: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[20px] text-leave-compoff">stars</span>
                 <span className="font-title-sm text-title-sm font-semibold text-on-surface">
-                  {saturdayCompOffHolidays.length} Saturday Holiday Credit{saturdayCompOffHolidays.length !== 1 ? 's' : ''} in Cycle
+                  {autoCompOffEarned} of {saturdayCompOffHolidays.length} Saturday Holiday{saturdayCompOffHolidays.length !== 1 ? 's' : ''} Active
                 </span>
               </div>
               <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-leave-compoff-container text-leave-compoff font-bold">
-                +{saturdayCompOffHolidays.length} Days Auto-Accrued
+                +{autoCompOffEarned} Days Accrued{carryForwardCompOff > 0 ? ` (+${carryForwardCompOff} CF)` : ''}
               </span>
             </div>
             <div className="flex flex-col gap-1.5 pt-1 border-t border-surface-container">
-              {saturdayCompOffHolidays.map((h) => (
-                <div key={h.date} className="flex items-center justify-between text-body-sm">
-                  <span className="text-on-surface font-medium flex items-center gap-1.5">
-                    <span>{h.emoji || '🇸🇬'}</span>
-                    <span>{h.name}</span>
-                    <span className="text-[11px] text-on-surface-variant">({h.date})</span>
-                  </span>
-                  <span className="font-label-sm text-label-sm text-leave-compoff font-semibold">
-                    +1 Comp-off
-                  </span>
-                </div>
-              ))}
+              {saturdayCompOffHolidays.map((h) => {
+                const isExcluded = excludedHolidayDates?.includes(h.date);
+                const isCNY = h.name.toLowerCase().includes('chinese new year');
+                return (
+                  <div key={h.date} className="flex items-center justify-between text-body-sm">
+                    <span className="text-on-surface font-medium flex items-center gap-1.5 flex-wrap">
+                      <span>{h.emoji || '🇸🇬'}</span>
+                      <span>{h.name}</span>
+                      {isCNY && (
+                        <span className="text-[10px] bg-primary-fixed text-on-primary-fixed px-1.5 py-0.2 rounded-full font-semibold">
+                          CNY 2027
+                        </span>
+                      )}
+                      <span className="text-[11px] text-on-surface-variant">({h.date})</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      {isExcluded ? (
+                        <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-1.5 py-0.2 rounded">
+                          Excluded
+                        </span>
+                      ) : (
+                        <span className="font-label-sm text-label-sm text-leave-compoff font-semibold">
+                          +1 Comp-off
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         ) : (

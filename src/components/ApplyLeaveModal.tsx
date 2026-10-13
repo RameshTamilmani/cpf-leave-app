@@ -23,8 +23,6 @@ export const ApplyLeaveModal: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   const [durationMode, setDurationMode] = useState<'full' | 'half-am' | 'half-pm'>('full');
   const [daysToDeduct, setDaysToDeduct] = useState<number>(1.0);
-  const [isRetroactive, setIsRetroactive] = useState(false);
-  const [refNo, setRefNo] = useState('');
   const [notes, setNotes] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -41,17 +39,13 @@ export const ApplyLeaveModal: React.FC = () => {
       setDurationMode('full');
       setDaysToDeduct(1.0);
       setValidationError(null);
-      setIsRetroactive(applyModalConfig.initialStatus === 'retroactive');
 
       if (selectedType === 'SL') {
         setTitle('Medical Outpatient (MC)');
-        setRefNo(`MC-SG-2026-${Math.floor(100 + Math.random() * 900)}`);
       } else if (selectedType === 'CO') {
         setTitle('Comp-Off Leave');
-        setRefNo('');
       } else {
         setTitle('Annual Vacation');
-        setRefNo('');
       }
     }
   }, [applyModalConfig]);
@@ -68,15 +62,33 @@ export const ApplyLeaveModal: React.FC = () => {
     }
   }
 
-  // Calculate maximum allowable days for the selected date range
-  let maxAllowedDays = 1.0;
-  if (durationMode === 'half-am' || durationMode === 'half-pm') {
-    maxAllowedDays = 0.5;
-  } else if (calendarDays <= 1) {
-    maxAllowedDays = 1.0;
-  } else {
-    maxAllowedDays = calendarDays;
-  }
+  const isMultiDay = Boolean(startDate && endDate && startDate !== endDate);
+  const workingDays = startDate && endDate && endDate >= startDate
+    ? calculateWorkingDays(startDate, endDate, allHolidays)
+    : 0;
+
+  // Strict Validation Rule:
+  // - Single day (startDate === endDate): allowed deduction is 1.0 day or 0.5 day (AM/PM)
+  // - Multi-day (startDate !== endDate):
+  //   If workingDays === 0: 0 days (blocked)
+  //   If workingDays >= 1: allowed deduction is STRICTLY workingDays or workingDays - 0.5 (for half-day adjustments).
+  //   Any other value (< workingDays - 0.5 or > workingDays) is completely blocked!
+  //   Selecting 0.5 days is allowed ONLY if startDate === endDate.
+  const allowedDeductionValues: number[] = isMultiDay
+    ? workingDays > 0
+      ? [workingDays, Number((workingDays - 0.5).toFixed(1))]
+      : []
+    : [1.0, 0.5];
+
+  const maxAllowedDays = isMultiDay
+    ? workingDays
+    : durationMode === 'half-am' || durationMode === 'half-pm'
+    ? 0.5
+    : 1.0;
+
+  const minAllowedDays = isMultiDay
+    ? workingDays > 0 ? Number((workingDays - 0.5).toFixed(1)) : 0
+    : 0.5;
 
   // Check for duplicate / overlapping leaves with existing records:
   const duplicateConflict = records.find((r) => {
@@ -104,34 +116,31 @@ export const ApplyLeaveModal: React.FC = () => {
   useEffect(() => {
     if (!startDate || !endDate) return;
 
+    if (isMultiDay) {
+      if (durationMode === 'half-am' || durationMode === 'half-pm') {
+        setDurationMode('full');
+      }
+      if (workingDays > 0) {
+        // Keep within allowed values [workingDays, workingDays - 0.5]
+        const halfAdj = Number((workingDays - 0.5).toFixed(1));
+        if (daysToDeduct !== workingDays && daysToDeduct !== halfAdj) {
+          setDaysToDeduct(workingDays);
+        }
+      } else {
+        setDaysToDeduct(0);
+      }
+      return;
+    }
+
+    // Single day
     if (durationMode === 'half-am' || durationMode === 'half-pm') {
       setDaysToDeduct(0.5);
-      return;
-    }
-
-    if (startDate === endDate) {
+    } else {
       setDaysToDeduct(1.0);
-      return;
     }
+  }, [startDate, endDate, durationMode, isMultiDay, workingDays]);
 
-    if (endDate > startDate) {
-      const startObj = new Date(startDate + 'T00:00:00');
-      const endObj = new Date(endDate + 'T00:00:00');
-      const totalCalendarDays = Math.round((endObj.getTime() - startObj.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      const workingDays = calculateWorkingDays(startDate, endDate, allHolidays);
-
-      if (type === 'SL') {
-        // Sick Leave / MC covers all calendar days prescribed
-        setDaysToDeduct(Math.min(totalCalendarDays, Math.max(1.0, totalCalendarDays)));
-      } else {
-        // Annual leave: working days if > 0, else total calendar days
-        const target = workingDays > 0 ? workingDays : Math.max(1.0, totalCalendarDays);
-        setDaysToDeduct(Math.min(totalCalendarDays, target));
-      }
-    }
-  }, [startDate, endDate, durationMode, type]);
-
-  // Whenever daysToDeduct or dates change, enforce validation
+  // Whenever daysToDeduct or dates change, enforce strict validation
   useEffect(() => {
     if (startDate && endDate && endDate < startDate) {
       setValidationError('End date cannot be earlier than start date.');
@@ -149,10 +158,35 @@ export const ApplyLeaveModal: React.FC = () => {
       return;
     }
 
-    if (daysToDeduct > maxAllowedDays) {
+    // STRICT CHECK: 0.5 days is ONLY allowed if start date and end date are the same!
+    if (isMultiDay && daysToDeduct === 0.5) {
       setValidationError(
-        `Invalid duration: Selected range is ${calendarDays} day${calendarDays !== 1 ? 's' : ''} (${startDate}${startDate !== endDate ? ` to ${endDate}` : ''}), but ${daysToDeduct} days is specified. Maximum allowed is ${maxAllowedDays} day${maxAllowedDays !== 1 ? 's' : ''}.`
+        'Selecting 0.5 days is only allowed if the start date and end date are the same.'
       );
+      return;
+    }
+
+    if (isMultiDay && workingDays === 0) {
+      setValidationError(
+        'Selected date range contains 0 working days (weekends or gazetted public holidays). No leave deduction is needed.'
+      );
+      return;
+    }
+
+    // STRICT RULE: The "Days to Deduct" value must strictly match the selected date range:
+    // For example, if 5 working days are selected, allow only 5 days or 4.5 days (for half-day adjustments). Any value less or greater must be blocked.
+    if (isMultiDay && workingDays > 0) {
+      const isExactMatch = daysToDeduct === workingDays || daysToDeduct === Number((workingDays - 0.5).toFixed(1));
+      if (!isExactMatch) {
+        setValidationError(
+          `Validation Rule: For the ${workingDays} working days selected in the date picker (${startDate} to ${endDate}), the system allows deducting strictly ${workingDays} days or ${(workingDays - 0.5).toFixed(1)} days (for half-day adjustments). Entering ${daysToDeduct} days is blocked.`
+        );
+        return;
+      }
+    }
+
+    if (!isMultiDay && daysToDeduct !== 1.0 && daysToDeduct !== 0.5) {
+      setValidationError('For a single day leave, you may only select 1.0 day (full day) or 0.5 days (half day).');
       return;
     }
 
@@ -165,7 +199,7 @@ export const ApplyLeaveModal: React.FC = () => {
     }
 
     setValidationError(null);
-  }, [duplicateConflict, daysToDeduct, maxAllowedDays, calendarDays, startDate, endDate, type, alAvailable, slAvailable, coAvailable]);
+  }, [duplicateConflict, daysToDeduct, isMultiDay, workingDays, startDate, endDate, type, alAvailable, slAvailable, coAvailable]);
 
   if (!isApplyModalOpen) return null;
 
@@ -177,10 +211,21 @@ export const ApplyLeaveModal: React.FC = () => {
     return coAvailable;
   };
 
-  const isExceedingRange = daysToDeduct > maxAllowedDays;
+  const isDeductionMismatch = isMultiDay
+    ? workingDays <= 0 || (daysToDeduct !== workingDays && daysToDeduct !== Number((workingDays - 0.5).toFixed(1)))
+    : daysToDeduct !== 1.0 && daysToDeduct !== 0.5;
+
   const isExceedingQuota = daysToDeduct > getAvailableBalance();
   const isInvalidDate = Boolean(startDate && endDate && endDate < startDate);
-  const isFormInvalid = Boolean(isDuplicate || isExceedingRange || isExceedingQuota || isInvalidDate);
+  const isHalfDayMultiDay = Boolean(isMultiDay && daysToDeduct === 0.5);
+  const isFormInvalid = Boolean(
+    isDuplicate ||
+    isDeductionMismatch ||
+    isExceedingQuota ||
+    isInvalidDate ||
+    isHalfDayMultiDay ||
+    daysToDeduct <= 0
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,12 +251,26 @@ export const ApplyLeaveModal: React.FC = () => {
       return;
     }
 
-    // Strict validation: cannot deduct more days than the selected date range allows!
-    if (daysToDeduct > maxAllowedDays) {
-      setValidationError(
-        `You selected a ${calendarDays}-day date range (${startDate} to ${endDate}), but entered ${daysToDeduct} days. Maximum allowed is ${maxAllowedDays} day(s).`
-      );
+    // STRICT CONSTRAINT: Selecting 0.5 days is allowed ONLY if start date and end date are the same!
+    if (startDate !== endDate && daysToDeduct === 0.5) {
+      setValidationError('Selecting 0.5 days is only allowed if the start date and end date are the same.');
       return;
+    }
+
+    if (isMultiDay && workingDays === 0) {
+      setValidationError('Selected date range contains 0 working days (weekends or gazetted public holidays).');
+      return;
+    }
+
+    // STRICT VALIDATION RULE: Days to Deduct must strictly match selected working days range
+    if (isMultiDay) {
+      const isExactMatch = daysToDeduct === workingDays || daysToDeduct === Number((workingDays - 0.5).toFixed(1));
+      if (!isExactMatch) {
+        setValidationError(
+          `For ${workingDays} working days selected, only ${workingDays} days or ${(workingDays - 0.5).toFixed(1)} days can be deducted.`
+        );
+        return;
+      }
     }
 
     if (daysToDeduct > getAvailableBalance()) {
@@ -223,7 +282,7 @@ export const ApplyLeaveModal: React.FC = () => {
 
     const finalTitle = title.trim() || (type === 'AL' ? 'Annual Leave' : type === 'SL' ? 'Medical Leave (MC)' : 'Comp-Off');
     const finalDays = Math.max(0.5, Number(daysToDeduct) || 1.0);
-    const status: LeaveStatus = isRetroactive ? 'retroactive' : 'planned';
+    const status: LeaveStatus = endDate < todayDateStr ? 'taken' : 'planned';
     const halfDay = durationMode === 'half-am' ? 'am' : durationMode === 'half-pm' ? 'pm' : 'full';
 
     addRecord({
@@ -234,7 +293,6 @@ export const ApplyLeaveModal: React.FC = () => {
       days: finalDays,
       halfDay,
       status,
-      refNo: refNo.trim() || undefined,
       notes: notes.trim() || undefined
     });
 
@@ -299,7 +357,6 @@ export const ApplyLeaveModal: React.FC = () => {
                 onClick={() => {
                   setType('SL');
                   setTitle('Medical Outpatient (MC)');
-                  if (!refNo) setRefNo(`MC-SG-2026-${Math.floor(100 + Math.random() * 900)}`);
                 }}
                 className={`py-2 px-3 rounded-xl flex flex-col items-center gap-1 border transition-all cursor-pointer ${
                   type === 'SL'
@@ -331,37 +388,17 @@ export const ApplyLeaveModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Retroactive / Past Leave Switch */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-surface-container-low border border-surface-container">
-            <div className="flex items-center gap-2.5">
-              <span className="material-symbols-outlined text-[20px] text-primary">history_toggle_off</span>
-              <div>
-                <span className="font-title-sm text-title-sm text-on-surface font-semibold block">Retroactive / Past MC</span>
-                <span className="font-body-sm text-body-sm text-on-surface-variant">Log medical slips or past days in FY 2026</span>
-              </div>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isRetroactive}
-                onChange={(e) => setIsRetroactive(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
-            </label>
-          </div>
-
           {/* Title / Description */}
           <div>
             <label className="font-label-md text-label-md text-on-surface-variant font-semibold block mb-1">
-              {type === 'SL' ? 'CLINIC / MC DESCRIPTION' : 'REASON / LEAVE TITLE'}
+              REASON / LEAVE TITLE
             </label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={type === 'SL' ? 'e.g., Raffles Medical Clinic (Fever)' : 'e.g., Songkran Getaway, Family Leave'}
+              placeholder={type === 'SL' ? 'e.g., Medical Consultation, Outpatient Care' : 'e.g., Annual Vacation, Family Matters'}
               className="w-full px-3.5 py-2.5 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary text-body-md"
             />
           </div>
@@ -395,7 +432,10 @@ export const ApplyLeaveModal: React.FC = () => {
                 required
                 value={endDate}
                 min={startDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => {
+                  const newEnd = e.target.value;
+                  setEndDate(newEnd);
+                }}
                 className="w-full px-3 py-2 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-label-md focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -403,53 +443,101 @@ export const ApplyLeaveModal: React.FC = () => {
 
           {/* Duration Mode Selector */}
           <div>
-            <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-              DURATION SELECTION
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setDurationMode('full')}
-                className={`py-2 text-center rounded-lg font-label-sm text-label-sm border cursor-pointer transition-colors ${
-                  durationMode === 'full'
-                    ? 'bg-primary-fixed text-on-primary-fixed border-primary font-semibold'
-                    : 'bg-surface-container-low border-surface-container text-on-surface-variant'
-                }`}
-              >
-                Full Day(s)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setDurationMode('half-am');
-                  setEndDate(startDate); // Half day is always single date
-                }}
-                className={`py-2 text-center rounded-lg font-label-sm text-label-sm border cursor-pointer transition-colors ${
-                  durationMode === 'half-am'
-                    ? 'bg-primary-fixed text-on-primary-fixed border-primary font-semibold'
-                    : 'bg-surface-container-low border-surface-container text-on-surface-variant'
-                }`}
-              >
-                Half Day (AM)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setDurationMode('half-pm');
-                  setEndDate(startDate); // Half day is always single date
-                }}
-                className={`py-2 text-center rounded-lg font-label-sm text-label-sm border cursor-pointer transition-colors ${
-                  durationMode === 'half-pm'
-                    ? 'bg-primary-fixed text-on-primary-fixed border-primary font-semibold'
-                    : 'bg-surface-container-low border-surface-container text-on-surface-variant'
-                }`}
-              >
-                Half Day (PM)
-              </button>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block">
+                DURATION SELECTION
+              </label>
+              <span className="text-[11px] text-on-surface-variant font-medium">
+                {isMultiDay
+                  ? `${workingDays} working day${workingDays !== 1 ? 's' : ''} in range`
+                  : 'Single day leave (1.0d or 0.5d)'}
+              </span>
             </div>
+
+            {isMultiDay ? (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDurationMode('full');
+                    setDaysToDeduct(workingDays);
+                  }}
+                  className={`py-2 px-3 text-center rounded-lg font-label-sm text-label-sm border cursor-pointer transition-colors ${
+                    daysToDeduct === workingDays
+                      ? 'bg-primary-fixed text-on-primary-fixed border-primary font-semibold shadow-xs'
+                      : 'bg-surface-container-low border-surface-container text-on-surface-variant hover:bg-surface-container'
+                  }`}
+                >
+                  <div className="font-bold">Full Period</div>
+                  <div className="text-[11px] opacity-85">{workingDays} Working Days</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDurationMode('full');
+                    setDaysToDeduct(Math.max(1.0, Number((workingDays - 0.5).toFixed(1))));
+                  }}
+                  className={`py-2 px-3 text-center rounded-lg font-label-sm text-label-sm border cursor-pointer transition-colors ${
+                    daysToDeduct === Number((workingDays - 0.5).toFixed(1))
+                      ? 'bg-primary-fixed text-on-primary-fixed border-primary font-semibold shadow-xs'
+                      : 'bg-surface-container-low border-surface-container text-on-surface-variant hover:bg-surface-container'
+                  }`}
+                  title="Deduct 0.5 day less for half-day on start/end date"
+                >
+                  <div className="font-bold">Half-Day Adjustment</div>
+                  <div className="text-[11px] opacity-85">{(workingDays - 0.5).toFixed(1)} Days (-0.5d)</div>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDurationMode('full');
+                    setDaysToDeduct(1.0);
+                  }}
+                  className={`py-2 text-center rounded-lg font-label-sm text-label-sm border cursor-pointer transition-colors ${
+                    durationMode === 'full'
+                      ? 'bg-primary-fixed text-on-primary-fixed border-primary font-semibold'
+                      : 'bg-surface-container-low border-surface-container text-on-surface-variant hover:bg-surface-container'
+                  }`}
+                >
+                  Full Day (1.0d)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDurationMode('half-am');
+                    setDaysToDeduct(0.5);
+                  }}
+                  className={`py-2 text-center rounded-lg font-label-sm text-label-sm border cursor-pointer transition-colors ${
+                    durationMode === 'half-am'
+                      ? 'bg-primary-fixed text-on-primary-fixed border-primary font-semibold'
+                      : 'bg-surface-container-low border-surface-container text-on-surface-variant hover:bg-surface-container'
+                  }`}
+                >
+                  Half Day (AM)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDurationMode('half-pm');
+                    setDaysToDeduct(0.5);
+                  }}
+                  className={`py-2 text-center rounded-lg font-label-sm text-label-sm border cursor-pointer transition-colors ${
+                    durationMode === 'half-pm'
+                      ? 'bg-primary-fixed text-on-primary-fixed border-primary font-semibold'
+                      : 'bg-surface-container-low border-surface-container text-on-surface-variant hover:bg-surface-container'
+                  }`}
+                >
+                  Half Day (PM)
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Interactive Days to Deduct Stepper with Range Constraint */}
+          {/* Interactive Days to Deduct Stepper strictly bound to Validation Rule */}
           <div className="flex flex-col gap-1.5 p-3.5 rounded-xl bg-surface-container-low border border-surface-container">
             <div className="flex items-center justify-between">
               <div>
@@ -464,43 +552,61 @@ export const ApplyLeaveModal: React.FC = () => {
                 {/* Decrement Button */}
                 <button
                   type="button"
-                  disabled={durationMode !== 'full' || daysToDeduct <= 0.5}
-                  onClick={() => setDaysToDeduct((prev) => Math.max(0.5, Number((prev - 0.5).toFixed(1))))}
+                  disabled={
+                    isMultiDay
+                      ? daysToDeduct <= minAllowedDays
+                      : daysToDeduct <= 0.5
+                  }
+                  onClick={() => {
+                    if (isMultiDay) {
+                      setDaysToDeduct(minAllowedDays);
+                    } else {
+                      setDurationMode('half-am');
+                      setDaysToDeduct(0.5);
+                    }
+                  }}
                   className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-                    durationMode !== 'full' || daysToDeduct <= 0.5
+                    (isMultiDay ? daysToDeduct <= minAllowedDays : daysToDeduct <= 0.5)
                       ? 'opacity-40 cursor-not-allowed bg-surface-container text-on-surface-variant'
                       : 'bg-surface-container text-on-surface hover:bg-surface-container-high active:scale-95 cursor-pointer'
                   }`}
-                  title={daysToDeduct <= 0.5 ? 'Minimum is 0.5 days' : 'Decrease days'}
+                  title={
+                    isMultiDay
+                      ? `Minimum allowed is ${minAllowedDays}d (half-day adjustment)`
+                      : 'Set to 0.5 days'
+                  }
                 >
                   <span className="material-symbols-outlined text-[16px]">remove</span>
                 </button>
 
-                <span className="font-title-md text-title-md text-on-surface font-bold w-10 text-center">
+                <span className="font-title-md text-title-md text-on-surface font-bold w-12 text-center">
                   {daysToDeduct.toFixed(1)}
                 </span>
                 <span className="font-label-sm text-label-sm text-on-surface-variant mr-1">
                   Day{daysToDeduct !== 1 ? 's' : ''}
                 </span>
 
-                {/* Increment Button with Maximum Range Validation Check */}
+                {/* Increment Button */}
                 <button
                   type="button"
-                  disabled={durationMode !== 'full' || daysToDeduct >= maxAllowedDays}
+                  disabled={daysToDeduct >= maxAllowedDays}
                   onClick={() => {
-                    if (daysToDeduct < maxAllowedDays) {
-                      setDaysToDeduct((prev) => Math.min(maxAllowedDays, Number((prev + 0.5).toFixed(1))));
+                    if (isMultiDay) {
+                      setDaysToDeduct(maxAllowedDays);
+                    } else {
+                      setDurationMode('full');
+                      setDaysToDeduct(1.0);
                     }
                   }}
                   className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-                    durationMode !== 'full' || daysToDeduct >= maxAllowedDays
+                    daysToDeduct >= maxAllowedDays
                       ? 'opacity-40 cursor-not-allowed bg-surface-container text-on-surface-variant'
                       : 'bg-primary-container text-on-primary-fixed hover:bg-primary-fixed active:scale-95 cursor-pointer'
                   }`}
                   title={
-                    daysToDeduct >= maxAllowedDays
-                      ? `Maximum allowed for selected date range (${calendarDays} day${calendarDays !== 1 ? 's' : ''}) is ${maxAllowedDays} day(s)`
-                      : 'Increase days'
+                    isMultiDay
+                      ? `Maximum allowed is ${maxAllowedDays}d (${workingDays} working days)`
+                      : 'Set to 1.0 day'
                   }
                 >
                   <span className="material-symbols-outlined text-[16px]">add</span>
@@ -508,53 +614,39 @@ export const ApplyLeaveModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Range helper caption */}
+            {/* Range helper caption strictly enforcing matching rule */}
             <div className="flex items-center justify-between pt-1 border-t border-surface-container text-[11px] text-on-surface-variant">
               <span>
-                Date selection: <strong className="text-on-surface">{calendarDays} Day{calendarDays !== 1 ? 's' : ''}</strong> ({startDate === endDate ? 'Single Day' : `${startDate} to ${endDate}`})
+                {isMultiDay
+                  ? `Selected: ${workingDays} Working Day${workingDays !== 1 ? 's' : ''} (${startDate} to ${endDate})`
+                  : `Selected: Single Day (${startDate})`}
               </span>
               <span>
-                Max allowed: <strong className="text-primary">{maxAllowedDays} Day{maxAllowedDays !== 1 ? 's' : ''}</strong>
+                Allowed: <strong className="text-primary">{isMultiDay ? `${workingDays}d or ${(workingDays - 0.5).toFixed(1)}d` : '1.0d or 0.5d'}</strong>
               </span>
             </div>
           </div>
 
-          {/* Validation Error Banner (When user exceeds allowable range, quota, or creates duplicates) */}
+          {/* Validation Error Banner */}
           {validationError && (
             <div className="p-3 rounded-xl bg-error-container text-on-error-container text-body-sm flex items-start gap-2.5 border border-error/20 animate-fade-in">
               <span className="material-symbols-outlined text-[20px] text-error shrink-0 mt-0.5">error</span>
               <div className="flex-1">
                 <span className="font-title-sm text-title-sm font-semibold text-error block">
-                  {isDuplicate ? 'Duplicate Leave Warning' : 'Validation Notice'}
+                  {isDuplicate ? 'Duplicate Leave Blocked' : 'Validation Error'}
                 </span>
                 <p className="mt-0.5 leading-snug">{validationError}</p>
-                {isExceedingRange && !isDuplicate && (
+                {isDeductionMismatch && isMultiDay && workingDays > 0 && (
                   <button
                     type="button"
-                    onClick={() => setDaysToDeduct(maxAllowedDays)}
+                    onClick={() => setDaysToDeduct(workingDays)}
                     className="mt-1.5 inline-flex items-center gap-1 font-label-sm text-label-sm font-bold text-error hover:underline cursor-pointer bg-white/40 px-2 py-0.5 rounded-md"
                   >
-                    <span>Fix: Reset to {maxAllowedDays} Day{maxAllowedDays !== 1 ? 's' : ''}</span>
+                    <span>Fix: Reset to {workingDays} Day{workingDays !== 1 ? 's' : ''}</span>
                     <span className="material-symbols-outlined text-[14px]">auto_fix_high</span>
                   </button>
                 )}
               </div>
-            </div>
-          )}
-
-          {/* DigiMC / Medical Slip Reference Number if SL */}
-          {type === 'SL' && (
-            <div>
-              <label className="font-label-md text-label-md text-on-surface-variant font-semibold block mb-1">
-                DIGIMC / CLINIC CERTIFICATE REF
-              </label>
-              <input
-                type="text"
-                value={refNo}
-                onChange={(e) => setRefNo(e.target.value)}
-                placeholder="e.g. MC-SG-2026-092"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary text-body-md"
-              />
             </div>
           )}
 
@@ -600,8 +692,10 @@ export const ApplyLeaveModal: React.FC = () => {
             >
               {isDuplicate
                 ? 'Date Already Booked (Duplicate)'
-                : isExceedingRange
-                ? 'Exceeds Selected Dates Range'
+                : isHalfDayMultiDay
+                ? '0.5d Allowed Only for Same Dates'
+                : isDeductionMismatch
+                ? 'Days Must Match Date Range'
                 : isExceedingQuota
                 ? 'Exceeds Available Balance'
                 : `Confirm & Log Leave (-${daysToDeduct.toFixed(1)} ${type})`}
