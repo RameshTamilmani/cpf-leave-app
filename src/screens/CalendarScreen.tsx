@@ -108,14 +108,24 @@ export const CalendarScreen: React.FC = () => {
   let inspectorExplanation = 'Normal gazetted business day. Eligible for Annual Leave or sick leave logging.';
   let isHolidayType = false;
 
+  const isGazettedPH = Boolean(selectedHoliday && !selectedHoliday.isSpecial);
+
   if (selectedHoliday) {
-    isHolidayType = true;
     inspectorTitle = selectedHoliday.name;
-    inspectorCategory = selectedHoliday.isSpecial ? 'Special Holiday' : 'Gazetted PH';
-    inspectorBadgeClass = 'bg-holiday-public-container text-holiday-public-on-container';
-    inspectorDeduction = '0 Days Deducted';
-    inspectorRule = selectedHoliday.momSection || 'MOM Section 88';
-    inspectorExplanation = selectedHoliday.description;
+    if (isGazettedPH) {
+      isHolidayType = true;
+      inspectorCategory = 'Gazetted PH';
+      inspectorBadgeClass = 'bg-holiday-public-container text-holiday-public-on-container';
+      inspectorDeduction = '0 Days Deducted';
+      inspectorRule = selectedHoliday.momSection || 'MOM Section 88';
+      inspectorExplanation = `${selectedHoliday.name} is an official gazetted public holiday (paid non-working day under MOM Employment Act). Leave cannot be applied.`;
+    } else {
+      inspectorCategory = 'Special Holiday';
+      inspectorBadgeClass = 'bg-leave-compoff-container text-leave-compoff-on-container';
+      inspectorDeduction = 'Leave Allowed';
+      inspectorRule = 'Company / Comp-Off';
+      inspectorExplanation = `${selectedHoliday.name} (Special holiday declared under Comp-off). Eligible for leave application.`;
+    }
   } else if (bookedRecord) {
     inspectorTitle = bookedRecord.title;
     if (bookedRecord.type === 'AL') {
@@ -398,12 +408,8 @@ export const CalendarScreen: React.FC = () => {
                 {inspectorTitle}
               </h2>
             </div>
-            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 shrink-0">
-              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm font-medium">
-                <span className="material-symbols-outlined text-[14px] text-primary">history_toggle_off</span>
-                <span>Retroactive Editing Allowed</span>
-              </div>
-              <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full font-label-sm text-label-sm font-semibold shrink-0 ${inspectorBadgeClass}`}>
+            <div className="shrink-0">
+              <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full font-label-sm text-label-sm font-semibold ${inspectorBadgeClass}`}>
                 <span className="material-symbols-outlined text-[16px]">
                   {isHolidayType ? 'flag' : bookedRecord ? 'event_available' : 'calendar_today'}
                 </span>
@@ -445,13 +451,13 @@ export const CalendarScreen: React.FC = () => {
           {/* Action Button inside details */}
           <div className="flex flex-col gap-2 pt-1">
             <div className="flex items-center justify-between gap-space-sm">
-              {isHolidayType ? (
+              {isGazettedPH ? (
                 <button
                   disabled
                   className="flex-1 h-11 rounded-full bg-surface-container-highest text-on-surface-variant font-label-md text-label-md flex items-center justify-center gap-2 cursor-not-allowed opacity-80"
                 >
                   <span className="material-symbols-outlined text-[18px]">verified</span>
-                  <span>{selectedHoliday?.isSpecial ? 'Special Declared Holiday (0 Leave Needed)' : 'Gazetted Holiday (0 Leave Needed)'}</span>
+                  <span>Gazetted Public Holiday (No Leave Needed)</span>
                 </button>
               ) : bookedRecord ? (
                 <button
@@ -487,40 +493,6 @@ export const CalendarScreen: React.FC = () => {
                 <span className="material-symbols-outlined text-[20px]">share</span>
               </button>
             </div>
-
-            {/* Quick add as special holiday if not already a gazetted holiday */}
-            {!selectedHoliday && (
-              <button
-                type="button"
-                onClick={() => setIsAddSpecialHolidayOpen(true)}
-                className="w-full py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-sm text-label-sm font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[16px]">add_circle</span>
-                <span>Declare {selectedCalendarDate} as Special Holiday</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Singapore Long Weekend & Bridge Optimization Tip Card */}
-      <div className="px-margin mt-3">
-        <div className="bg-primary-container text-on-primary-container rounded-xl p-space-md shadow-xs flex items-start gap-3 border border-primary/20">
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary shrink-0 mt-0.5 shadow-xs">
-            <span className="material-symbols-outlined text-[20px]">lightbulb</span>
-          </div>
-          <div className="flex flex-col flex-1">
-            <div className="flex items-center justify-between">
-              <span className="font-title-sm text-title-sm font-semibold text-white">
-                Singapore Hack: 3-Day Weekend
-              </span>
-              <span className="font-label-sm text-label-sm bg-primary/20 px-2 py-0.5 rounded text-white font-medium">
-                Tip
-              </span>
-            </div>
-            <p className="font-body-sm text-body-sm mt-1 text-white/90 leading-relaxed">
-              Enjoy an automatic 3-day long weekend from <strong className="text-white font-semibold">Friday, 1 May</strong> to <strong className="text-white font-semibold">Sunday, 3 May 2026</strong> with 0 annual leave days deducted!
-            </p>
           </div>
         </div>
       </div>

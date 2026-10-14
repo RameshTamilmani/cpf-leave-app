@@ -2,7 +2,13 @@ import React from 'react';
 import { useLeave } from '../context/LeaveContext';
 
 export const NotificationsModal: React.FC = () => {
-  const { isNotificationsOpen, setIsNotificationsOpen, setCurrentTab } = useLeave();
+  const { isNotificationsOpen, setIsNotificationsOpen, setCurrentTab, markNotificationsAsViewed } = useLeave();
+
+  React.useEffect(() => {
+    if (isNotificationsOpen) {
+      markNotificationsAsViewed();
+    }
+  }, [isNotificationsOpen, markNotificationsAsViewed]);
 
   if (!isNotificationsOpen) return null;
 

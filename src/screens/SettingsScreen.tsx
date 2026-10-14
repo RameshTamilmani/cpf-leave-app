@@ -368,7 +368,7 @@ export const SettingsScreen: React.FC = () => {
             Singapore Holiday Sync
           </h2>
           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-leave-compoff-container text-leave-compoff-on-container font-label-sm text-label-sm font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-leave-compoff animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-leave-compoff" />
             Connected
           </div>
         </div>
@@ -493,113 +493,57 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* Section 3: Weekend & Employment Rules */}
+      {/* Section 3: Weekend & Employment Rules (Informational Notes) */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
           <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase">
-            Policy &amp; Comp-off Rules
+            Policy &amp; Statutory Notes
           </h2>
           <span className="font-label-sm text-label-sm text-on-surface-variant">Employment Act</span>
         </div>
-        <div className="rounded-xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-space-md">
-          {/* Weekend Days */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-space-sm">
-              <div className="w-10 h-10 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[22px]">weekend</span>
-              </div>
-              <div>
-                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Standard Rest Days</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Saturday &amp; Sunday</p>
-              </div>
-            </div>
-            <button
-              onClick={() => showToast('Singapore 5-day standard rest workweek (Sat & Sun rest days)')}
-              className="w-8 h-8 rounded-full bg-surface-container-low text-on-surface flex items-center justify-center hover:bg-surface-container transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-            </button>
-          </div>
-
-          <div className="h-[1px] bg-surface-container" />
-
-          {/* Saturday Comp Off Toggle */}
-          <div className="flex items-start justify-between gap-space-sm">
-            <div className="flex items-start gap-space-sm min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-leave-compoff-container text-leave-compoff-on-container flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[22px]">add_circle</span>
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <p className="font-title-sm text-title-sm text-on-surface font-semibold">Saturday Holiday Compensation</p>
-                </div>
-                <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5 leading-snug">
-                  Automatically credit +1 Comp-Off Day when a gazetted public holiday falls on a non-working Saturday.
-                </p>
-                <div className="inline-flex items-center gap-1 mt-1 text-leave-compoff font-label-sm text-label-sm font-semibold">
-                  <span className="material-symbols-outlined text-[14px]">task_alt</span>
-                  <span>Earn +1 Comp-off Credit</span>
-                </div>
-              </div>
-            </div>
-
-            <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
-              <input
-                type="checkbox"
-                checked={settings.saturdayCompOffEnabled}
-                onChange={(e) => {
-                  updateSettings({ saturdayCompOffEnabled: e.target.checked });
-                  showToast(e.target.checked ? 'Saturday holidays will earn +1 Comp-Off day' : 'Saturday holiday compensation turned off');
-                }}
-                className="sr-only peer"
-              />
-              <div className="w-12 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
-            </label>
-          </div>
-
-          <div className="h-[1px] bg-surface-container" />
-
-          {/* Sunday Rule */}
-          <div className="flex items-start justify-between gap-space-sm">
-            <div className="flex items-start gap-space-sm min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-holiday-public-container text-holiday-public-on-container flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[22px]">next_plan</span>
-              </div>
-              <div className="min-w-0">
-                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Sunday Holiday Rule</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5 leading-snug">
-                  Observe following Monday as paid public holiday per MOM Employment Act Section 88.
-                </p>
-                <span className="inline-block mt-1 font-label-sm text-label-sm text-primary font-semibold">
-                  Always active (Statutory Mandate)
-                </span>
-              </div>
-            </div>
-            <div className="w-6 h-6 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed shrink-0 mt-1">
-              <span className="material-symbols-outlined text-[16px]">lock</span>
+        <div className="rounded-xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-2.5">
+          {/* Note 1: Standard Rest Days */}
+          <div className="p-2.5 rounded-lg bg-surface-container-low border border-surface-container flex items-start gap-2.5">
+            <span className="material-symbols-outlined text-[18px] text-primary shrink-0 mt-0.5">weekend</span>
+            <div>
+              <p className="font-title-sm text-title-sm text-on-surface font-semibold text-[13px]">Standard Rest Days</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant text-[12px] mt-0.5 leading-snug">
+                Saturday and Sunday are standard non-working rest days under the Singapore 5-day workweek.
+              </p>
             </div>
           </div>
 
-          <div className="h-[1px] bg-surface-container" />
-
-          {/* Comp-Off Validity Period */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-space-sm">
-              <div className="w-10 h-10 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[22px]">hourglass_top</span>
-              </div>
-              <div>
-                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Comp-off Validity Window</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">3 Calendar Months (MOM Standard)</p>
-              </div>
+          {/* Note 2: Saturday Holiday Compensation */}
+          <div className="p-2.5 rounded-lg bg-surface-container-low border border-surface-container flex items-start gap-2.5">
+            <span className="material-symbols-outlined text-[18px] text-leave-compoff shrink-0 mt-0.5">add_circle</span>
+            <div>
+              <p className="font-title-sm text-title-sm text-on-surface font-semibold text-[13px]">Saturday Holiday Compensation</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant text-[12px] mt-0.5 leading-snug">
+                Employees automatically accrue +1 Comp-Off Day off-in-lieu whenever a gazetted public holiday falls on a non-working Saturday.
+              </p>
             </div>
-            <button
-              onClick={() => showToast('Comp-off validity window is calibrated to MOM standard (90 days)')}
-              className="px-3 py-1.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1 hover:bg-surface-container-high transition-colors cursor-pointer"
-            >
-              <span>90 Days</span>
-              <span className="material-symbols-outlined text-[16px]">edit</span>
-            </button>
+          </div>
+
+          {/* Note 3: Sunday Holiday Rule */}
+          <div className="p-2.5 rounded-lg bg-surface-container-low border border-surface-container flex items-start gap-2.5">
+            <span className="material-symbols-outlined text-[18px] text-holiday-public shrink-0 mt-0.5">next_plan</span>
+            <div>
+              <p className="font-title-sm text-title-sm text-on-surface font-semibold text-[13px]">Sunday Holiday Rule</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant text-[12px] mt-0.5 leading-snug">
+                When a gazetted public holiday falls on a Sunday, the following Monday is observed as a paid public holiday pursuant to MOM Employment Act Section 88.
+              </p>
+            </div>
+          </div>
+
+          {/* Note 4: Comp-off Validity Window */}
+          <div className="p-2.5 rounded-lg bg-surface-container-low border border-surface-container flex items-start gap-2.5">
+            <span className="material-symbols-outlined text-[18px] text-secondary shrink-0 mt-0.5">hourglass_top</span>
+            <div>
+              <p className="font-title-sm text-title-sm text-on-surface font-semibold text-[13px]">Comp-off Validity Window</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant text-[12px] mt-0.5 leading-snug">
+                Accrued comp-off credits remain valid for 90 days (3 calendar months) from the date earned in alignment with MOM statutory guidelines.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -668,60 +612,49 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* Section 5: Data Management & CSV Export/Restore (Mandatory Data Only) */}
+      {/* Section 5: Data Management */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
           <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase">
-            Data Management (CSV Only)
+            Data Management
           </h2>
-          <span className="font-label-sm text-label-sm text-on-surface-variant">Strict Validation</span>
         </div>
-        <div className="rounded-xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-space-sm">
-          {/* Informational Privacy & Mandatory Data Pill */}
-          <div className="p-2.5 rounded-lg bg-surface-container-low text-body-sm text-on-surface-variant flex items-center gap-2 border border-surface-container">
-            <span className="material-symbols-outlined text-[18px] text-primary shrink-0">security</span>
-            <span className="text-[12px] leading-tight">
-              Export and restore operations process <strong>mandatory fields only</strong> (Type, Title, Start Date, End Date, Days, Status). Internal IDs and unnecessary metadata are excluded. Strict duplicate validation is enforced on import.
-            </span>
-          </div>
-
-          {/* Export CSV (Mandatory Data Only) */}
+        <div className="rounded-xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-sm">
+          {/* Export Records */}
           <div className="flex items-center justify-between py-2">
             <div className="flex items-center gap-space-sm min-w-0">
               <div className="w-10 h-10 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-[22px]">download</span>
               </div>
               <div>
-                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Export Leave Records (CSV)</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Mandatory columns only (Type, Title, Dates, Days, Status)</p>
+                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Export Leave Records</p>
               </div>
             </div>
             <button
               onClick={exportCSV}
               className="px-3.5 py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md font-semibold hover:opacity-95 active:scale-95 transition-all cursor-pointer shadow-2xs shrink-0"
             >
-              Export CSV
+              Export
             </button>
           </div>
 
           <div className="h-[1px] bg-surface-container" />
 
-          {/* Restore CSV (Mandatory Data Only with Strict Duplicate Validation) */}
+          {/* Restore Records */}
           <div className="flex items-center justify-between py-2">
             <div className="flex items-center gap-space-sm min-w-0">
               <div className="w-10 h-10 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-[22px]">upload_file</span>
               </div>
               <div>
-                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Restore Leave Records (CSV)</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Import standard CSV file with strict duplicate validation</p>
+                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Restore Leave Records</p>
               </div>
             </div>
             <button
               onClick={() => csvInputRef.current?.click()}
               className="px-3.5 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-md text-label-md font-semibold hover:bg-primary-fixed-dim transition-colors cursor-pointer shrink-0"
             >
-              Import CSV
+              Restore
             </button>
             <input
               type="file"

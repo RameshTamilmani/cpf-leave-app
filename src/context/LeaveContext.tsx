@@ -83,6 +83,11 @@ interface LeaveContextType {
   showToast: (msg: string) => void;
   dismissToast: () => void;
   
+  // Notifications state
+  hasNewNotification: boolean;
+  markNotificationsAsViewed: () => void;
+  triggerNewNotification: () => void;
+
   // Actions
   triggerSync: () => Promise<void>;
   isSyncing: boolean;
@@ -92,11 +97,11 @@ interface LeaveContextType {
 }
 
 const defaultSettings: UserSettings = {
-  userName: 'Employee',
-  employeeId: 'EMP-1103118',
+  userName: '',
+  employeeId: '',
   avatarUrl: '',
   alEntitlement: 12,
-  slEntitlement: 14,
+  slEntitlement: 12,
   cycle: 'Jun 13 – Jun 12 (Next Year)',
   cycleStartMonth: 6,
   cycleStartDay: 13,
@@ -136,15 +141,44 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isAddSpecialHolidayOpen, setIsAddSpecialHolidayOpen] = useState(false);
   const [isEditCycleModalOpen, setIsEditCycleModalOpen] = useState(false);
 
+  // New notification tracking (blinks only on new notification until acknowledged/viewed)
+  const [hasNewNotification, setHasNewNotification] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('cutisg_has_new_notification');
+      return saved !== null ? saved === 'true' : false;
+    } catch {
+      return false;
+    }
+  });
+
+  const markNotificationsAsViewed = () => {
+    setHasNewNotification(false);
+    try {
+      localStorage.setItem('cutisg_has_new_notification', 'false');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const triggerNewNotification = () => {
+    setHasNewNotification(true);
+    try {
+      localStorage.setItem('cutisg_has_new_notification', 'true');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   // Persistence in localStorage
   const [settings, setSettings] = useState<UserSettings>(() => {
     try {
       const saved = localStorage.getItem('cutisg_settings');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.alEntitlement === 14) {
-          parsed.alEntitlement = 12;
-        }
+        if (parsed.alEntitlement === 14) parsed.alEntitlement = 12;
+        if (parsed.slEntitlement === 14) parsed.slEntitlement = 12;
+        if (parsed.userName === 'Employee') parsed.userName = '';
+        if (parsed.employeeId === 'EMP-1103118') parsed.employeeId = '';
         return { ...defaultSettings, ...parsed };
       }
       return defaultSettings;
@@ -397,7 +431,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     .reduce((sum, r) => sum + (Number(r.days) || 0), 0);
 
   const coUsed = records
-    .filter((r) => r.type === 'CO')
+    .filter((r) => r.type === 'CO' || r.type === 'CL')
     .reduce((sum, r) => sum + (Number(r.days) || 0), 0);
 
   const alAvailable = Math.max(0, settings.alEntitlement - alUsed);
@@ -414,6 +448,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       lastSynced: `Today, ${timeStr} (Just now)`
     }));
     setIsSyncing(false);
+    triggerNewNotification();
     showToast('Updated gazetted public holidays from data.gov.sg!');
   };
 
@@ -627,6 +662,9 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setIsEditCycleModalOpen,
         selectedCalendarDate,
         setSelectedCalendarDate,
+        hasNewNotification,
+        markNotificationsAsViewed,
+        triggerNewNotification,
         toast,
         showToast,
         dismissToast,

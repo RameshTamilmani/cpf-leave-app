@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { LeaveType, LeaveStatus } from '../types/leave';
-import { calculateWorkingDays, getPublicHolidayForDate } from '../data/singaporeHolidays2026';
+import { calculateWorkingDays, getPublicHolidayForDate, getGazettedHolidayForDate } from '../data/singaporeHolidays2026';
 
 export const ApplyLeaveModal: React.FC = () => {
   const {
@@ -64,7 +64,7 @@ export const ApplyLeaveModal: React.FC = () => {
 
   const isMultiDay = Boolean(startDate && endDate && startDate !== endDate);
   const workingDays = startDate && endDate && endDate >= startDate
-    ? calculateWorkingDays(startDate, endDate, allHolidays)
+    ? calculateWorkingDays(startDate, endDate)
     : 0;
 
   // Strict Validation Rule:
@@ -158,17 +158,43 @@ export const ApplyLeaveModal: React.FC = () => {
       return;
     }
 
+    // STRICT CHECK: Gazetted public holidays cannot have leave applied.
+    // Special holidays added under Comp-off ARE permitted!
+    if (!isMultiDay) {
+      const gazettedPH = getGazettedHolidayForDate(startDate);
+      if (gazettedPH) {
+        setValidationError(
+          `Cannot apply for leave on gazetted public holiday (${gazettedPH.name}). Public holidays are official paid non-working days under MOM guidelines.`
+        );
+        return;
+      }
+    } else {
+      const startPH = getGazettedHolidayForDate(startDate);
+      if (startPH) {
+        setValidationError(
+          `Leave cannot start on gazetted public holiday (${startPH.name}). Please select your first actual working day.`
+        );
+        return;
+      }
+      const endPH = getGazettedHolidayForDate(endDate);
+      if (endPH) {
+        setValidationError(
+          `Leave cannot end on gazetted public holiday (${endPH.name}). Please select your last actual working day.`
+        );
+        return;
+      }
+      if (workingDays === 0) {
+        setValidationError(
+          'Selected date range contains 0 working days (dates fall on weekends or gazetted public holidays). Leave cannot be applied solely for non-working days.'
+        );
+        return;
+      }
+    }
+
     // STRICT CHECK: 0.5 days is ONLY allowed if start date and end date are the same!
     if (isMultiDay && daysToDeduct === 0.5) {
       setValidationError(
         'Selecting 0.5 days is only allowed if the start date and end date are the same.'
-      );
-      return;
-    }
-
-    if (isMultiDay && workingDays === 0) {
-      setValidationError(
-        'Selected date range contains 0 working days (weekends or gazetted public holidays). No leave deduction is needed.'
       );
       return;
     }
@@ -204,6 +230,7 @@ export const ApplyLeaveModal: React.FC = () => {
   if (!isApplyModalOpen) return null;
 
   const holidayOnStart = getPublicHolidayForDate(startDate);
+  const gazettedHolidayOnStart = getGazettedHolidayForDate(startDate);
 
   const getAvailableBalance = () => {
     if (type === 'AL') return alAvailable;
@@ -215,11 +242,16 @@ export const ApplyLeaveModal: React.FC = () => {
     ? workingDays <= 0 || (daysToDeduct !== workingDays && daysToDeduct !== Number((workingDays - 0.5).toFixed(1)))
     : daysToDeduct !== 1.0 && daysToDeduct !== 0.5;
 
+  const gazettedPHSingle = !isMultiDay && Boolean(getGazettedHolidayForDate(startDate));
+  const gazettedPHRange = isMultiDay && (Boolean(getGazettedHolidayForDate(startDate)) || Boolean(getGazettedHolidayForDate(endDate)) || workingDays === 0);
+  const isPHBlocked = Boolean(gazettedPHSingle || gazettedPHRange);
+
   const isExceedingQuota = daysToDeduct > getAvailableBalance();
   const isInvalidDate = Boolean(startDate && endDate && endDate < startDate);
   const isHalfDayMultiDay = Boolean(isMultiDay && daysToDeduct === 0.5);
   const isFormInvalid = Boolean(
     isDuplicate ||
+    isPHBlocked ||
     isDeductionMismatch ||
     isExceedingQuota ||
     isInvalidDate ||
@@ -251,14 +283,39 @@ export const ApplyLeaveModal: React.FC = () => {
       return;
     }
 
+    // Public holiday validation
+    if (!isMultiDay) {
+      const gazettedPH = getGazettedHolidayForDate(startDate);
+      if (gazettedPH) {
+        setValidationError(
+          `Cannot apply for leave on gazetted public holiday (${gazettedPH.name}). Public holidays are official paid non-working days under MOM guidelines.`
+        );
+        return;
+      }
+    } else {
+      const startPH = getGazettedHolidayForDate(startDate);
+      if (startPH) {
+        setValidationError(
+          `Leave cannot start on gazetted public holiday (${startPH.name}). Please select your first actual working day.`
+        );
+        return;
+      }
+      const endPH = getGazettedHolidayForDate(endDate);
+      if (endPH) {
+        setValidationError(
+          `Leave cannot end on gazetted public holiday (${endPH.name}). Please select your last actual working day.`
+        );
+        return;
+      }
+      if (workingDays === 0) {
+        setValidationError('Selected date range contains 0 working days (dates fall on weekends or gazetted public holidays).');
+        return;
+      }
+    }
+
     // STRICT CONSTRAINT: Selecting 0.5 days is allowed ONLY if start date and end date are the same!
     if (startDate !== endDate && daysToDeduct === 0.5) {
       setValidationError('Selecting 0.5 days is only allowed if the start date and end date are the same.');
-      return;
-    }
-
-    if (isMultiDay && workingDays === 0) {
-      setValidationError('Selected date range contains 0 working days (weekends or gazetted public holidays).');
       return;
     }
 
@@ -659,9 +716,13 @@ export const ApplyLeaveModal: React.FC = () => {
               </span>
             </div>
             {holidayOnStart && (
-              <p className="font-body-sm text-body-sm text-holiday-public flex items-center gap-1">
+              <p className={`font-body-sm text-body-sm flex items-center gap-1 ${gazettedHolidayOnStart ? 'text-holiday-public font-medium' : 'text-leave-compoff'}`}>
                 <span className="material-symbols-outlined text-[16px]">flag</span>
-                <span>Includes {holidayOnStart.name} (Gazetted PH)</span>
+                <span>
+                  {gazettedHolidayOnStart
+                    ? `${holidayOnStart.name} (Gazetted PH — leave blocked)`
+                    : `${holidayOnStart.name} (Special Holiday — leave allowed)`}
+                </span>
               </p>
             )}
             <div className="flex items-center justify-between pt-1 border-t border-surface-container text-label-sm">

@@ -1,4 +1,4 @@
-export type LeaveType = 'AL' | 'SL' | 'CO';
+export type LeaveType = 'AL' | 'SL' | 'CO' | 'CL';
 
 export type LeaveStatus = 'planned' | 'taken' | 'retroactive';
 

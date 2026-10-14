@@ -449,7 +449,14 @@ export const ALL_GAZETTED_HOLIDAYS: PublicHoliday[] = [
   ...SINGAPORE_HOLIDAYS_2028
 ];
 
-// Helper to check if a date string YYYY-MM-DD is a gazetted public holiday or observed holiday or custom special holiday
+// Helper to check if a date string YYYY-MM-DD is an official gazetted Singapore public holiday
+export function getGazettedHolidayForDate(dateStr: string): PublicHoliday | undefined {
+  return ALL_GAZETTED_HOLIDAYS.find(
+    (h) => (h.date === dateStr || h.observedDate === dateStr) && !h.isSpecial
+  );
+}
+
+// Helper to check if a date string YYYY-MM-DD is any holiday (gazetted or special)
 export function getPublicHolidayForDate(
   dateStr: string,
   customHolidays: PublicHoliday[] = []
@@ -468,11 +475,11 @@ export function isWeekend(dateStr: string): boolean {
 }
 
 // Calculate actual working days between start and end (inclusive)
-// excluding weekends, official SG public holidays, and custom special holidays!
+// Excludes weekends and gazetted Singapore public holidays.
+// Special holidays added under Comp-off are permitted for leave application!
 export function calculateWorkingDays(
   startDateStr: string,
-  endDateStr: string,
-  customHolidays: PublicHoliday[] = []
+  endDateStr: string
 ): number {
   if (!startDateStr || !endDateStr) return 0;
 
@@ -492,9 +499,9 @@ export function calculateWorkingDays(
 
     const dayOfWeek = cur.getDay();
     const isWknd = dayOfWeek === 0 || dayOfWeek === 6;
-    const isHoliday = !!getPublicHolidayForDate(curStr, customHolidays);
+    const isGazettedHoliday = !!getGazettedHolidayForDate(curStr);
 
-    if (!isWknd && !isHoliday) {
+    if (!isWknd && !isGazettedHoliday) {
       workingDays++;
     }
 

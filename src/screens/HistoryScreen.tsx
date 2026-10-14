@@ -9,6 +9,8 @@ export const HistoryScreen: React.FC = () => {
     openApplyModal,
     exportCSV,
     alAvailable,
+    slAvailable,
+    coAvailable,
     settings,
     setIsEditCycleModalOpen,
     showToast
@@ -36,7 +38,7 @@ export const HistoryScreen: React.FC = () => {
     .filter((r) => r.status === 'planned')
     .reduce((s, r) => s + (Number(r.days) || 0), 0);
 
-  const statutoryLeft = alAvailable;
+  const statutoryLeft = alAvailable + slAvailable + coAvailable;
 
   const plannedCount = records.filter((r) => r.status === 'planned').length;
   const takenCount = records.filter((r) => r.status === 'taken').length;
@@ -78,11 +80,11 @@ export const HistoryScreen: React.FC = () => {
         <div className="flex items-center gap-1">
           <button
             onClick={exportCSV}
-            aria-label="Export to CSV"
+            aria-label="Export leave records"
             className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-card text-primary shadow-xs hover:bg-primary-container/20 active:scale-95 transition-all cursor-pointer border border-surface-container"
           >
             <span className="material-symbols-outlined text-[18px]">ios_share</span>
-            <span className="font-label-sm text-label-sm font-semibold">Export CSV</span>
+            <span className="font-label-sm text-label-sm font-semibold">Export</span>
           </button>
         </div>
       </div>
@@ -136,7 +138,7 @@ export const HistoryScreen: React.FC = () => {
           }`}
         >
           <span className="w-2 h-2 rounded-full bg-leave-compoff" />
-          <span>Comp-off (CO)</span>
+          <span>Comp-off / Casual (CO/CL)</span>
         </button>
       </div>
 
@@ -210,10 +212,13 @@ export const HistoryScreen: React.FC = () => {
           <span className="font-label-sm text-label-sm text-on-surface-variant">Statutory Left</span>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="font-title-lg text-title-lg text-primary font-semibold">
-              {statutoryLeft.toFixed(1)}
+              {Number.isInteger(statutoryLeft) ? statutoryLeft : statutoryLeft.toFixed(1)}
             </span>
             <span className="font-body-sm text-body-sm text-on-surface-variant">days</span>
           </div>
+          <span className="text-[10px] text-on-surface-variant mt-0.5 truncate" title={`AL (${alAvailable}) + SL (${slAvailable}) + CL (${coAvailable})`}>
+            AL {alAvailable} + SL {slAvailable} + CL {coAvailable}
+          </span>
         </div>
       </div>
 

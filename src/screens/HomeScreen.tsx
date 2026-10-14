@@ -46,9 +46,13 @@ export const HomeScreen: React.FC = () => {
                 alt="Profile"
                 className="w-12 h-12 rounded-full object-cover border-2 border-primary-fixed shadow-xs"
               />
-            ) : (
+            ) : settings.userName ? (
               <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary-fixed font-bold text-lg flex items-center justify-center shadow-xs">
-                {(settings.userName || 'E').slice(0, 1).toUpperCase()}
+                {settings.userName.slice(0, 1).toUpperCase()}
+              </div>
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center shadow-xs">
+                <span className="material-symbols-outlined text-[24px]">person</span>
               </div>
             )}
             <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary border-2 border-surface-card flex items-center justify-center">
@@ -57,16 +61,21 @@ export const HomeScreen: React.FC = () => {
           </div>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-title-sm text-title-sm text-on-surface font-bold truncate">
-                {settings.userName || 'Employee'}
-              </span>
-              <span className="font-label-sm text-label-sm px-2 py-0.2 rounded-full bg-surface-container-highest text-on-surface font-mono font-semibold">
-                {settings.employeeId || 'EMP-ID'}
-              </span>
+              {settings.userName ? (
+                <span className="font-title-sm text-title-sm text-on-surface font-bold truncate">
+                  {settings.userName}
+                </span>
+              ) : (
+                <span className="font-title-sm text-title-sm text-on-surface-variant font-medium">
+                  Employee Profile
+                </span>
+              )}
+              {settings.employeeId && (
+                <span className="font-label-sm text-label-sm px-2 py-0.2 rounded-full bg-surface-container-highest text-on-surface font-mono font-semibold">
+                  {settings.employeeId}
+                </span>
+              )}
             </div>
-            <p className="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">
-              Cycle: {settings.cycle} ({cycleStartDateStr} – {cycleEndDateStr})
-            </p>
           </div>
         </div>
         <button

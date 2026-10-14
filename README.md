@@ -15,9 +15,10 @@
 ## 🌟 Key Highlights & MOM Statutory Features
 
 ### 1. Default Leave Entitlement (12/12 Days)
-- **12 Days Annual Leave (AL) / 12 Days Statutory Default**: Aligned with progressive annual leave entitlements under Part IV of the Singapore Employment Act.
-- **14 Days Outpatient Sick Leave (SL)**: Built-in statutory allocation for certified outpatient medical leave under Section 89 of the Employment Act.
-- **Informational Leave Balances**: Clicking on the Annual Leave, Sick Leave, or Comp-off balance cards displays current active cycle quotas (`12/12 Days Available`). Modifying or applying for leave is strictly restricted to the official **Apply Leave** workflow to eliminate accidental edits and ensure data integrity.
+- **12 Days Annual Leave (AL) / 12 Days Statutory Default**: Standardized at 12/12 days default entitlement.
+- **12 Days Outpatient Sick Leave (OSL) / 12 Days Default**: Initialized to 12 days default entitlement, fully customizable in Settings.
+- **Clean Profile Initialization**: Employee Name and Employee ID fields start empty without predefined dummy values.
+- **Informational Leave Balances**: Annual Leave, Sick Leave, and Comp-off balance cards display active cycle quotas (`12/12 Days Available`). Leave submissions and modifications are strictly restricted to the official **Apply Leave** workflow to eliminate accidental edits and ensure data integrity.
 
 ### 2. Year-Over-Year Automatic SG Leave Policy Updates
 - Built-in multi-year database of Singapore gazetted public holidays covering **2025, 2026, 2027, and 2028**.
@@ -91,7 +92,7 @@ npm run build
 | Provision | Statutory Rule | CutiSG Implementation |
 | :--- | :--- | :--- |
 | **Annual Leave** | Min 7–14 days based on years of service | Default 12/12 days with customizable entitlement in Settings |
-| **Outpatient Sick Leave** | 14 days per year (after 6 months service) | 14 days statutory allowance |
+| **Outpatient Sick Leave** | Up to 14 days per year (after 6 months service) | Default 12/12 days with customizable entitlement in Settings |
 | **Sunday Public Holiday** | Next working day (Monday) is a paid public holiday | Automatic Monday observation |
 | **Saturday Public Holiday** | Day off-in-lieu or credit for 5-day work week | Automatic +1 Comp-Off calculation per MOM Sec 88 |
 | **Comp-Off Validity** | Typically within 90 days / active cycle | 90-day tracking window with cycle rollover options |
