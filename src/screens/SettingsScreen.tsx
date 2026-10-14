@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
+import { PWAInstallButton } from '../components/PWAInstallButton';
 
 export const SettingsScreen: React.FC = () => {
   const {
@@ -342,7 +343,7 @@ export const SettingsScreen: React.FC = () => {
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <p className="font-title-sm text-title-sm text-on-surface font-semibold">Leave Year Cycle</p>
                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-leave-compoff-container text-leave-compoff">
-                    +{autoCompOffEarned} Comp-off Days
+                    +{autoCompOffEarned} Credited Comp-off Days
                   </span>
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant truncate">
@@ -541,7 +542,7 @@ export const SettingsScreen: React.FC = () => {
             <div>
               <p className="font-title-sm text-title-sm text-on-surface font-semibold text-[13px]">Comp-off Validity Window</p>
               <p className="font-body-sm text-body-sm text-on-surface-variant text-[12px] mt-0.5 leading-snug">
-                Accrued comp-off credits remain valid for 90 days (3 calendar months) from the date earned in alignment with MOM statutory guidelines.
+                Comp-off credits are credited only once the respective holiday date has crossed. Accrued credits remain valid for 90 days (3 months), after which they can be manually expired if unused.
               </p>
             </div>
           </div>
@@ -686,6 +687,17 @@ export const SettingsScreen: React.FC = () => {
             <span className="material-symbols-outlined text-error text-[20px]">warning</span>
           </button>
         </div>
+      </section>
+
+      {/* Section 5.5: Install PWA & Offline Access */}
+      <section className="space-y-space-xs">
+        <div className="px-1 flex items-center justify-between">
+          <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase">
+            Install App &amp; Offline PWA
+          </h2>
+          <span className="font-label-sm text-label-sm text-on-surface-variant">Home Screen</span>
+        </div>
+        <PWAInstallButton variant="card" />
       </section>
 
       {/* Section 6: About CutiSG & Singapore Leave Policy */}

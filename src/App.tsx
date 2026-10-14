@@ -14,6 +14,7 @@ import { HomeScreen } from './screens/HomeScreen';
 import { CalendarScreen } from './screens/CalendarScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { OfflineIndicator } from './components/OfflineIndicator';
 
 const MainAppContent: React.FC = () => {
   const { currentTab, isEditCycleModalOpen, setIsEditCycleModalOpen } = useLeave();
@@ -47,6 +48,9 @@ const MainAppContent: React.FC = () => {
         isOpen={isEditCycleModalOpen}
         onClose={() => setIsEditCycleModalOpen(false)}
       />
+
+      {/* Offline Connectivity Status Badge */}
+      <OfflineIndicator />
 
       {/* Universal Floating Toast Banner */}
       <Toast />

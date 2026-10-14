@@ -40,6 +40,10 @@ interface LeaveContextType {
   autoCompOffEarned: number;
   excludedHolidayDates: string[];
   toggleHolidayCompOff: (date: string) => void;
+  expiredHolidayDates: string[];
+  toggleHolidayExpired: (date: string) => void;
+  crossedCompOffCount: number;
+  upcomingCompOffCount: number;
   carryForwardCompOff: number;
   setCarryForwardCompOff: (days: number) => void;
   manualCompOffCredits: number;
@@ -111,7 +115,10 @@ const defaultSettings: UserSettings = {
   compOffValidityDays: 90,
   phAlertsEnabled: true,
   expiryAlertsEnabled: true,
-  lastSynced: 'Today, 09:41 AM (2h ago)'
+  lastSynced: 'Today, 09:41 AM (2h ago)',
+  excludedHolidayDates: [],
+  expiredHolidayDates: [],
+  carryForwardCompOff: 0
 };
 
 const LeaveContext = createContext<LeaveContextType | undefined>(undefined);
@@ -382,8 +389,9 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const cycleStartDateStr = `${activeStartYear}-${String(startMonth).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`;
   const cycleEndDateStr = `${activeEndYear}-${String(endMonth).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
 
-  // Excluded holiday dates and carried forward credits from user settings
+  // Excluded holiday dates, expired holiday dates, and carried forward credits
   const excludedHolidayDates = settings.excludedHolidayDates || [];
+  const expiredHolidayDates = settings.expiredHolidayDates || [];
   const carryForwardCompOff = settings.carryForwardCompOff || 0;
 
   const toggleHolidayCompOff = (date: string) => {
@@ -393,6 +401,15 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       : [...excludedHolidayDates, date];
     updateSettings({ excludedHolidayDates: updated });
     showToast(isExcluded ? `Re-included ${date} in Comp-Off calculation` : `Excluded ${date} from Comp-Off calculation`);
+  };
+
+  const toggleHolidayExpired = (date: string) => {
+    const isExpired = expiredHolidayDates.includes(date);
+    const updated = isExpired
+      ? expiredHolidayDates.filter((d) => d !== date)
+      : [...expiredHolidayDates, date];
+    updateSettings({ expiredHolidayDates: updated });
+    showToast(isExpired ? `Reactivated Comp-Off credit for ${date}` : `Marked Comp-Off for ${date} as Expired`);
   };
 
   const setCarryForwardCompOff = (days: number) => {
@@ -413,9 +430,16 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return isSat || Boolean(h.isCompOffEligible);
   });
 
-  // Only non-excluded Saturday holidays accrue comp-off days
-  const activeSaturdayCompOffHolidays = saturdayCompOffHolidays.filter(
-    (h) => !excludedHolidayDates.includes(h.date)
+  // Comp-off credited ONLY when the respective days are crossed (date <= todayDateStr)
+  const crossedSaturdayHolidays = saturdayCompOffHolidays.filter((h) => h.date <= todayDateStr);
+  const upcomingSaturdayHolidays = saturdayCompOffHolidays.filter((h) => h.date > todayDateStr);
+
+  const crossedCompOffCount = crossedSaturdayHolidays.length;
+  const upcomingCompOffCount = upcomingSaturdayHolidays.length;
+
+  // Active credited comp-offs: must be crossed, not excluded, and not marked expired
+  const activeSaturdayCompOffHolidays = crossedSaturdayHolidays.filter(
+    (h) => !excludedHolidayDates.includes(h.date) && !expiredHolidayDates.includes(h.date)
   );
 
   const autoCompOffEarned = activeSaturdayCompOffHolidays.length;
@@ -640,6 +664,10 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         autoCompOffEarned,
         excludedHolidayDates,
         toggleHolidayCompOff,
+        expiredHolidayDates,
+        toggleHolidayExpired,
+        crossedCompOffCount,
+        upcomingCompOffCount,
         carryForwardCompOff,
         setCarryForwardCompOff,
         manualCompOffCredits,

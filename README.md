@@ -52,6 +52,13 @@
 - **No JSON Clutter**: JSON backup and restore options have been eliminated in favor of universal, audit-friendly CSV format.
 - **Streamlined UI**: Removed the Low Leave Balance warning and legacy Medical Certificate reference number inputs.
 
+### 7. Progressive Web App (PWA) & Offline Capabilities
+- **Standards Compliant Web App Manifest**: Full Web App Manifest (`manifest.json`) with standalone display mode, orientation locking, and quick shortcuts.
+- **In-App Installation Prompt**: Built-in `PWAInstallButton` mounted in both the Header and Settings screen, providing seamless installation on Chromium/Android and step-by-step guidance for iOS Safari users.
+- **Offline Service Worker Caching**: Powered by Workbox to cache application code, typography, and Singapore public holiday databases for offline access.
+- **Network Connectivity Indicator**: Built-in `OfflineIndicator` toast that surfaces when the user is disconnected, confirming cached MOM holiday and leave data remain active.
+- **Comprehensive Icon Suite**: Features standard 192x192, 512x512 PNG icons, 180x180 Apple Touch Icon, and 512x512 maskable icon with safe zone margins.
+
 ---
 
 ## 🛠️ Tech Stack & Architecture

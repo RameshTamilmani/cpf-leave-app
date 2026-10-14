@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLeave } from '../context/LeaveContext';
+import { PWAInstallButton } from './PWAInstallButton';
 
 export const Header: React.FC = () => {
   const {
@@ -61,6 +62,7 @@ export const Header: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-space-xs">
+            <PWAInstallButton variant="header" />
             <button
               onClick={() => {
                 setIsNotificationsOpen(true);

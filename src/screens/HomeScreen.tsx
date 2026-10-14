@@ -9,6 +9,9 @@ export const HomeScreen: React.FC = () => {
     saturdayCompOffHolidays,
     autoCompOffEarned,
     excludedHolidayDates,
+    expiredHolidayDates,
+    crossedCompOffCount,
+    upcomingCompOffCount,
     carryForwardCompOff,
     upcomingHolidays,
     todayDateStr,
@@ -269,16 +272,18 @@ export const HomeScreen: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[20px] text-leave-compoff">stars</span>
                 <span className="font-title-sm text-title-sm font-semibold text-on-surface">
-                  {autoCompOffEarned} of {saturdayCompOffHolidays.length} Saturday Holiday{saturdayCompOffHolidays.length !== 1 ? 's' : ''} Active
+                  {autoCompOffEarned} of {crossedCompOffCount} Crossed Saturday Holiday{crossedCompOffCount !== 1 ? 's' : ''} Credited
                 </span>
               </div>
               <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-leave-compoff-container text-leave-compoff font-bold">
-                +{autoCompOffEarned} Days Accrued{carryForwardCompOff > 0 ? ` (+${carryForwardCompOff} CF)` : ''}
+                +{autoCompOffEarned} Days Credited{carryForwardCompOff > 0 ? ` (+${carryForwardCompOff} CF)` : ''}
               </span>
             </div>
             <div className="flex flex-col gap-1.5 pt-1 border-t border-surface-container">
               {saturdayCompOffHolidays.map((h) => {
+                const isCrossed = h.date <= todayDateStr;
                 const isExcluded = excludedHolidayDates?.includes(h.date);
+                const isExpired = expiredHolidayDates?.includes(h.date);
                 const isCNY = h.name.toLowerCase().includes('chinese new year');
                 return (
                   <div key={h.date} className="flex items-center justify-between text-body-sm">
@@ -293,13 +298,21 @@ export const HomeScreen: React.FC = () => {
                       <span className="text-[11px] text-on-surface-variant">({h.date})</span>
                     </span>
                     <span className="flex items-center gap-1">
-                      {isExcluded ? (
-                        <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-1.5 py-0.2 rounded">
+                      {!isCrossed ? (
+                        <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-2 py-0.2 rounded-full">
+                          Upcoming
+                        </span>
+                      ) : isExpired ? (
+                        <span className="font-label-sm text-label-sm text-error bg-surface-container px-2 py-0.2 rounded-full">
+                          Expired
+                        </span>
+                      ) : isExcluded ? (
+                        <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-2 py-0.2 rounded-full">
                           Excluded
                         </span>
                       ) : (
-                        <span className="font-label-sm text-label-sm text-leave-compoff font-semibold">
-                          +1 Comp-off
+                        <span className="font-label-sm text-label-sm text-leave-compoff bg-leave-compoff-container px-2 py-0.2 rounded-full font-bold">
+                          +1 Credited
                         </span>
                       )}
                     </span>

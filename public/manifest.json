@@ -1,0 +1,56 @@
+{
+  "id": "/",
+  "name": "CutiSG - Singapore Leave & Public Holiday Tracker",
+  "short_name": "CutiSG",
+  "description": "Singapore MOM compliant personal leave planner, gazetted public holiday tracker, and comp-off ledger for FY 2026.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FFFFFF",
+  "theme_color": "#EE2C38",
+  "categories": ["productivity", "business", "lifestyle"],
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Apply Leave",
+      "short_name": "Apply",
+      "description": "Apply for annual, sick, or comp-off leave",
+      "url": "/?action=apply",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Leave Calendar",
+      "short_name": "Calendar",
+      "description": "View Singapore MOM gazetted holidays and leave calendar",
+      "url": "/?tab=calendar",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Comp-Off Ledger",
+      "short_name": "Comp-Off",
+      "description": "View Saturday public holiday comp-off days and credits",
+      "url": "/?tab=compoff",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}

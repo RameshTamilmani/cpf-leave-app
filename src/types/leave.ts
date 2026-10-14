@@ -56,5 +56,6 @@ export interface UserSettings {
   expiryAlertsEnabled: boolean;
   lastSynced: string;
   excludedHolidayDates?: string[];
+  expiredHolidayDates?: string[];
   carryForwardCompOff?: number;
 }

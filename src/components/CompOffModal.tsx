@@ -10,6 +10,9 @@ export const CompOffModal: React.FC = () => {
     saturdayCompOffHolidays,
     excludedHolidayDates,
     toggleHolidayCompOff,
+    expiredHolidayDates,
+    toggleHolidayExpired,
+    todayDateStr,
     carryForwardCompOff,
     setCarryForwardCompOff,
     cycleStartDateStr,
@@ -20,6 +23,8 @@ export const CompOffModal: React.FC = () => {
   } = useLeave();
 
   if (!isCompOffModalOpen) return null;
+
+  const validityDays = settings.compOffValidityDays || 90;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-xs p-0 sm:p-4">
@@ -64,7 +69,7 @@ export const CompOffModal: React.FC = () => {
                 <span className="font-title-sm font-semibold">Days</span>
               </div>
               <span className="font-label-sm text-label-sm opacity-80 block mt-0.5">
-                {autoCompOffEarned} from Saturday PH{carryForwardCompOff > 0 ? ` + ${carryForwardCompOff} Carried Forward` : ''}
+                {autoCompOffEarned} credited from crossed Saturday PHs{carryForwardCompOff > 0 ? ` + ${carryForwardCompOff} Carried Forward` : ''}
               </span>
             </div>
             <div className="w-11 h-11 rounded-xl bg-white/70 flex items-center justify-center text-leave-compoff shrink-0">
@@ -80,57 +85,127 @@ export const CompOffModal: React.FC = () => {
                 <span>Saturday Holidays in Cycle</span>
               </span>
               <span className="font-label-sm text-label-sm text-on-surface-variant font-medium bg-surface-container px-2 py-0.5 rounded-full">
-                MOM Sec 88
+                MOM Sec 88 • 90d Validity
               </span>
             </div>
 
             {saturdayCompOffHolidays.length > 0 ? (
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-2">
                 {saturdayCompOffHolidays.map((h) => {
+                  const isCrossed = h.date <= todayDateStr;
                   const isExcluded = excludedHolidayDates?.includes(h.date);
+                  const isExpired = expiredHolidayDates?.includes(h.date);
                   const isCNY = h.name.toLowerCase().includes('chinese new year');
+
+                  // 90-day validity window calculation
+                  const hDate = new Date(h.date + 'T00:00:00');
+                  const expDate = new Date(hDate);
+                  expDate.setDate(expDate.getDate() + validityDays);
+                  const expDateStr = `${expDate.getFullYear()}-${String(expDate.getMonth() + 1).padStart(2, '0')}-${String(expDate.getDate()).padStart(2, '0')}`;
+                  const isPast90Days = todayDateStr > expDateStr;
+
                   return (
                     <div
                       key={h.date}
-                      className="p-2.5 rounded-lg bg-surface-card border border-surface-container flex items-center justify-between text-body-sm"
+                      className="p-3 rounded-lg bg-surface-card border border-surface-container flex flex-col gap-2 text-body-sm"
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-base shrink-0">{h.emoji || '🇸🇬'}</span>
-                        <div className="flex flex-col min-w-0">
-                          <span className="font-title-sm text-title-sm font-medium text-on-surface truncate flex items-center gap-1.5">
-                            {h.name}
-                            {isCNY && (
-                              <span className="text-[10px] bg-primary-fixed text-on-primary-fixed px-1.5 py-0.1 rounded font-semibold shrink-0">
-                                2027
-                              </span>
-                            )}
-                          </span>
-                          <span className="font-label-sm text-label-sm text-on-surface-variant">
-                            {h.date}
-                          </span>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xl shrink-0">{h.emoji || '🇸🇬'}</span>
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-title-sm text-title-sm font-medium text-on-surface truncate flex items-center gap-1.5">
+                              {h.name}
+                              {isCNY && (
+                                <span className="text-[10px] bg-primary-fixed text-on-primary-fixed px-1.5 py-0.1 rounded font-semibold shrink-0">
+                                  2027
+                                </span>
+                              )}
+                            </span>
+                            <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1.5 flex-wrap">
+                              <span>Holiday Date: {h.date}</span>
+                              {isCrossed && (
+                                <span className="text-[11px] text-on-surface-variant/80">
+                                  • Valid until: {expDateStr}
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Status Badges */}
+                        <div className="shrink-0 flex items-center">
+                          {!isCrossed ? (
+                            <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-medium flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[14px]">schedule</span>
+                              Upcoming
+                            </span>
+                          ) : isExpired ? (
+                            <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container-highest text-error font-medium flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[14px]">event_busy</span>
+                              Expired
+                            </span>
+                          ) : isExcluded ? (
+                            <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-medium">
+                              Excluded
+                            </span>
+                          ) : (
+                            <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-leave-compoff-container text-leave-compoff font-bold flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[14px]">verified</span>
+                              +1 Credited
+                            </span>
+                          )}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        {isExcluded ? (
-                          <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-medium">
-                            Excluded
-                          </span>
-                        ) : (
-                          <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-leave-compoff-container text-leave-compoff font-bold">
-                            +1 Day
-                          </span>
-                        )}
-                        <button
-                          onClick={() => toggleHolidayCompOff(h.date)}
-                          className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg cursor-pointer transition-colors ${
-                            isExcluded
-                              ? 'bg-primary text-on-primary hover:opacity-90'
-                              : 'bg-surface-container-high text-on-surface hover:bg-surface-container-highest'
-                          }`}
-                        >
-                          {isExcluded ? 'Include' : 'Exclude'}
-                        </button>
+                      {/* Informational state note & manual actions */}
+                      <div className="flex items-center justify-between pt-1 border-t border-surface-container/60 text-xs">
+                        <div className="text-on-surface-variant">
+                          {!isCrossed ? (
+                            <span className="text-on-surface-variant italic">
+                              Accrues +1 Comp-off when date is crossed
+                            </span>
+                          ) : isExpired ? (
+                            <span className="text-error font-medium">
+                              Marked as expired ({isPast90Days ? 'exceeded 90-day validity' : 'manual'})
+                            </span>
+                          ) : isExcluded ? (
+                            <span className="text-on-surface-variant italic">
+                              Excluded from comp-off accrual
+                            </span>
+                          ) : (
+                            <span className="text-leave-compoff font-medium">
+                              {isPast90Days ? 'Past 90-day window • eligible to expire' : 'Active and available to apply'}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {isCrossed && (
+                            <button
+                              onClick={() => toggleHolidayExpired(h.date)}
+                              className={`px-2 py-1 rounded text-[11px] font-semibold cursor-pointer transition-colors ${
+                                isExpired
+                                  ? 'bg-leave-compoff-container text-leave-compoff hover:bg-leave-compoff-container/80'
+                                  : 'bg-surface-container-high text-on-surface-variant hover:text-error hover:bg-error-container/40'
+                              }`}
+                              title={isExpired ? 'Reactivate this comp-off' : 'Manually expire this comp-off'}
+                            >
+                              {isExpired ? 'Reactivate' : 'Mark Expired'}
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => toggleHolidayCompOff(h.date)}
+                            className={`px-2 py-1 rounded text-[11px] font-semibold cursor-pointer transition-colors ${
+                              isExcluded
+                                ? 'bg-primary text-on-primary hover:opacity-90'
+                                : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest'
+                            }`}
+                          >
+                            {isExcluded ? 'Include' : 'Exclude'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
