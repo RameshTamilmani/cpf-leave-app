@@ -29,14 +29,15 @@ export const SINGAPORE_HOLIDAYS_2026: PublicHoliday[] = [
     momSection: 'MOM Section 88'
   },
   {
-    date: '2026-03-20',
+    date: '2026-03-21',
     name: 'Hari Raya Puasa',
-    dayOfWeek: 'Friday',
+    dayOfWeek: 'Saturday',
     isLongWeekend: true,
-    longWeekendText: '3-Day Weekend 🎉',
-    description: 'Marks the end of the Islamic holy month of Ramadan. Automatic 3-day long weekend with zero leave deducted.',
+    longWeekendText: 'Saturday PH • +1 Comp-Off Day',
+    description: 'Gazetted Singapore Public Holiday marking the end of Ramadan falls on a Saturday. +1 Comp-Off day is credited.',
     emoji: '🌙',
-    momSection: 'MOM Section 88'
+    isCompOffEligible: true,
+    momSection: 'MOM Section 88 (Saturday Rest Compensation)'
   },
   {
     date: '2026-04-03',
@@ -509,4 +510,14 @@ export function calculateWorkingDays(
   }
 
   return workingDays;
+}
+
+// Add days to date string (YYYY-MM-DD)
+export function addDaysToDate(dateStr: string, days: number): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }

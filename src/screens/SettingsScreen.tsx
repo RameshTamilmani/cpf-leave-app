@@ -15,6 +15,7 @@ export const SettingsScreen: React.FC = () => {
     setIsEditCycleModalOpen,
     setIsAddSpecialHolidayOpen,
     autoCompOffEarned,
+    carryForwardCompOff,
     saturdayCompOffHolidays,
     cycleStartDateStr,
     cycleEndDateStr,
@@ -343,7 +344,7 @@ export const SettingsScreen: React.FC = () => {
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <p className="font-title-sm text-title-sm text-on-surface font-semibold">Leave Year Cycle</p>
                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-leave-compoff-container text-leave-compoff">
-                    +{autoCompOffEarned} Credited Comp-off Days
+                    +{autoCompOffEarned} Comp-off Days
                   </span>
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant truncate">
@@ -514,35 +515,13 @@ export const SettingsScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* Note 2: Saturday Holiday Compensation */}
-          <div className="p-2.5 rounded-lg bg-surface-container-low border border-surface-container flex items-start gap-2.5">
-            <span className="material-symbols-outlined text-[18px] text-leave-compoff shrink-0 mt-0.5">add_circle</span>
-            <div>
-              <p className="font-title-sm text-title-sm text-on-surface font-semibold text-[13px]">Saturday Holiday Compensation</p>
-              <p className="font-body-sm text-body-sm text-on-surface-variant text-[12px] mt-0.5 leading-snug">
-                Employees automatically accrue +1 Comp-Off Day off-in-lieu whenever a gazetted public holiday falls on a non-working Saturday.
-              </p>
-            </div>
-          </div>
-
-          {/* Note 3: Sunday Holiday Rule */}
+          {/* Note 2: Sunday Holiday Rule */}
           <div className="p-2.5 rounded-lg bg-surface-container-low border border-surface-container flex items-start gap-2.5">
             <span className="material-symbols-outlined text-[18px] text-holiday-public shrink-0 mt-0.5">next_plan</span>
             <div>
               <p className="font-title-sm text-title-sm text-on-surface font-semibold text-[13px]">Sunday Holiday Rule</p>
               <p className="font-body-sm text-body-sm text-on-surface-variant text-[12px] mt-0.5 leading-snug">
                 When a gazetted public holiday falls on a Sunday, the following Monday is observed as a paid public holiday pursuant to MOM Employment Act Section 88.
-              </p>
-            </div>
-          </div>
-
-          {/* Note 4: Comp-off Validity Window */}
-          <div className="p-2.5 rounded-lg bg-surface-container-low border border-surface-container flex items-start gap-2.5">
-            <span className="material-symbols-outlined text-[18px] text-secondary shrink-0 mt-0.5">hourglass_top</span>
-            <div>
-              <p className="font-title-sm text-title-sm text-on-surface font-semibold text-[13px]">Comp-off Validity Window</p>
-              <p className="font-body-sm text-body-sm text-on-surface-variant text-[12px] mt-0.5 leading-snug">
-                Comp-off credits are credited only once the respective holiday date has crossed. Accrued credits remain valid for 90 days (3 months), after which they can be manually expired if unused.
               </p>
             </div>
           </div>
@@ -713,7 +692,7 @@ export const SettingsScreen: React.FC = () => {
             <strong>Why &ldquo;CutiSG&rdquo;?</strong> &ldquo;Cuti&rdquo; (/tʃuːti/) is the colloquial Malay and Singlish word for <em>leave</em> or <em>vacation</em> widely used across Singaporean workplaces (e.g., &ldquo;apply cuti&rdquo;, &ldquo;on cuti&rdquo;). Paired with &ldquo;SG&rdquo;, <strong>CutiSG</strong> provides a dedicated personal leave planner tailored to Singapore MOM statutory rules.
           </p>
           <p>
-            <strong>Year-Over-Year Automatic Policy Updates:</strong> CutiSG automatically tracks gazetted Singapore public holidays, calculates long weekends with 0 leave deducted, and applies the MOM Employment Act Section 88 rule (awarding +1 day off-in-lieu comp-off whenever a gazetted holiday falls on a Saturday).
+            <strong>Year-Over-Year Automatic Holiday Updates:</strong> CutiSG automatically tracks gazetted Singapore public holidays and calculates long weekends with 0 leave deducted.
           </p>
         </div>
       </section>

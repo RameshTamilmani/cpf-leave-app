@@ -10,6 +10,7 @@ export const HomeScreen: React.FC = () => {
     autoCompOffEarned,
     excludedHolidayDates,
     expiredHolidayDates,
+    expiredCompOffCount,
     crossedCompOffCount,
     upcomingCompOffCount,
     carryForwardCompOff,
@@ -241,7 +242,7 @@ export const HomeScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. Comp-off Expiry Alerts & Saturday Policy Card */}
+      {/* 4. Comp-off Expiry Tracker */}
       <section className="w-full text-alert-warning rounded-xl p-4 shadow-xs flex flex-col gap-3 bg-surface-container-high border border-surface-container">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
@@ -260,9 +261,6 @@ export const HomeScreen: React.FC = () => {
             >
               Edit Cycle
             </button>
-            <span className="font-label-sm text-label-sm font-medium bg-surface-container-lowest px-2 py-0.5 rounded-full text-on-surface-variant">
-              MOM Sec 88
-            </span>
           </div>
         </div>
 
@@ -272,16 +270,16 @@ export const HomeScreen: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[20px] text-leave-compoff">stars</span>
                 <span className="font-title-sm text-title-sm font-semibold text-on-surface">
-                  {autoCompOffEarned} of {crossedCompOffCount} Crossed Saturday Holiday{crossedCompOffCount !== 1 ? 's' : ''} Credited
+                  {upcomingCompOffCount} Future Saturday Holiday{upcomingCompOffCount !== 1 ? 's' : ''} in Cycle
                 </span>
               </div>
               <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-leave-compoff-container text-leave-compoff font-bold">
-                +{autoCompOffEarned} Days Credited{carryForwardCompOff > 0 ? ` (+${carryForwardCompOff} CF)` : ''}
+                {coAvailable} Available ({expiredCompOffCount} Expired)
               </span>
             </div>
             <div className="flex flex-col gap-1.5 pt-1 border-t border-surface-container">
               {saturdayCompOffHolidays.map((h) => {
-                const isCrossed = h.date <= todayDateStr;
+                const isPrevious = h.date < todayDateStr;
                 const isExcluded = excludedHolidayDates?.includes(h.date);
                 const isExpired = expiredHolidayDates?.includes(h.date);
                 const isCNY = h.name.toLowerCase().includes('chinese new year');
@@ -298,21 +296,21 @@ export const HomeScreen: React.FC = () => {
                       <span className="text-[11px] text-on-surface-variant">({h.date})</span>
                     </span>
                     <span className="flex items-center gap-1">
-                      {!isCrossed ? (
+                      {isPrevious ? (
                         <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-2 py-0.2 rounded-full">
-                          Upcoming
+                          Expired (Usable)
                         </span>
                       ) : isExpired ? (
                         <span className="font-label-sm text-label-sm text-error bg-surface-container px-2 py-0.2 rounded-full">
-                          Expired
+                          Expired (Usable)
                         </span>
                       ) : isExcluded ? (
                         <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-2 py-0.2 rounded-full">
                           Excluded
                         </span>
                       ) : (
-                        <span className="font-label-sm text-label-sm text-leave-compoff bg-leave-compoff-container px-2 py-0.2 rounded-full font-bold">
-                          +1 Credited
+                        <span className="font-label-sm text-label-sm text-primary bg-primary-fixed/30 px-2 py-0.2 rounded-full font-medium">
+                          Auto on Date
                         </span>
                       )}
                     </span>
@@ -330,13 +328,6 @@ export const HomeScreen: React.FC = () => {
             </p>
           </div>
         )}
-
-        <div className="flex items-start gap-1.5 pt-0.5 text-on-surface-variant">
-          <span className="material-symbols-outlined text-[15px] shrink-0 mt-0.5">info</span>
-          <p className="font-label-sm text-label-sm leading-tight text-on-surface-variant">
-            Under Singapore MOM Employment Act Section 88, employees on 5-day workweeks automatically receive +1 day off-in-lieu for public holidays on a Saturday.
-          </p>
-        </div>
       </section>
 
       {/* 5. Upcoming Singapore Public Holidays Section (STRICTLY ON OR AFTER CURRENT DATE) */}

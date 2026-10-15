@@ -58,4 +58,5 @@ export interface UserSettings {
   excludedHolidayDates?: string[];
   expiredHolidayDates?: string[];
   carryForwardCompOff?: number;
+  manualExpiredCompOffCount?: number;
 }

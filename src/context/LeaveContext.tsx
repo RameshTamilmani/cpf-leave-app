@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { LeaveRecord, UserSettings, LeaveType, LeaveStatus, PublicHoliday, SpecialHoliday } from '../types/leave';
-import { ALL_GAZETTED_HOLIDAYS } from '../data/singaporeHolidays2026';
+import { ALL_GAZETTED_HOLIDAYS, addDaysToDate } from '../data/singaporeHolidays2026';
 
 interface ToastState {
   show: boolean;
@@ -44,6 +44,13 @@ interface LeaveContextType {
   toggleHolidayExpired: (date: string) => void;
   crossedCompOffCount: number;
   upcomingCompOffCount: number;
+  expiredCompOffCount: number;
+  nonExpiredCompOffCount: number;
+  oldExpiredCompOffCount: number;
+  oldCycleSaturdayHolidays: PublicHoliday[];
+  futureSaturdayHolidays: PublicHoliday[];
+  manualExpiredCompOffCount: number;
+  setManualExpiredCompOffCount: (count: number) => void;
   carryForwardCompOff: number;
   setCarryForwardCompOff: (days: number) => void;
   manualCompOffCredits: number;
@@ -118,7 +125,8 @@ const defaultSettings: UserSettings = {
   lastSynced: 'Today, 09:41 AM (2h ago)',
   excludedHolidayDates: [],
   expiredHolidayDates: [],
-  carryForwardCompOff: 0
+  carryForwardCompOff: 0,
+  manualExpiredCompOffCount: 0
 };
 
 const LeaveContext = createContext<LeaveContextType | undefined>(undefined);
@@ -389,10 +397,9 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const cycleStartDateStr = `${activeStartYear}-${String(startMonth).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`;
   const cycleEndDateStr = `${activeEndYear}-${String(endMonth).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
 
-  // Excluded holiday dates, expired holiday dates, and carried forward credits
+  // Excluded holiday dates and expired holiday dates
   const excludedHolidayDates = settings.excludedHolidayDates || [];
   const expiredHolidayDates = settings.expiredHolidayDates || [];
-  const carryForwardCompOff = settings.carryForwardCompOff || 0;
 
   const toggleHolidayCompOff = (date: string) => {
     const isExcluded = excludedHolidayDates.includes(date);
@@ -412,38 +419,77 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast(isExpired ? `Reactivated Comp-Off credit for ${date}` : `Marked Comp-Off for ${date} as Expired`);
   };
 
-  const setCarryForwardCompOff = (days: number) => {
-    updateSettings({ carryForwardCompOff: Math.max(0, days) });
-    showToast(`Updated prior-cycle comp-off carry forward: ${days} day(s)`);
-  };
-
   // Holidays falling within active leave cycle
   const holidaysInCycle = allHolidays.filter(
     (h) => h.date >= cycleStartDateStr && h.date <= cycleEndDateStr
   );
 
-  // Auto-calculated Saturday Public Holidays in Cycle (MOM Employment Act Sec 88)
-  const saturdayCompOffHolidays = holidaysInCycle.filter((h) => {
+  // Saturday Public Holidays considered in active cycle:
+  // Includes Saturday holidays within the cycle (cycleStartDateStr <= h.date <= cycleEndDateStr)
+  // as well as Saturday holidays before cycle start whose 90-day validity window extends into the cycle
+  // (e.g., 21 March 2026 Hari Raya Puasa, whose 90-day validity ends on 19 June 2026, which falls after June 13!)
+  const saturdayCompOffHolidays = allHolidays.filter((h) => {
     if (!settings.saturdayCompOffEnabled) return false;
     const d = new Date(h.date + 'T00:00:00');
     const isSat = d.getDay() === 6; // Saturday
-    return isSat || Boolean(h.isCompOffEligible);
+    if (!isSat && !h.isCompOffEligible) return false;
+
+    const validityEndDate = addDaysToDate(h.date, 90);
+    const fallsInCycle = h.date >= cycleStartDateStr && h.date <= cycleEndDateStr;
+    const validityExtendsIntoCycle = h.date < cycleStartDateStr && validityEndDate >= cycleStartDateStr;
+    return fallsInCycle || validityExtendsIntoCycle;
   });
 
-  // Comp-off credited ONLY when the respective days are crossed (date <= todayDateStr)
-  const crossedSaturdayHolidays = saturdayCompOffHolidays.filter((h) => h.date <= todayDateStr);
-  const upcomingSaturdayHolidays = saturdayCompOffHolidays.filter((h) => h.date > todayDateStr);
+  // Crossed Saturday holidays between cycle start date and current date
+  const crossedSaturdayHolidays = saturdayCompOffHolidays.filter((h) => h.date < todayDateStr);
 
-  const crossedCompOffCount = crossedSaturdayHolidays.length;
-  const upcomingCompOffCount = upcomingSaturdayHolidays.length;
+  // Old expired comp-offs: credited/valid between Cycle start date and current date
+  // (e.g., 21 March 2026 Hari Raya Puasa validity expired on 19 June 2026, which is between June 13 and today)
+  const oldCycleSaturdayHolidays = crossedSaturdayHolidays.filter((h) => {
+    const validityEndDate = addDaysToDate(h.date, 90);
+    const isManuallyExpired = expiredHolidayDates.includes(h.date);
+    const isValidityExpired = validityEndDate <= todayDateStr;
 
-  // Active credited comp-offs: must be crossed, not excluded, and not marked expired
-  const activeSaturdayCompOffHolidays = crossedSaturdayHolidays.filter(
-    (h) => !excludedHolidayDates.includes(h.date) && !expiredHolidayDates.includes(h.date)
+    if (h.date < cycleStartDateStr) {
+      return validityEndDate >= cycleStartDateStr && isValidityExpired;
+    }
+    return isValidityExpired || isManuallyExpired;
+  });
+
+  // Non-expired active comp-offs between cycle start date and current date
+  const nonExpiredSaturdayHolidays = crossedSaturdayHolidays.filter((h) => {
+    return !oldCycleSaturdayHolidays.some((old) => old.date === h.date);
+  });
+
+  // Future comp-offs: on or after current date (h.date >= todayDateStr) - added automatically based on SG calendar
+  const futureSaturdayHolidays = saturdayCompOffHolidays.filter(
+    (h) => h.date >= todayDateStr
   );
 
-  const autoCompOffEarned = activeSaturdayCompOffHolidays.length;
-  const totalCompOffPool = autoCompOffEarned + manualCompOffCredits + carryForwardCompOff;
+  // Counts (excluding any explicitly excluded dates)
+  const expiredCompOffCount = oldCycleSaturdayHolidays.filter((h) => !excludedHolidayDates.includes(h.date)).length;
+  const nonExpiredCompOffCount = nonExpiredSaturdayHolidays.filter((h) => !excludedHolidayDates.includes(h.date)).length;
+  const oldExpiredCompOffCount = expiredCompOffCount;
+  const crossedCompOffCount = crossedSaturdayHolidays.filter((h) => !excludedHolidayDates.includes(h.date)).length;
+  const upcomingCompOffCount = futureSaturdayHolidays.length;
+
+  // "Leaves can be applied for both expired and non-expired days comp-off day"
+  // Maintain the default comp-off available between the Cycle start date and current date:
+  // Both expired and non-expired comp-off days from this cycle are default available to apply leave!
+  const autoCompOffEarned = expiredCompOffCount + nonExpiredCompOffCount;
+
+  // Option to add comp-off leaves is removed as per user instruction.
+  const carryForwardCompOff = 0;
+  const setCarryForwardCompOff = (_days: number) => {
+    // Option to add comp-off is removed
+  };
+
+  const manualExpiredCompOffCount = 0;
+  const setManualExpiredCompOffCount = (_count: number) => {
+    // Option to add comp-off is removed
+  };
+
+  const totalCompOffPool = autoCompOffEarned + manualCompOffCredits;
 
   // Balances calculation
   const alUsed = records
@@ -668,6 +714,13 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         toggleHolidayExpired,
         crossedCompOffCount,
         upcomingCompOffCount,
+        expiredCompOffCount,
+        nonExpiredCompOffCount,
+        oldExpiredCompOffCount,
+        oldCycleSaturdayHolidays,
+        futureSaturdayHolidays,
+        manualExpiredCompOffCount,
+        setManualExpiredCompOffCount,
         carryForwardCompOff,
         setCarryForwardCompOff,
         manualCompOffCredits,
