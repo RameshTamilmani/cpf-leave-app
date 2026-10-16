@@ -10,6 +10,7 @@ import { CompOffModal } from './components/CompOffModal';
 import { NotificationsModal } from './components/NotificationsModal';
 import { AddSpecialHolidayModal } from './components/AddSpecialHolidayModal';
 import { EditCycleModal } from './components/EditCycleModal';
+import { OnboardingModal } from './components/OnboardingModal';
 import { HomeScreen } from './screens/HomeScreen';
 import { CalendarScreen } from './screens/CalendarScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
@@ -48,6 +49,7 @@ const MainAppContent: React.FC = () => {
         isOpen={isEditCycleModalOpen}
         onClose={() => setIsEditCycleModalOpen(false)}
       />
+      <OnboardingModal />
 
       {/* Offline Connectivity Status Badge */}
       <OfflineIndicator />

@@ -190,11 +190,9 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const saved = localStorage.getItem('cutisg_settings');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.alEntitlement === 14) parsed.alEntitlement = 12;
-        if (parsed.slEntitlement === 14) parsed.slEntitlement = 12;
         if (parsed.userName === 'Employee') parsed.userName = '';
         if (parsed.employeeId === 'EMP-1103118') parsed.employeeId = '';
-        return { ...defaultSettings, ...parsed };
+        return { ...defaultSettings, ...parsed, alEntitlement: 12, slEntitlement: 12 };
       }
       return defaultSettings;
     } catch {

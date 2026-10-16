@@ -7,13 +7,8 @@ export const HomeScreen: React.FC = () => {
     slAvailable,
     coAvailable,
     saturdayCompOffHolidays,
-    autoCompOffEarned,
-    excludedHolidayDates,
     expiredHolidayDates,
     expiredCompOffCount,
-    crossedCompOffCount,
-    upcomingCompOffCount,
-    carryForwardCompOff,
     upcomingHolidays,
     todayDateStr,
     cycleStartDateStr,
@@ -28,7 +23,7 @@ export const HomeScreen: React.FC = () => {
     setSelectedCalendarDate
   } = useLeave();
 
-  // Next 4 strictly upcoming holidays (strictly on or after current date)
+  // Next 4 strictly upcoming holidays (from current date onward)
   const displayedUpcomingHolidays = upcomingHolidays.slice(0, 4);
 
   const todayObj = new Date(todayDateStr + 'T00:00:00');
@@ -70,7 +65,7 @@ export const HomeScreen: React.FC = () => {
                   {settings.userName}
                 </span>
               ) : (
-                <span className="font-title-sm text-title-sm text-on-surface-variant font-medium">
+                <span className="font-title-sm text-title-sm text-on-surface font-semibold">
                   Employee Profile
                 </span>
               )}
@@ -80,11 +75,14 @@ export const HomeScreen: React.FC = () => {
                 </span>
               )}
             </div>
+            <span className="text-[11px] text-on-surface-variant">
+              Cycle: {cycleStartDateStr} to {cycleEndDateStr}
+            </span>
           </div>
         </div>
         <button
           onClick={() => setCurrentTab('settings')}
-          aria-label="Edit Profile & Settings"
+          aria-label="Profile & Settings"
           className="w-9 h-9 rounded-full bg-surface-container-lowest flex items-center justify-center text-on-surface-variant hover:bg-surface-variant active:scale-90 transition-all shrink-0 cursor-pointer shadow-xs"
           title="Profile & Settings"
         >
@@ -92,21 +90,25 @@ export const HomeScreen: React.FC = () => {
         </button>
       </section>
 
-      {/* 2. Leave Balance Cards (Hero Tonal Entitlement Grid) */}
+      {/* 2. Leave Balance Cards */}
       <section className="flex flex-col gap-space-sm">
         <div className="flex items-center justify-between px-1">
           <h2 className="font-title-md text-title-md text-on-surface font-semibold">Leave Balances</h2>
           <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Active Cycle</span>
         </div>
         <div className="flex flex-col gap-space-sm">
-          {/* Annual Leave Card - Informational Only */}
+          {/* Annual Leave Card - Always beach_access icon */}
           <article className="w-full bg-leave-annual-container rounded-xl p-4 shadow-xs flex items-center justify-between text-leave-annual-on-container">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-surface-container-lowest/80 flex items-center justify-center text-leave-annual shrink-0">
-                <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>beach_access</span>
+                <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  beach_access
+                </span>
               </div>
               <div>
-                <h3 className="font-title-md text-title-md font-semibold text-leave-annual-on-container leading-tight">Annual Leave (AL)</h3>
+                <h3 className="font-title-md text-title-md font-semibold text-leave-annual-on-container leading-tight">
+                  Annual Leave
+                </h3>
                 <span className="font-label-sm text-label-sm opacity-80">
                   {Number.isInteger(alAvailable) ? alAvailable : alAvailable.toFixed(1)} / {settings.alEntitlement} Days Available
                 </span>
@@ -122,14 +124,18 @@ export const HomeScreen: React.FC = () => {
             </div>
           </article>
 
-          {/* Sick Leave Card - Informational Only */}
+          {/* Sick Leave Card - Always medical_services icon */}
           <article className="w-full bg-leave-sick-container rounded-xl p-4 shadow-xs flex items-center justify-between text-leave-sick-on-container">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-surface-container-lowest/80 flex items-center justify-center text-leave-sick shrink-0">
-                <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>medical_services</span>
+                <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  medical_services
+                </span>
               </div>
               <div>
-                <h3 className="font-title-md text-title-md font-semibold text-leave-sick-on-container leading-tight">Sick Leave (SL)</h3>
+                <h3 className="font-title-md text-title-md font-semibold text-leave-sick-on-container leading-tight">
+                  Sick Leave
+                </h3>
                 <span className="font-label-sm text-label-sm opacity-80">
                   {Number.isInteger(slAvailable) ? slAvailable : slAvailable.toFixed(1)} / {settings.slEntitlement} Days Available
                 </span>
@@ -145,22 +151,19 @@ export const HomeScreen: React.FC = () => {
             </div>
           </article>
 
-          {/* Comp-off Leave Card - Informational Only */}
+          {/* Comp-off Leave Card - Always update icon, Auto-Calculated removed */}
           <article className="w-full bg-leave-compoff-container rounded-xl p-4 shadow-xs flex items-center justify-between text-leave-compoff-on-container">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-surface-container-lowest/80 flex items-center justify-center text-leave-compoff shrink-0">
-                <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>update</span>
+                <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  update
+                </span>
               </div>
               <div>
-                <div className="flex items-center gap-1.5">
-                  <h3 className="font-title-md text-title-md font-semibold text-leave-compoff-on-container leading-tight">Comp-off Leave</h3>
-                  {autoCompOffEarned > 0 && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-leave-compoff text-white">
-                      Auto-Calculated
-                    </span>
-                  )}
-                </div>
-                <span className="font-label-sm text-label-sm opacity-80">Available</span>
+                <h3 className="font-title-md text-title-md font-semibold text-leave-compoff-on-container leading-tight">
+                  Comp-off Leave
+                </h3>
+                <span className="font-label-sm text-label-sm opacity-80">Available Balance</span>
               </div>
             </div>
             <div className="flex items-baseline gap-1.5 text-right">
@@ -173,193 +176,152 @@ export const HomeScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. Quick Action Grid / Buttons */}
+      {/* 3. Quick Action Buttons - Only Apply Leave and Comp-off Ledger (Leave Calendar & History removed) */}
       <section className="flex flex-col gap-space-xs mt-1">
         <div className="flex items-center justify-between px-1">
           <h2 className="font-title-md text-title-md text-on-surface font-semibold">Quick Actions</h2>
         </div>
         <div className="grid grid-cols-2 gap-space-sm">
-          {/* Apply / Log Leave */}
+          {/* Apply Leave Button (Only in Home tab) */}
           <button
             onClick={() => openApplyModal({ initialType: 'AL' })}
-            className="flex flex-col items-start justify-between p-3.5 rounded-xl bg-primary-fixed text-on-primary-fixed shadow-xs hover:bg-primary-fixed-dim active:scale-95 transition-all text-left cursor-pointer"
+            className="flex flex-col items-start justify-between p-4 rounded-xl bg-primary text-on-primary shadow-xs hover:opacity-95 active:scale-95 transition-all text-left cursor-pointer"
           >
-            <div className="w-9 h-9 rounded-full bg-on-primary-fixed/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[20px]">add_circle</span>
+            <div className="w-10 h-10 rounded-full bg-on-primary/15 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[22px]">add_circle</span>
             </div>
             <div className="mt-3">
-              <span className="font-title-sm text-title-sm font-semibold block leading-tight">Apply Leave</span>
-              <span className="font-label-sm text-label-sm opacity-75">Log new request</span>
+              <span className="font-title-sm text-title-sm font-bold block leading-tight">Apply Leave</span>
+              <span className="font-label-sm text-label-sm opacity-80">Log new leave</span>
             </div>
           </button>
 
-          {/* Leave Calendar */}
-          <button
-            onClick={() => setCurrentTab('calendar')}
-            className="flex flex-col items-start justify-between p-3.5 rounded-xl bg-surface-container-lowest text-on-surface shadow-xs hover:bg-surface-container active:scale-95 transition-all text-left cursor-pointer border border-surface-container"
-          >
-            <div className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined text-[20px]">calendar_month</span>
-            </div>
-            <div className="mt-3">
-              <span className="font-title-sm text-title-sm font-semibold block leading-tight">Leave Calendar</span>
-              <span className="font-label-sm text-label-sm text-on-surface-variant">View long weekends</span>
-            </div>
-          </button>
-
-          {/* Leave History */}
-          <button
-            onClick={() => setCurrentTab('history')}
-            className="flex flex-col items-start justify-between p-3.5 rounded-xl bg-surface-container-lowest text-on-surface shadow-xs hover:bg-surface-container active:scale-95 transition-all text-left cursor-pointer border border-surface-container"
-          >
-            <div className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-secondary">
-              <span className="material-symbols-outlined text-[20px]">history_toggle_off</span>
-            </div>
-            <div className="mt-3">
-              <span className="font-title-sm text-title-sm font-semibold block leading-tight">Leave History</span>
-              <span className="font-label-sm text-label-sm text-on-surface-variant">Past approvals &amp; MCs</span>
-            </div>
-          </button>
-
-          {/* Comp-off Manager */}
+          {/* Comp-off Ledger */}
           <button
             onClick={() => setIsCompOffModalOpen(true)}
-            className="flex flex-col items-start justify-between p-3.5 rounded-xl bg-surface-container-lowest text-on-surface shadow-xs hover:bg-surface-container active:scale-95 transition-all text-left relative overflow-hidden cursor-pointer border border-surface-container"
+            className="flex flex-col items-start justify-between p-4 rounded-xl bg-surface-container-lowest text-on-surface shadow-xs hover:bg-surface-container active:scale-95 transition-all text-left border border-surface-container cursor-pointer"
           >
             <div className="flex items-center justify-between w-full">
-              <div className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant">
-                <span className="material-symbols-outlined text-[20px]">more_time</span>
+              <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-leave-compoff">
+                <span className="material-symbols-outlined text-[22px]">more_time</span>
               </div>
-              <span className="font-label-sm text-label-sm font-semibold px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant">
+              <span className="font-label-sm text-label-sm font-bold px-2 py-0.5 rounded-full bg-leave-compoff-container text-leave-compoff">
                 {coAvailable} Active
               </span>
             </div>
             <div className="mt-3">
               <span className="font-title-sm text-title-sm font-semibold block leading-tight">Comp-off Ledger</span>
-              <span className="font-label-sm text-label-sm text-on-surface-variant">Saturday PH credits</span>
+              <span className="font-label-sm text-label-sm text-on-surface-variant">View Saturday credits</span>
             </div>
           </button>
         </div>
       </section>
 
-      {/* 4. Comp-off Expiry Tracker */}
-      <section className="w-full text-alert-warning rounded-xl p-4 shadow-xs flex flex-col gap-3 bg-surface-container-high border border-surface-container">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[22px] text-on-surface-variant">event_available</span>
+      {/* 4. Comp-off Expiry Tracker - Simplified, neat and clean */}
+      <section className="w-full rounded-2xl p-4 shadow-xs flex flex-col gap-3 bg-surface-container-lowest border border-surface-container">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-leave-compoff-container text-leave-compoff flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[20px]">event_available</span>
+            </div>
             <div>
-              <h3 className="font-title-sm text-title-sm font-semibold text-on-surface">Comp-off Expiry Tracker</h3>
+              <h3 className="font-title-sm text-title-sm font-bold text-on-surface">Comp-off Expiry Tracker</h3>
               <span className="text-[11px] text-on-surface-variant">
-                Cycle: {settings.cycle} ({cycleStartDateStr} to {cycleEndDateStr})
+                {cycleStartDateStr} to {cycleEndDateStr}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setIsEditCycleModalOpen(true)}
-              className="font-label-sm text-label-sm font-semibold text-primary bg-primary-fixed/30 hover:bg-primary-fixed/50 px-2.5 py-0.5 rounded-full cursor-pointer transition-colors"
-            >
-              Edit Cycle
-            </button>
+          <button
+            onClick={() => setIsEditCycleModalOpen(true)}
+            className="font-label-sm text-label-sm font-semibold text-primary hover:underline cursor-pointer"
+          >
+            Edit Cycle
+          </button>
+        </div>
+
+        {/* Clean Summary Stats Strip */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="bg-surface-container-low rounded-xl p-2.5 flex items-center justify-between border border-surface-container/60">
+            <span className="font-label-sm text-label-sm text-on-surface-variant">Available</span>
+            <span className="font-title-sm text-title-sm font-bold text-leave-compoff">
+              {coAvailable} Day{coAvailable !== 1 ? 's' : ''}
+            </span>
+          </div>
+          <div className="bg-surface-container-low rounded-xl p-2.5 flex items-center justify-between border border-surface-container/60">
+            <span className="font-label-sm text-label-sm text-on-surface-variant">Expired in Cycle</span>
+            <span className="font-title-sm text-title-sm font-bold text-on-surface">
+              {expiredCompOffCount} Day{expiredCompOffCount !== 1 ? 's' : ''}
+            </span>
           </div>
         </div>
 
+        {/* Simple & Neat Holiday List */}
         {saturdayCompOffHolidays.length > 0 ? (
-          <div className="bg-surface-container-lowest rounded-lg p-3 text-on-surface flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[20px] text-leave-compoff">stars</span>
-                <span className="font-title-sm text-title-sm font-semibold text-on-surface">
-                  {upcomingCompOffCount} Future Saturday Holiday{upcomingCompOffCount !== 1 ? 's' : ''} in Cycle
-                </span>
-              </div>
-              <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-leave-compoff-container text-leave-compoff font-bold">
-                {coAvailable} Available ({expiredCompOffCount} Expired)
-              </span>
-            </div>
-            <div className="flex flex-col gap-1.5 pt-1 border-t border-surface-container">
-              {saturdayCompOffHolidays.map((h) => {
-                const isPrevious = h.date < todayDateStr;
-                const isExcluded = excludedHolidayDates?.includes(h.date);
-                const isExpired = expiredHolidayDates?.includes(h.date);
-                const isCNY = h.name.toLowerCase().includes('chinese new year');
-                return (
-                  <div key={h.date} className="flex items-center justify-between text-body-sm">
-                    <span className="text-on-surface font-medium flex items-center gap-1.5 flex-wrap">
-                      <span>{h.emoji || '🇸🇬'}</span>
-                      <span>{h.name}</span>
-                      {isCNY && (
-                        <span className="text-[10px] bg-primary-fixed text-on-primary-fixed px-1.5 py-0.2 rounded-full font-semibold">
-                          CNY 2027
-                        </span>
-                      )}
-                      <span className="text-[11px] text-on-surface-variant">({h.date})</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      {isPrevious ? (
-                        <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-2 py-0.2 rounded-full">
-                          Expired (Usable)
-                        </span>
-                      ) : isExpired ? (
-                        <span className="font-label-sm text-label-sm text-error bg-surface-container px-2 py-0.2 rounded-full">
-                          Expired (Usable)
-                        </span>
-                      ) : isExcluded ? (
-                        <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-2 py-0.2 rounded-full">
-                          Excluded
-                        </span>
-                      ) : (
-                        <span className="font-label-sm text-label-sm text-primary bg-primary-fixed/30 px-2 py-0.2 rounded-full font-medium">
-                          Auto on Date
-                        </span>
-                      )}
-                    </span>
+          <div className="flex flex-col divide-y divide-surface-container pt-1">
+            {saturdayCompOffHolidays.map((h) => {
+              const isPast = h.date < todayDateStr;
+              const isExpired = expiredHolidayDates?.includes(h.date);
+
+              return (
+                <div key={h.date} className="py-2.5 flex items-center justify-between text-body-sm first:pt-1 last:pb-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-base shrink-0">{h.emoji || '🇸🇬'}</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-title-sm text-title-sm font-medium text-on-surface truncate">
+                        {h.name}
+                      </span>
+                      <span className="text-[11px] text-on-surface-variant">
+                        {h.date}
+                      </span>
+                    </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  <div className="shrink-0">
+                    {isPast || isExpired ? (
+                      <span className="font-label-sm text-label-sm px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-medium">
+                        Expired (Usable)
+                      </span>
+                    ) : (
+                      <span className="font-label-sm text-label-sm px-2.5 py-0.5 rounded-full bg-leave-compoff-container text-leave-compoff font-semibold">
+                        Auto on date
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
-          <div className="bg-surface-container-lowest rounded-lg p-3.5 text-on-surface flex flex-col items-center justify-center text-center gap-1.5">
-            <span className="material-symbols-outlined text-[28px] text-on-surface-variant opacity-75">check_circle</span>
-            <span className="font-title-sm text-title-sm font-semibold text-on-surface">No Gazetted Saturday Holidays in Current Cycle</span>
-            <p className="font-body-sm text-body-sm text-on-surface-variant max-w-xs leading-snug">
-              When a gazetted Singapore public holiday or special holiday falls on a Saturday during your Leave Year Cycle ({cycleStartDateStr} to {cycleEndDateStr}), +1 day comp-off automatically accrues.
-            </p>
+          <div className="p-3 bg-surface-container-low rounded-xl text-center text-body-sm text-on-surface-variant">
+            No Saturday gazetted holidays in this cycle.
           </div>
         )}
       </section>
 
-      {/* 5. Upcoming Singapore Public Holidays Section (STRICTLY ON OR AFTER CURRENT DATE) */}
+      {/* 5. Upcoming Singapore Public Holidays - Neat, Simple & Clean */}
       <section className="flex flex-col gap-space-sm mt-1">
         <div className="flex items-center justify-between px-1">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[20px] text-holiday-public">flag</span>
-              <h2 className="font-title-md text-title-md text-on-surface font-semibold">Upcoming Public Holidays</h2>
-            </div>
-            <span className="text-[11px] text-on-surface-variant">
-              From current date ({todayFormatted}) onward • Excludes past holidays
-            </span>
+          <div>
+            <h2 className="font-title-md text-title-md text-on-surface font-semibold">Upcoming Public Holidays</h2>
+            <p className="text-[11px] text-on-surface-variant">From current date ({todayFormatted}) onward</p>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setIsAddSpecialHolidayOpen(true)}
-              className="font-label-sm text-label-sm text-primary font-bold hover:underline cursor-pointer flex items-center gap-0.5 bg-primary-fixed/30 px-2.5 py-1 rounded-full shadow-2xs"
+              className="font-label-sm text-label-sm text-primary font-semibold hover:underline cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[15px]">add</span>
-              <span>Special Holiday</span>
+              + Special
             </button>
             <button
               onClick={() => setIsHolidaysModalOpen(true)}
-              className="font-label-md text-label-md text-primary font-medium hover:underline cursor-pointer px-1 py-1"
+              className="font-label-sm text-label-sm text-primary font-semibold hover:underline cursor-pointer"
             >
-              Full List
+              View All
             </button>
           </div>
         </div>
 
-        {/* Dynamic List: only holidays strictly on or after current date */}
+        {/* Clean Holiday Cards */}
         {displayedUpcomingHolidays.length > 0 ? (
           <div className="flex flex-col gap-2">
             {displayedUpcomingHolidays.map((holiday) => {
@@ -368,66 +330,58 @@ export const HomeScreen: React.FC = () => {
               const dayStr = String(d.getDate()).padStart(2, '0');
               const isSat = d.getDay() === 6;
 
-              // Calculate countdown days from current date
               const dToday = new Date(todayDateStr + 'T00:00:00');
               const diffDays = Math.ceil((d.getTime() - dToday.getTime()) / (1000 * 60 * 60 * 24));
-              const countdownLabel = diffDays === 0 ? 'Today! 🎉' : diffDays === 1 ? 'Tomorrow' : `In ${diffDays} days`;
+              const countdownLabel = diffDays === 0 ? 'Today' : diffDays === 1 ? 'Tomorrow' : `In ${diffDays} days`;
 
               return (
-                <article
+                <div
                   key={holiday.date}
                   onClick={() => {
                     setSelectedCalendarDate(holiday.date);
                     setCurrentTab('calendar');
                   }}
-                  className="bg-surface-container-lowest rounded-xl p-3.5 shadow-xs flex items-center justify-between transition-transform active:scale-[0.99] border border-surface-container cursor-pointer"
+                  className="bg-surface-container-lowest rounded-xl p-3 shadow-xs flex items-center justify-between transition-transform active:scale-[0.99] border border-surface-container cursor-pointer hover:bg-surface-container-low"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-holiday-public-container text-holiday-public-on-container flex flex-col items-center justify-center shrink-0">
-                      <span className="font-label-sm text-label-sm font-bold uppercase leading-none">{monthStr}</span>
-                      <span className="font-title-md text-title-md font-bold leading-tight">{dayStr}</span>
+                    <div className="w-10 h-10 rounded-xl bg-holiday-public-container text-holiday-public-on-container flex flex-col items-center justify-center shrink-0">
+                      <span className="font-label-sm text-[9px] font-bold uppercase leading-none">{monthStr}</span>
+                      <span className="font-title-sm text-title-sm font-bold leading-tight">{dayStr}</span>
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <h4 className="font-title-sm text-title-sm font-semibold text-on-surface">
+                        <span className="font-title-sm text-title-sm font-semibold text-on-surface">
                           {holiday.name}
-                        </h4>
-                        <span className="text-xs">{holiday.emoji || '🇸🇬'}</span>
-                        {holiday.isSpecial && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-primary-fixed text-on-primary-fixed">
-                            Special Holiday
-                          </span>
-                        )}
-                        <span className="text-[10px] font-medium px-1.5 py-0.2 rounded-full bg-surface-container text-on-surface-variant">
-                          {countdownLabel}
                         </span>
+                        <span className="text-xs">{holiday.emoji || '🇸🇬'}</span>
                       </div>
-                      <span className="font-body-sm text-body-sm text-on-surface-variant">
+                      <span className="font-body-sm text-[12px] text-on-surface-variant">
                         {holiday.dayOfWeek} {holiday.observedDate ? `• Observed Mon ${new Date(holiday.observedDate + 'T00:00:00').getDate()}` : ''}
                       </span>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-holiday-public-container text-holiday-public-on-container font-semibold">
-                      0 leave needed
+
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className="font-label-sm text-[11px] font-medium px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant">
+                      {countdownLabel}
                     </span>
                     {isSat ? (
-                      <span className="font-label-sm text-label-sm text-alert-warning font-semibold">
-                        +1 Comp-Off Day
+                      <span className="font-label-sm text-[11px] text-leave-compoff font-bold">
+                        +1 Comp-Off
                       </span>
                     ) : holiday.isLongWeekend ? (
-                      <span className="font-label-sm text-label-sm text-leave-compoff font-medium">
-                        {holiday.longWeekendText || 'Long Weekend 🎉'}
+                      <span className="font-label-sm text-[11px] text-primary font-medium">
+                        Long Weekend
                       </span>
                     ) : null}
                   </div>
-                </article>
+                </div>
               );
             })}
           </div>
         ) : (
           <div className="p-4 bg-surface-container-low rounded-xl text-center text-body-sm text-on-surface-variant">
-            No further public holidays scheduled for the remainder of this calendar year.
+            No further public holidays scheduled for this calendar year.
           </div>
         )}
       </section>

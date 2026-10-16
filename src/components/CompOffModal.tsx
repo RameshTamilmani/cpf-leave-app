@@ -18,8 +18,7 @@ export const CompOffModal: React.FC = () => {
     todayDateStr,
     cycleStartDateStr,
     cycleEndDateStr,
-    setIsEditCycleModalOpen,
-    openApplyModal
+    setIsEditCycleModalOpen
   } = useLeave();
 
   if (!isCompOffModalOpen) return null;
@@ -273,16 +272,12 @@ export const CompOffModal: React.FC = () => {
             )}
           </div>
 
-          {/* Apply Leave CTA */}
+          {/* Close Action */}
           <button
-            onClick={() => {
-              setIsCompOffModalOpen(false);
-              openApplyModal({ initialType: 'CO' });
-            }}
-            className="w-full py-2.5 rounded-full bg-primary text-on-primary font-label-md text-label-md font-semibold hover:opacity-95 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs mt-1"
+            onClick={() => setIsCompOffModalOpen(false)}
+            className="w-full py-2.5 rounded-full bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold hover:bg-surface-variant active:scale-98 transition-all flex items-center justify-center cursor-pointer mt-1"
           >
-            <span className="material-symbols-outlined text-[18px]">beach_access</span>
-            <span>Apply Leave Using Comp-Off ({coAvailable} Available)</span>
+            <span>Close</span>
           </button>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { isWeekend } from '../data/singaporeHolidays2026';
 export const CalendarScreen: React.FC = () => {
   const {
     records,
+    deleteRecord,
     selectedCalendarDate,
     setSelectedCalendarDate,
     allHolidays,
@@ -156,36 +157,10 @@ export const CalendarScreen: React.FC = () => {
     inspectorExplanation = 'Official statutory weekly rest day pursuant to Singapore Employment Act Part IV.';
   }
 
-  const handleShare = () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(
-        `CutiSG 2026: ${selectedDateFormatted} - ${inspectorTitle} (${inspectorCategory})`
-      );
-    }
-    showToast(`Copied ${inspectorTitle} (${selectedDateFormatted}) details!`);
-  };
-
   return (
     <div className="flex flex-col w-full pb-8 max-w-xl mx-auto">
-      {/* Month Navigator Header & Sync Bar */}
+      {/* Month Navigator Header */}
       <div className="px-margin flex flex-col gap-space-sm pt-2">
-        {/* Top Meta Row */}
-        <div className="flex items-center justify-between gap-space-xs">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
-            <span className="material-symbols-outlined text-[15px] text-primary">verified</span>
-            <span className="font-medium">2026 Singapore MOM Gazetted</span>
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-leave-compoff-container text-leave-compoff-on-container font-label-sm text-label-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-leave-compoff animate-ping" />
-            <span>data.gov.sg live</span>
-          </div>
-        </div>
-
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm w-fit">
-          <span className="material-symbols-outlined text-[16px] text-primary">edit_calendar</span>
-          <span>FY 2026: Select any date (Past, Today, or Future) to log or edit leave entries</span>
-        </div>
-
         {/* Month Picker Card */}
         <div className="bg-surface-container-lowest rounded-xl p-space-sm shadow-xs flex items-center justify-between border border-surface-container">
           <div className="flex items-center gap-space-xs">
@@ -448,50 +423,51 @@ export const CalendarScreen: React.FC = () => {
             </p>
           </div>
 
-          {/* Action Button inside details */}
+          {/* Contextual Date Status Display */}
           <div className="flex flex-col gap-2 pt-1">
             <div className="flex items-center justify-between gap-space-sm">
               {isGazettedPH ? (
-                <button
-                  disabled
-                  className="flex-1 h-11 rounded-full bg-surface-container-highest text-on-surface-variant font-label-md text-label-md flex items-center justify-center gap-2 cursor-not-allowed opacity-80"
+                <div
+                  className="flex-1 h-11 rounded-full bg-surface-container-highest text-on-surface-variant font-label-md text-label-md flex items-center justify-center gap-2 select-none"
                 >
                   <span className="material-symbols-outlined text-[18px]">verified</span>
-                  <span>Gazetted Public Holiday (No Leave Needed)</span>
-                </button>
+                  <span>Gazetted Public Holiday (Paid Off-Day)</span>
+                </div>
               ) : bookedRecord ? (
-                <button
-                  onClick={() => openApplyModal({ initialType: bookedRecord.type, initialDate: selectedCalendarDate })}
-                  className="flex-1 h-11 rounded-full bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer shadow-xs"
-                >
-                  <span className="material-symbols-outlined text-[18px]">edit_calendar</span>
-                  <span>Modify Leave Booking</span>
-                </button>
+                <div className="flex items-center gap-2 w-full">
+                  <div className="flex-1 h-11 px-3.5 rounded-full bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center gap-2 min-w-0">
+                    <span className="material-symbols-outlined text-[18px] text-primary shrink-0">event_available</span>
+                    <span className="truncate">
+                      {bookedRecord.title} ({bookedRecord.type === 'AL' ? 'Annual Leave' : bookedRecord.type === 'SL' ? 'Sick Leave' : 'Comp Off'})
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      deleteRecord(bookedRecord.id);
+                    }}
+                    className="h-11 px-4 rounded-full bg-error text-on-error font-label-md text-label-md font-semibold flex items-center gap-1.5 hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs shrink-0"
+                    title="Delete Leave Booking"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                    <span>Delete</span>
+                  </button>
+                </div>
               ) : selectedIsWeekend ? (
-                <button
-                  disabled
-                  className="flex-1 h-11 rounded-full bg-surface-container-highest text-on-surface-variant font-label-md text-label-md flex items-center justify-center gap-2 cursor-not-allowed opacity-80"
+                <div
+                  className="flex-1 h-11 rounded-full bg-surface-container-highest text-on-surface-variant font-label-md text-label-md flex items-center justify-center gap-2 select-none"
                 >
                   <span className="material-symbols-outlined text-[18px]">weekend</span>
                   <span>Rest Day (Non-Working Day)</span>
-                </button>
+                </div>
               ) : (
                 <button
                   onClick={() => openApplyModal({ initialType: 'AL', initialDate: selectedCalendarDate })}
-                  className="flex-1 h-11 rounded-full bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center gap-2 hover:opacity-95 active:scale-98 transition-all shadow-xs cursor-pointer"
+                  className="flex-1 h-11 rounded-full bg-primary text-on-primary font-label-md text-label-md font-semibold flex items-center justify-center gap-2 hover:opacity-95 active:scale-98 transition-all shadow-xs cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-[18px]">edit_calendar</span>
+                  <span className="material-symbols-outlined text-[18px]">add_circle</span>
                   <span>+ Apply Leave on this day</span>
                 </button>
               )}
-
-              <button
-                onClick={handleShare}
-                aria-label="Share Date info"
-                className="w-11 h-11 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-95 transition-all cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[20px]">share</span>
-              </button>
             </div>
           </div>
         </div>

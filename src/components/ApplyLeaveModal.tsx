@@ -39,14 +39,7 @@ export const ApplyLeaveModal: React.FC = () => {
       setDurationMode('full');
       setDaysToDeduct(1.0);
       setValidationError(null);
-
-      if (selectedType === 'SL') {
-        setTitle('Medical Outpatient (MC)');
-      } else if (selectedType === 'CO') {
-        setTitle('Comp-Off Leave');
-      } else {
-        setTitle('Annual Vacation');
-      }
+      setTitle('');
     }
   }, [applyModalConfig]);
 
@@ -246,10 +239,12 @@ export const ApplyLeaveModal: React.FC = () => {
   const gazettedPHRange = isMultiDay && (Boolean(getGazettedHolidayForDate(startDate)) || Boolean(getGazettedHolidayForDate(endDate)) || workingDays === 0);
   const isPHBlocked = Boolean(gazettedPHSingle || gazettedPHRange);
 
+  const isTitleMissing = !title.trim();
   const isExceedingQuota = daysToDeduct > getAvailableBalance();
   const isInvalidDate = Boolean(startDate && endDate && endDate < startDate);
   const isHalfDayMultiDay = Boolean(isMultiDay && daysToDeduct === 0.5);
   const isFormInvalid = Boolean(
+    isTitleMissing ||
     isDuplicate ||
     isPHBlocked ||
     isDeductionMismatch ||
@@ -330,6 +325,11 @@ export const ApplyLeaveModal: React.FC = () => {
       }
     }
 
+    if (!title.trim()) {
+      setValidationError('Reason / Leave Title is mandatory. Please enter a reason.');
+      return;
+    }
+
     if (daysToDeduct > getAvailableBalance()) {
       setValidationError(
         `Requested ${daysToDeduct} days exceeds your available ${type} quota of ${getAvailableBalance()} day(s).`
@@ -337,7 +337,7 @@ export const ApplyLeaveModal: React.FC = () => {
       return;
     }
 
-    const finalTitle = title.trim() || (type === 'AL' ? 'Annual Leave' : type === 'SL' ? 'Medical Leave (MC)' : 'Comp-Off');
+    const finalTitle = title.trim();
     const finalDays = Math.max(0.5, Number(daysToDeduct) || 1.0);
     const status: LeaveStatus = endDate < todayDateStr ? 'taken' : 'planned';
     const halfDay = durationMode === 'half-am' ? 'am' : durationMode === 'half-pm' ? 'pm' : 'full';
@@ -394,10 +394,7 @@ export const ApplyLeaveModal: React.FC = () => {
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setType('AL');
-                  setTitle('Annual Vacation');
-                }}
+                onClick={() => setType('AL')}
                 className={`py-2 px-3 rounded-xl flex flex-col items-center gap-1 border transition-all cursor-pointer ${
                   type === 'AL'
                     ? 'bg-leave-annual-container text-leave-annual-on-container border-leave-annual font-semibold shadow-xs'
@@ -411,10 +408,7 @@ export const ApplyLeaveModal: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => {
-                  setType('SL');
-                  setTitle('Medical Outpatient (MC)');
-                }}
+                onClick={() => setType('SL')}
                 className={`py-2 px-3 rounded-xl flex flex-col items-center gap-1 border transition-all cursor-pointer ${
                   type === 'SL'
                     ? 'bg-leave-sick-container text-leave-sick-on-container border-leave-sick font-semibold shadow-xs'
@@ -428,10 +422,7 @@ export const ApplyLeaveModal: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => {
-                  setType('CO');
-                  setTitle('Comp-Off Leave');
-                }}
+                onClick={() => setType('CO')}
                 className={`py-2 px-3 rounded-xl flex flex-col items-center gap-1 border transition-all cursor-pointer ${
                   type === 'CO'
                     ? 'bg-leave-compoff-container text-leave-compoff-on-container border-leave-compoff font-semibold shadow-xs'
@@ -445,17 +436,25 @@ export const ApplyLeaveModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Title / Description */}
+          {/* Title / Description - MANDATORY, NO AUTO-FILLER */}
           <div>
-            <label className="font-label-md text-label-md text-on-surface-variant font-semibold block mb-1">
-              REASON / LEAVE TITLE
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-label-md text-label-md text-on-surface-variant font-semibold">
+                REASON / LEAVE TITLE <span className="text-error">*</span>
+              </label>
+              <span className="text-[11px] text-error font-medium">Required</span>
+            </div>
             <input
               type="text"
               required
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={type === 'SL' ? 'e.g., Medical Consultation, Outpatient Care' : 'e.g., Annual Vacation, Family Matters'}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (validationError && validationError.includes('Reason')) {
+                  setValidationError(null);
+                }
+              }}
+              placeholder="Enter reason for leave (mandatory)"
               className="w-full px-3.5 py-2.5 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary text-body-md"
             />
           </div>
@@ -751,7 +750,9 @@ export const ApplyLeaveModal: React.FC = () => {
                   : 'bg-primary text-on-primary hover:opacity-95 active:scale-98 cursor-pointer'
               }`}
             >
-              {isDuplicate
+              {isTitleMissing
+                ? 'Enter Reason / Leave Title'
+                : isDuplicate
                 ? 'Date Already Booked (Duplicate)'
                 : isHalfDayMultiDay
                 ? '0.5d Allowed Only for Same Dates'
@@ -759,7 +760,7 @@ export const ApplyLeaveModal: React.FC = () => {
                 ? 'Days Must Match Date Range'
                 : isExceedingQuota
                 ? 'Exceeds Available Balance'
-                : `Confirm & Log Leave (-${daysToDeduct.toFixed(1)} ${type})`}
+                : 'Confirm'}
             </button>
           </div>
         </form>

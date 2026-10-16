@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
-import { LeaveType, LeaveStatus, LeaveRecord } from '../types/leave';
+import { LeaveType, LeaveRecord } from '../types/leave';
 
 export const HistoryScreen: React.FC = () => {
   const {
@@ -12,20 +12,17 @@ export const HistoryScreen: React.FC = () => {
     slAvailable,
     coAvailable,
     settings,
-    setIsEditCycleModalOpen,
-    showToast
+    setIsEditCycleModalOpen
   } = useLeave();
 
   const [typeFilter, setTypeFilter] = useState<'ALL' | LeaveType>('ALL');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | LeaveStatus>('ALL');
 
   // Active record action sheet state
   const [selectedRecordForSheet, setSelectedRecordForSheet] = useState<LeaveRecord | null>(null);
 
-  // Filter records
+  // Filter records by leave type only (second filter removed as requested)
   const filteredRecords = records.filter((r) => {
     if (typeFilter !== 'ALL' && r.type !== typeFilter) return false;
-    if (statusFilter !== 'ALL' && r.status !== statusFilter) return false;
     return true;
   });
 
@@ -40,10 +37,6 @@ export const HistoryScreen: React.FC = () => {
 
   const statutoryLeft = alAvailable + slAvailable + coAvailable;
 
-  const plannedCount = records.filter((r) => r.status === 'planned').length;
-  const takenCount = records.filter((r) => r.status === 'taken').length;
-  const retroCount = records.filter((r) => r.status === 'retroactive').length;
-
   const getCycleBadgeText = () => {
     if (settings.cycleStartMonth && settings.cycleStartDay && settings.cycleEndMonth && settings.cycleEndDay) {
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -53,6 +46,20 @@ export const HistoryScreen: React.FC = () => {
     if (settings.cycle.includes('1 Apr')) return '1 Apr – 31 Mar';
     if (settings.cycle.includes('1 Jul')) return '1 Jul – 30 Jun';
     return 'Jan – Dec';
+  };
+
+  // Helper to get full name consistently
+  const getLeaveTypeFullName = (type: LeaveType) => {
+    switch (type) {
+      case 'AL':
+        return 'Annual Leave';
+      case 'SL':
+        return 'Sick Leave';
+      case 'CO':
+        return 'Comp Off';
+      default:
+        return 'Leave';
+    }
   };
 
   return (
@@ -66,7 +73,7 @@ export const HistoryScreen: React.FC = () => {
             title="Configure Leave Year Cycle"
           >
             <span className="material-symbols-outlined text-[18px] text-primary">calendar_today</span>
-            <span className="font-title-sm text-title-sm">FY 2026</span>
+            <span className="font-title-sm text-title-sm">Active Cycle</span>
             <span className="material-symbols-outlined text-[18px] text-on-surface-variant">expand_more</span>
           </button>
           <button
@@ -77,7 +84,14 @@ export const HistoryScreen: React.FC = () => {
             {getCycleBadgeText()}
           </button>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => openApplyModal({ initialType: 'AL' })}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-on-primary shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer font-label-sm text-label-sm font-semibold"
+          >
+            <span className="material-symbols-outlined text-[16px]">add</span>
+            <span>Apply Leave</span>
+          </button>
           <button
             onClick={exportCSV}
             aria-label="Export leave records"
@@ -89,7 +103,7 @@ export const HistoryScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Category Filter Chips (Horizontal Scroll) */}
+      {/* Category Filter Chips - Displays full names (No AL/SL short names) */}
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-margin px-margin py-1">
         <button
           onClick={() => setTypeFilter('ALL')}
@@ -114,7 +128,7 @@ export const HistoryScreen: React.FC = () => {
           }`}
         >
           <span className="w-2 h-2 rounded-full bg-leave-annual" />
-          <span>Annual Leave (AL)</span>
+          <span>Annual Leave</span>
         </button>
 
         <button
@@ -126,7 +140,7 @@ export const HistoryScreen: React.FC = () => {
           }`}
         >
           <span className="w-2 h-2 rounded-full bg-leave-sick" />
-          <span>Sick Leave (SL)</span>
+          <span>Sick Leave</span>
         </button>
 
         <button
@@ -138,51 +152,7 @@ export const HistoryScreen: React.FC = () => {
           }`}
         >
           <span className="w-2 h-2 rounded-full bg-leave-compoff" />
-          <span>Comp-off / Casual (CO/CL)</span>
-        </button>
-      </div>
-
-      {/* Status Filter Sub-row */}
-      <div className="flex items-center justify-between bg-surface-container-low p-1.5 rounded-xl border border-surface-container">
-        <button
-          onClick={() => setStatusFilter('ALL')}
-          className={`flex-1 py-1 px-2 rounded-lg font-label-sm text-label-sm transition-all text-center cursor-pointer ${
-            statusFilter === 'ALL'
-              ? 'bg-surface-card text-on-surface font-semibold shadow-xs'
-              : 'text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          All
-        </button>
-        <button
-          onClick={() => setStatusFilter('taken')}
-          className={`flex-1 py-1 px-2 rounded-lg font-label-sm text-label-sm transition-all text-center cursor-pointer ${
-            statusFilter === 'taken'
-              ? 'bg-surface-card text-on-surface font-semibold shadow-xs'
-              : 'text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          Taken ({takenCount})
-        </button>
-        <button
-          onClick={() => setStatusFilter('planned')}
-          className={`flex-1 py-1 px-2 rounded-lg font-label-sm text-label-sm transition-all text-center cursor-pointer ${
-            statusFilter === 'planned'
-              ? 'bg-surface-card text-on-surface font-semibold shadow-xs'
-              : 'text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          Planned ({plannedCount})
-        </button>
-        <button
-          onClick={() => setStatusFilter('retroactive')}
-          className={`flex-1 py-1 px-2 rounded-lg font-label-sm text-label-sm transition-all text-center cursor-pointer ${
-            statusFilter === 'retroactive'
-              ? 'bg-surface-card text-on-surface font-semibold shadow-xs'
-              : 'text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          Retro MC ({retroCount})
+          <span>Comp Off</span>
         </button>
       </div>
 
@@ -209,20 +179,17 @@ export const HistoryScreen: React.FC = () => {
         </div>
 
         <div className="bg-surface-card p-3 rounded-xl shadow-xs border border-surface-container flex flex-col">
-          <span className="font-label-sm text-label-sm text-on-surface-variant">Statutory Left</span>
+          <span className="font-label-sm text-label-sm text-on-surface-variant">Available Left</span>
           <div className="flex items-baseline gap-1 mt-1">
             <span className="font-title-lg text-title-lg text-primary font-semibold">
               {Number.isInteger(statutoryLeft) ? statutoryLeft : statutoryLeft.toFixed(1)}
             </span>
             <span className="font-body-sm text-body-sm text-on-surface-variant">days</span>
           </div>
-          <span className="text-[10px] text-on-surface-variant mt-0.5 truncate" title={`AL (${alAvailable}) + SL (${slAvailable}) + CL (${coAvailable})`}>
-            AL {alAvailable} + SL {slAvailable} + CL {coAvailable}
-          </span>
         </div>
       </div>
 
-      {/* Real Logged Records List (renders only when records exist) */}
+      {/* Real Logged Records List */}
       {filteredRecords.length > 0 ? (
         <div className="flex flex-col gap-2.5">
           <div className="flex items-center justify-between px-1">
@@ -233,14 +200,16 @@ export const HistoryScreen: React.FC = () => {
           {filteredRecords.map((record) => {
             const isAL = record.type === 'AL';
             const isSL = record.type === 'SL';
+            const fullName = getLeaveTypeFullName(record.type);
 
             return (
               <div
                 key={record.id}
-                className="bg-surface-card rounded-xl p-3.5 shadow-xs border border-surface-container flex flex-col gap-2.5 transition-all"
+                className="bg-surface-card rounded-xl p-3.5 shadow-xs border border-surface-container flex flex-col gap-2 transition-all"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2.5 min-w-0">
+                    {/* Consistent icon: beach_access for AL, medical_services for SL, update for CO */}
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                         isAL
@@ -250,15 +219,17 @@ export const HistoryScreen: React.FC = () => {
                           : 'bg-leave-compoff-container text-leave-compoff-on-container'
                       }`}
                     >
-                      <span className="material-symbols-outlined text-[22px]">
-                        {isAL ? 'flight_takeoff' : isSL ? 'local_hospital' : 'update'}
+                      <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                        {isAL ? 'beach_access' : isSL ? 'medical_services' : 'update'}
                       </span>
                     </div>
+
                     <div className="flex flex-col min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-title-sm text-title-sm text-on-surface font-semibold truncate">
                           {record.title}
                         </span>
+                        {/* Always display Sick Leave, Annual Leave, Comp Off in full */}
                         <span
                           className={`px-2 py-0.5 rounded-full font-label-sm text-label-sm font-semibold shrink-0 ${
                             isAL
@@ -268,7 +239,7 @@ export const HistoryScreen: React.FC = () => {
                               : 'bg-leave-compoff-container text-leave-compoff-on-container'
                           }`}
                         >
-                          {record.type}
+                          {fullName}
                         </span>
                       </div>
                       <span className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
@@ -277,103 +248,64 @@ export const HistoryScreen: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <span className="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm capitalize">
                       {record.status}
                     </span>
                     <button
                       onClick={() => setSelectedRecordForSheet(record)}
-                      aria-label="Manage record"
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container active:scale-90 transition-all cursor-pointer"
+                      aria-label="Delete leave record"
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-error hover:bg-error-container/30 active:scale-90 transition-all cursor-pointer"
+                      title="Delete Leave Record"
                     >
-                      <span className="material-symbols-outlined text-[20px]">more_vert</span>
+                      <span className="material-symbols-outlined text-[18px]">delete</span>
                     </button>
                   </div>
                 </div>
-
-                  <div className="flex items-center justify-between pt-2 bg-surface-container-low/50 px-2.5 py-1.5 rounded-lg text-label-sm">
-                    <div className="flex items-center gap-1.5 text-on-surface-variant">
-                      <span className="material-symbols-outlined text-[16px] text-primary">
-                        account_balance_wallet
-                      </span>
-                      <span>
-                        Entitlement Impact: <strong className="text-on-surface">-{Number(record.days).toFixed(1)} {record.type}</strong>
-                      </span>
-                    </div>
-                    <span className="font-label-sm text-label-sm text-leave-compoff font-medium">
-                      ✓ Deducted from quota
-                    </span>
-                  </div>
               </div>
             );
           })}
         </div>
       ) : (
-        /* Pristine Empty State Card (When no records have been entered yet) */
-        <div className="bg-surface-card rounded-2xl p-6 shadow-xs border border-surface-container flex flex-col items-center text-center relative overflow-hidden">
-          {/* Subtle Background Ambient Geometry */}
-          <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-primary-fixed/20 pointer-events-none blur-2xl" />
-          <div className="absolute -bottom-10 -left-10 w-28 h-28 rounded-full bg-secondary-fixed/30 pointer-events-none blur-xl" />
-
-          {/* Soft Decorative Icon Container */}
-          <div className="w-16 h-16 rounded-2xl bg-surface-container-high flex items-center justify-center text-primary mb-3.5 shadow-xs relative">
-            <span className="material-symbols-outlined text-[32px]">event_busy</span>
-            <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed shadow-xs">
-              <span className="material-symbols-outlined text-[14px]">history</span>
-            </span>
+        /* Empty State Card */
+        <div className="bg-surface-card rounded-2xl p-6 shadow-xs border border-surface-container flex flex-col items-center text-center">
+          <div className="w-14 h-14 rounded-2xl bg-surface-container-high flex items-center justify-center text-on-surface-variant mb-2">
+            <span className="material-symbols-outlined text-[28px]">event_busy</span>
           </div>
-
           <h2 className="font-title-md text-title-md text-on-surface font-semibold">
-            No leave entries logged yet for 2026
+            No leave entries logged yet
           </h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-1.5 max-w-xs leading-relaxed">
-            Your clean slate awaits! Record approved annual vacations, medical leaves, or comp-off days to keep statutory balances compliant.
+          <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            Recorded leaves will be listed here.
           </p>
-
-          {/* Quick Entry CTA */}
-          <div className="flex items-center justify-center mt-5 w-full max-w-xs">
-            <button
-              onClick={() => openApplyModal({ initialType: 'AL' })}
-              className="w-full py-2.5 px-4 rounded-full bg-primary text-on-primary font-label-lg text-label-lg shadow-xs hover:opacity-95 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[18px]">add_circle</span>
-              <span>Apply Leave</span>
-            </button>
-          </div>
+          <button
+            onClick={() => openApplyModal({ initialType: 'AL' })}
+            className="mt-3 px-4 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md font-semibold hover:opacity-95 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            <span>Apply Leave</span>
+          </button>
         </div>
       )}
 
-      {/* Statutory MOM Compliance Notice Card */}
-      <div className="bg-alert-warning-container rounded-2xl p-3.5 shadow-xs border border-alert-warning/20 flex items-start gap-3">
-        <span className="material-symbols-outlined text-alert-warning text-[22px] shrink-0 mt-0.5">policy</span>
-        <div className="flex flex-col">
-          <span className="font-title-sm text-title-sm text-alert-warning font-semibold">
-            MOM Employment Act Guide
-          </span>
-          <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5 leading-relaxed">
-            Singapore statutory annual leave must be taken within 12 months after the end of every 12 months of continuous service. Use export to keep HR audit logs ready.
-          </p>
-        </div>
-      </div>
-
-      {/* Action Sheet Simulation for managing a logged entry */}
+      {/* Delete Confirmation Sheet (NO EDIT OPTION) */}
       {selectedRecordForSheet && (
         <div
           className="fixed inset-0 bg-black/40 z-50 backdrop-blur-xs flex items-end justify-center"
           onClick={() => setSelectedRecordForSheet(null)}
         >
           <div
-            className="w-full max-w-md bg-surface-card rounded-t-3xl p-5 shadow-2xl flex flex-col gap-3 border-t border-surface-container animate-in slide-in-from-bottom-6"
+            className="w-full max-w-md bg-surface-card rounded-t-3xl p-5 shadow-2xl flex flex-col gap-3.5 border-t border-surface-container animate-in slide-in-from-bottom-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-12 h-1.5 rounded-full bg-surface-variant self-center mb-1" />
-            <div className="flex items-center justify-between pb-2">
+            <div className="flex items-center justify-between pb-1">
               <div className="flex flex-col">
-                <span className="font-title-md text-title-md text-on-surface font-semibold">
-                  {selectedRecordForSheet.title}
+                <span className="font-title-md text-title-md text-on-surface font-bold">
+                  Delete Leave Record
                 </span>
                 <span className="font-body-sm text-body-sm text-on-surface-variant">
-                  Manage leave entry ({selectedRecordForSheet.type} • {Number(selectedRecordForSheet.days).toFixed(1)} Day{Number(selectedRecordForSheet.days) !== 1 ? 's' : ''})
+                  {selectedRecordForSheet.title} ({getLeaveTypeFullName(selectedRecordForSheet.type)} • {Number(selectedRecordForSheet.days).toFixed(1)} Day{Number(selectedRecordForSheet.days) !== 1 ? 's' : ''})
                 </span>
               </div>
               <button
@@ -384,29 +316,37 @@ export const HistoryScreen: React.FC = () => {
               </button>
             </div>
 
-            <button
-              onClick={() => {
-                const target = selectedRecordForSheet;
-                setSelectedRecordForSheet(null);
-                openApplyModal({ initialType: target.type, initialDate: target.startDate });
-              }}
-              className="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface text-left font-label-lg text-label-lg transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[20px] text-primary">edit</span>
-              <span>Edit Leave Details</span>
-            </button>
+            <div className="p-3 rounded-xl bg-error-container/20 border border-error/20 flex flex-col gap-1">
+              <span className="font-title-sm text-title-sm text-error font-semibold flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[18px]">warning</span>
+                Confirm Deletion
+              </span>
+              <p className="text-body-sm text-on-surface-variant text-[12px] leading-snug">
+                Deleting this record will restore {Number(selectedRecordForSheet.days).toFixed(1)} day(s) back to your {getLeaveTypeFullName(selectedRecordForSheet.type)} balance.
+              </p>
+            </div>
 
-            <button
-              onClick={() => {
-                const idToDelete = selectedRecordForSheet.id;
-                setSelectedRecordForSheet(null);
-                deleteRecord(idToDelete);
-              }}
-              className="flex items-center gap-3 p-3 rounded-xl bg-error-container hover:opacity-90 text-on-error-container text-left font-label-lg text-label-lg transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[20px] text-error">delete</span>
-              <span>Cancel &amp; Remove Entry (Restore Balance)</span>
-            </button>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setSelectedRecordForSheet(null)}
+                className="flex-1 py-2.5 rounded-full bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold hover:bg-surface-variant transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const idToDelete = selectedRecordForSheet.id;
+                  setSelectedRecordForSheet(null);
+                  deleteRecord(idToDelete);
+                }}
+                className="flex-1 py-2.5 rounded-full bg-error text-on-error flex items-center justify-center gap-1.5 font-label-md text-label-md font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
+              >
+                <span className="material-symbols-outlined text-[18px]">delete</span>
+                <span>Delete Record</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
