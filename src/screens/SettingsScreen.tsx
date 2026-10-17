@@ -7,6 +7,7 @@ import { formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
 export const SettingsScreen: React.FC = () => {
   const {
     settings,
+    records,
     updateSettings,
     exportCSV,
     restoreCSV,
@@ -467,7 +468,13 @@ export const SettingsScreen: React.FC = () => {
             </div>
             <button
               onClick={exportCSV}
-              className="px-3.5 py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md font-semibold hover:opacity-95 active:scale-95 transition-all cursor-pointer shadow-2xs shrink-0"
+              disabled={records.length === 0}
+              className={`px-3.5 py-1.5 rounded-full font-label-md text-label-md font-semibold transition-all shadow-2xs shrink-0 ${
+                records.length > 0
+                  ? 'bg-primary text-on-primary hover:opacity-95 active:scale-95 cursor-pointer'
+                  : 'bg-surface-container text-on-surface-variant/40 cursor-not-allowed opacity-50 pointer-events-none'
+              }`}
+              title={records.length > 0 ? 'Export records to CSV' : 'No records available to export'}
             >
               Export
             </button>

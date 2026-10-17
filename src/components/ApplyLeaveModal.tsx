@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { LeaveType, LeaveStatus } from '../types/leave';
-import { calculateWorkingDays, getPublicHolidayForDate, getGazettedHolidayForDate, formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
+import { calculateWorkingDays, formatDateDDMMYYYY, isWeekend } from '../data/singaporeHolidays2026';
 
 export const ApplyLeaveModal: React.FC = () => {
   const {
@@ -57,7 +57,7 @@ export const ApplyLeaveModal: React.FC = () => {
 
   const isMultiDay = Boolean(startDate && endDate && startDate !== endDate);
   const workingDays = startDate && endDate && endDate >= startDate
-    ? calculateWorkingDays(startDate, endDate)
+    ? calculateWorkingDays(startDate, endDate, allHolidays)
     : 0;
 
   // Strict Validation Rule:
@@ -151,34 +151,51 @@ export const ApplyLeaveModal: React.FC = () => {
       return;
     }
 
-    // STRICT CHECK: Gazetted public holidays cannot have leave applied.
-    // Special holidays added under Comp-off ARE permitted!
+    // STRICT CHECK: Cannot apply leave on weekends (Saturday / Sunday) or holidays
+    const startHol = allHolidays.find((h) => h.date === startDate || h.observedDate === startDate);
+    const endHol = allHolidays.find((h) => h.date === endDate || h.observedDate === endDate);
+
     if (!isMultiDay) {
-      const gazettedPH = getGazettedHolidayForDate(startDate);
-      if (gazettedPH) {
+      if (isWeekend(startDate)) {
         setValidationError(
-          `Cannot apply for leave on gazetted public holiday (${gazettedPH.name}). Public holidays are official paid non-working days under MOM guidelines.`
+          'Leave cannot be applied on weekends (Saturday / Sunday). Weekends are official non-working rest days.'
+        );
+        return;
+      }
+      if (startHol) {
+        setValidationError(
+          `Cannot apply for leave on holiday (${startHol.name}). Holidays are official non-working days.`
         );
         return;
       }
     } else {
-      const startPH = getGazettedHolidayForDate(startDate);
-      if (startPH) {
+      if (isWeekend(startDate)) {
         setValidationError(
-          `Leave cannot start on gazetted public holiday (${startPH.name}). Please select your first actual working day.`
+          'Leave cannot start on a weekend (Saturday / Sunday). Please select your first actual working day.'
         );
         return;
       }
-      const endPH = getGazettedHolidayForDate(endDate);
-      if (endPH) {
+      if (isWeekend(endDate)) {
         setValidationError(
-          `Leave cannot end on gazetted public holiday (${endPH.name}). Please select your last actual working day.`
+          'Leave cannot end on a weekend (Saturday / Sunday). Please select your last actual working day.'
+        );
+        return;
+      }
+      if (startHol) {
+        setValidationError(
+          `Leave cannot start on a holiday (${startHol.name}). Please select your first actual working day.`
+        );
+        return;
+      }
+      if (endHol) {
+        setValidationError(
+          `Leave cannot end on a holiday (${endHol.name}). Please select your last actual working day.`
         );
         return;
       }
       if (workingDays === 0) {
         setValidationError(
-          'Selected date range contains 0 working days (dates fall on weekends or gazetted public holidays). Leave cannot be applied solely for non-working days.'
+          'Selected date range contains 0 working days (dates fall on weekends or holidays). Leave cannot be applied solely for non-working days.'
         );
         return;
       }
@@ -193,7 +210,6 @@ export const ApplyLeaveModal: React.FC = () => {
     }
 
     // STRICT RULE: The "Days to Deduct" value must strictly match the selected date range:
-    // For example, if 5 working days are selected, allow only 5 days or 4.5 days (for half-day adjustments). Any value less or greater must be blocked.
     if (isMultiDay && workingDays > 0) {
       const isExactMatch = daysToDeduct === workingDays || daysToDeduct === Number((workingDays - 0.5).toFixed(1));
       if (!isExactMatch) {
@@ -209,10 +225,12 @@ export const ApplyLeaveModal: React.FC = () => {
       return;
     }
 
+    // Quota check: AL and SL are ALLOWED to exceed entitlement and calculated as LOP (Loss of Pay)
+    // Only Comp-off (CO) requires active comp-off pool balance
     const available = type === 'AL' ? alAvailable : type === 'SL' ? slAvailable : coAvailable;
-    if (daysToDeduct > available) {
+    if (type === 'CO' && daysToDeduct > available) {
       setValidationError(
-        `Insufficient quota: You only have ${available} ${type} day${available !== 1 ? 's' : ''} available, cannot deduct ${daysToDeduct} days.`
+        `Insufficient quota: You only have ${available} Comp-Off day${available !== 1 ? 's' : ''} available, cannot deduct ${daysToDeduct} days.`
       );
       return;
     }
@@ -222,8 +240,8 @@ export const ApplyLeaveModal: React.FC = () => {
 
   if (!isApplyModalOpen) return null;
 
-  const holidayOnStart = getPublicHolidayForDate(startDate);
-  const gazettedHolidayOnStart = getGazettedHolidayForDate(startDate);
+  const holidayOnStart = allHolidays.find((h) => h.date === startDate || h.observedDate === startDate);
+  const holidayOnEnd = allHolidays.find((h) => h.date === endDate || h.observedDate === endDate);
 
   const getAvailableBalance = () => {
     if (type === 'AL') return alAvailable;
@@ -235,18 +253,26 @@ export const ApplyLeaveModal: React.FC = () => {
     ? workingDays <= 0 || (daysToDeduct !== workingDays && daysToDeduct !== Number((workingDays - 0.5).toFixed(1)))
     : daysToDeduct !== 1.0 && daysToDeduct !== 0.5;
 
-  const gazettedPHSingle = !isMultiDay && Boolean(getGazettedHolidayForDate(startDate));
-  const gazettedPHRange = isMultiDay && (Boolean(getGazettedHolidayForDate(startDate)) || Boolean(getGazettedHolidayForDate(endDate)) || workingDays === 0);
-  const isPHBlocked = Boolean(gazettedPHSingle || gazettedPHRange);
+  const isWeekendSingle = !isMultiDay && isWeekend(startDate);
+  const isWeekendRange = isMultiDay && (isWeekend(startDate) || isWeekend(endDate));
+  const isWeekendBlocked = Boolean(isWeekendSingle || isWeekendRange);
+
+  const isHolidaySingle = !isMultiDay && Boolean(holidayOnStart);
+  const isHolidayRange = isMultiDay && (Boolean(holidayOnStart) || Boolean(holidayOnEnd) || workingDays === 0);
+  const isHolidayBlocked = Boolean(isHolidaySingle || isHolidayRange);
 
   const isTitleMissing = !title.trim();
-  const isExceedingQuota = daysToDeduct > getAvailableBalance();
+  // Only Comp-off is restricted by quota; AL and SL allow exceeding quota and count as Loss of Pay (LOP)
+  const isExceedingQuota = type === 'CO' && daysToDeduct > getAvailableBalance();
+  const isLOPApplicable = (type === 'AL' || type === 'SL') && daysToDeduct > getAvailableBalance();
+  const lopDays = isLOPApplicable ? Number((daysToDeduct - getAvailableBalance()).toFixed(1)) : 0;
   const isInvalidDate = Boolean(startDate && endDate && endDate < startDate);
   const isHalfDayMultiDay = Boolean(isMultiDay && daysToDeduct === 0.5);
   const isFormInvalid = Boolean(
     isTitleMissing ||
     isDuplicate ||
-    isPHBlocked ||
+    isWeekendBlocked ||
+    isHolidayBlocked ||
     isDeductionMismatch ||
     isExceedingQuota ||
     isInvalidDate ||
@@ -278,32 +304,41 @@ export const ApplyLeaveModal: React.FC = () => {
       return;
     }
 
-    // Public holiday validation
+    // Weekend and Holiday validation: Strictly prevent applying leave on weekends or holidays
     if (!isMultiDay) {
-      const gazettedPH = getGazettedHolidayForDate(startDate);
-      if (gazettedPH) {
+      if (isWeekend(startDate)) {
+        setValidationError('Leave cannot be applied on weekends (Saturday / Sunday). Weekends are official non-working rest days.');
+        return;
+      }
+      if (holidayOnStart) {
         setValidationError(
-          `Cannot apply for leave on gazetted public holiday (${gazettedPH.name}). Public holidays are official paid non-working days under MOM guidelines.`
+          `Cannot apply for leave on holiday (${holidayOnStart.name}). Holidays are official non-working days.`
         );
         return;
       }
     } else {
-      const startPH = getGazettedHolidayForDate(startDate);
-      if (startPH) {
+      if (isWeekend(startDate)) {
+        setValidationError('Leave cannot start on a weekend (Saturday / Sunday). Please select your first actual working day.');
+        return;
+      }
+      if (isWeekend(endDate)) {
+        setValidationError('Leave cannot end on a weekend (Saturday / Sunday). Please select your last actual working day.');
+        return;
+      }
+      if (holidayOnStart) {
         setValidationError(
-          `Leave cannot start on gazetted public holiday (${startPH.name}). Please select your first actual working day.`
+          `Leave cannot start on a holiday (${holidayOnStart.name}). Please select your first actual working day.`
         );
         return;
       }
-      const endPH = getGazettedHolidayForDate(endDate);
-      if (endPH) {
+      if (holidayOnEnd) {
         setValidationError(
-          `Leave cannot end on gazetted public holiday (${endPH.name}). Please select your last actual working day.`
+          `Leave cannot end on a holiday (${holidayOnEnd.name}). Please select your last actual working day.`
         );
         return;
       }
       if (workingDays === 0) {
-        setValidationError('Selected date range contains 0 working days (dates fall on weekends or gazetted public holidays).');
+        setValidationError('Selected date range contains 0 working days (dates fall on weekends or holidays).');
         return;
       }
     }
@@ -330,9 +365,10 @@ export const ApplyLeaveModal: React.FC = () => {
       return;
     }
 
-    if (daysToDeduct > getAvailableBalance()) {
+    // Only Comp-Off cannot exceed available quota; AL/SL calculate excess as LOP
+    if (type === 'CO' && daysToDeduct > getAvailableBalance()) {
       setValidationError(
-        `Requested ${daysToDeduct} days exceeds your available ${type} quota of ${getAvailableBalance()} day(s).`
+        `Requested ${daysToDeduct} days exceeds your available Comp-Off quota of ${getAvailableBalance()} day(s).`
       );
       return;
     }
@@ -716,21 +752,42 @@ export const ApplyLeaveModal: React.FC = () => {
               </span>
             </div>
             {holidayOnStart && (
-              <p className={`font-body-sm text-body-sm flex items-center gap-1 ${gazettedHolidayOnStart ? 'text-holiday-public font-medium' : 'text-leave-compoff'}`}>
-                <span className="material-symbols-outlined text-[16px]">flag</span>
+              <p className="font-body-sm text-body-sm flex items-center gap-1 text-error font-medium">
+                <span className="material-symbols-outlined text-[16px]">celebration</span>
                 <span>
-                  {gazettedHolidayOnStart
-                    ? `${holidayOnStart.name} (Gazetted PH — leave blocked)`
-                    : `${holidayOnStart.name} (Special Holiday — leave allowed)`}
+                  {holidayOnStart.name} (Holiday — leave application blocked)
+                </span>
+              </p>
+            )}
+            {isWeekend(startDate) && (
+              <p className="font-body-sm text-body-sm flex items-center gap-1 text-error font-medium">
+                <span className="material-symbols-outlined text-[16px]">weekend</span>
+                <span>
+                  Weekend (Saturday/Sunday — leave application blocked)
                 </span>
               </p>
             )}
             <div className="flex items-center justify-between pt-1 border-t border-surface-container text-label-sm">
               <span className="text-on-surface-variant">Current Available: <strong>{getAvailableBalance()} Days</strong></span>
-              <span className={`font-semibold ${isExceedingQuota ? 'text-error' : 'text-primary'}`}>
-                Remaining after: <strong>{remainingBalanceAfter.toFixed(1)} Days</strong>
+              <span className={`font-semibold ${isExceedingQuota ? 'text-error' : isLOPApplicable ? 'text-error' : 'text-primary'}`}>
+                Remaining after: <strong>{remainingBalanceAfter.toFixed(1)} Days{isLOPApplicable ? ` (+${lopDays}d LOP)` : ''}</strong>
               </span>
             </div>
+
+            {/* LOP (Loss of Pay) Notice when AL/SL exceeds quota */}
+            {isLOPApplicable && (
+              <div className="p-2.5 rounded-lg bg-surface-container-high text-on-surface flex items-start gap-2 border border-surface-container text-xs mt-1">
+                <span className="material-symbols-outlined text-[18px] text-error shrink-0 mt-0.5">money_off</span>
+                <div>
+                  <span className="font-semibold text-error block">Loss of Pay (LOP) Notice:</span>
+                  <span className="text-on-surface-variant">
+                    {getAvailableBalance() === 0
+                      ? `Quota exhausted. All ${daysToDeduct.toFixed(1)} day(s) will be logged as Loss of Pay (LOP).`
+                      : `${getAvailableBalance().toFixed(1)} day(s) deducted from your quota, and ${lopDays} day(s) will be calculated as Loss of Pay (LOP).`}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Submit & Cancel Buttons */}
@@ -753,6 +810,10 @@ export const ApplyLeaveModal: React.FC = () => {
             >
               {isTitleMissing
                 ? 'Enter Reason / Leave Title'
+                : isWeekendBlocked
+                ? 'Cannot Apply on Weekends (Sat/Sun)'
+                : isHolidayBlocked
+                ? 'Cannot Apply on Holidays'
                 : isDuplicate
                 ? 'Date Already Booked (Duplicate)'
                 : isHalfDayMultiDay
@@ -760,7 +821,7 @@ export const ApplyLeaveModal: React.FC = () => {
                 : isDeductionMismatch
                 ? 'Days Must Match Date Range'
                 : isExceedingQuota
-                ? 'Exceeds Available Balance'
+                ? 'Exceeds Available Comp-Off'
                 : 'Confirm'}
             </button>
           </div>

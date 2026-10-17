@@ -169,7 +169,7 @@ export const HistoryScreen: React.FC = () => {
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-xs transition-all font-label-sm text-label-sm font-semibold border ${
             records.length > 0
               ? 'bg-surface-card text-primary border-surface-container hover:bg-primary-container/20 active:scale-95 cursor-pointer'
-              : 'bg-surface-container-low text-on-surface-variant/40 border-surface-container cursor-not-allowed opacity-50'
+              : 'bg-surface-container-low text-on-surface-variant/40 border-surface-container cursor-not-allowed opacity-50 pointer-events-none'
           }`}
           title={records.length > 0 ? 'Export leave entries to CSV' : 'No records to export'}
         >

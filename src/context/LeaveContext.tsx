@@ -26,6 +26,9 @@ interface LeaveContextType {
   alAvailable: number;
   slAvailable: number;
   coAvailable: number;
+  alLOP: number;
+  slLOP: number;
+  totalLOP: number;
   
   // Special Holidays & Auto Comp-off
   specialHolidays: SpecialHoliday[];
@@ -506,6 +509,11 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const slAvailable = Math.max(0, settings.slEntitlement - slUsed);
   const coAvailable = Math.max(0, totalCompOffPool - coUsed);
 
+  // LOP (Loss of Pay) calculations: any AL or SL taken beyond statutory 12/12 days
+  const alLOP = Math.max(0, alUsed - settings.alEntitlement);
+  const slLOP = Math.max(0, slUsed - settings.slEntitlement);
+  const totalLOP = alLOP + slLOP;
+
   const triggerSync = async () => {
     setIsSyncing(true);
     await new Promise((resolve) => setTimeout(resolve, 1100));
@@ -521,7 +529,11 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Export CSV with ONLY mandatory data: Type, Title, Start Date, End Date, Days, Status
+  // Only executed when records exist (no false download popup)
   const exportCSV = () => {
+    if (!records || records.length === 0) {
+      return;
+    }
     const headers = ['Type', 'Title', 'Start Date', 'End Date', 'Days', 'Status'];
     const rows = records.map((r) => [
       `"${r.type}"`,
@@ -532,15 +544,18 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       `"${r.status}"`
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = [headers.join(','), ...rows.map((e) => e.join(','))].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `SG_Leave_Export_${cycleStartDateStr.slice(0, 4)}.csv`);
+    link.href = url;
+    link.setAttribute('download', `SG_Leave_Export_${cycleStartDateStr ? cycleStartDateStr.slice(0, 4) : '2026'}.csv`);
+    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showToast(`Exported ${records.length} mandatory leave record${records.length !== 1 ? 's' : ''} to CSV`);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast(`Exported ${records.length} leave record${records.length !== 1 ? 's' : ''} to CSV`);
   };
 
   // Restore CSV containing mandatory data with strict duplicate validation
@@ -698,6 +713,9 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         alAvailable,
         slAvailable,
         coAvailable,
+        alLOP,
+        slLOP,
+        totalLOP,
         specialHolidays,
         addSpecialHoliday,
         deleteSpecialHoliday,

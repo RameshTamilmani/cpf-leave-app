@@ -11,10 +11,10 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
   className = ''
 }) => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
-  const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
 
-  // If already installed and running standalone, hide the prompt
+  // If already installed and running in standalone mode
   if (isInstalled) {
     if (variant === 'card') {
       return (
@@ -40,34 +40,20 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
   const handleInstallClick = async () => {
     if (isInstallable) {
       setIsInstalling(true);
-      await install();
-      setIsInstalling(false);
-    } else if (isIOS) {
-      setShowIOSGuide(true);
+      try {
+        const accepted = await install();
+        if (!accepted) {
+          setShowInstallGuide(true);
+        }
+      } catch {
+        setShowInstallGuide(true);
+      } finally {
+        setIsInstalling(false);
+      }
+    } else {
+      setShowInstallGuide(true);
     }
   };
-
-  // If not running in standalone, and is either installable via beforeinstallprompt or on iOS Safari:
-  const canPrompt = isInstallable || isIOS;
-  if (!canPrompt) {
-    // Desktop/browser without beforeinstallprompt or already handled
-    if (variant === 'card') {
-      return (
-        <div className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-surface-container text-primary flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-[20px]">install_mobile</span>
-            </div>
-            <div>
-              <p className="font-title-sm text-title-sm text-on-surface font-semibold">Install CutiSG</p>
-              <p className="font-body-sm text-body-sm text-on-surface-variant text-[12px]">Install via browser menu &ldquo;Add to Home screen&rdquo;</p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  }
 
   // Header compact pill variant
   if (variant === 'header') {
@@ -83,14 +69,14 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
           <span>Install App</span>
         </button>
 
-        {showIOSGuide && (
-          <IOSInstallModal onClose={() => setShowIOSGuide(false)} />
+        {showInstallGuide && (
+          <UniversalInstallModal onClose={() => setShowInstallGuide(false)} isIOS={isIOS} />
         )}
       </>
     );
   }
 
-  // Card variant for Settings or Home
+  // Card variant for Settings
   if (variant === 'card') {
     return (
       <>
@@ -100,9 +86,9 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
               <span className="material-symbols-outlined text-[22px]">install_mobile</span>
             </div>
             <div className="min-w-0">
-              <p className="font-title-sm text-title-sm text-on-surface font-semibold truncate">Install CutiSG PWA</p>
+              <p className="font-title-sm text-title-sm text-on-surface font-semibold truncate">Install CutiSG App</p>
               <p className="font-body-sm text-body-sm text-on-surface-variant text-[12px] truncate">
-                {isIOS ? 'Add to iPhone / iPad Home Screen' : 'Offline MOM holiday calendar & fast access'}
+                {isIOS ? 'Add to iPhone / iPad Home Screen' : 'Offline MOM holiday calendar & instant access'}
               </p>
             </div>
           </div>
@@ -114,12 +100,12 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
             <span className="material-symbols-outlined text-[16px]">
               {isIOS ? 'ios_share' : 'download'}
             </span>
-            <span>{isIOS ? 'How to Install' : isInstalling ? 'Installing...' : 'Install'}</span>
+            <span>{isInstalling ? 'Installing...' : 'Install'}</span>
           </button>
         </div>
 
-        {showIOSGuide && (
-          <IOSInstallModal onClose={() => setShowIOSGuide(false)} />
+        {showInstallGuide && (
+          <UniversalInstallModal onClose={() => setShowInstallGuide(false)} isIOS={isIOS} />
         )}
       </>
     );
@@ -136,18 +122,24 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
         <span className="material-symbols-outlined text-[18px]">
           {isIOS ? 'ios_share' : 'download'}
         </span>
-        <span>{isIOS ? 'Install on iOS' : isInstalling ? 'Installing...' : 'Install CutiSG App'}</span>
+        <span>{isInstalling ? 'Installing...' : 'Install CutiSG App'}</span>
       </button>
 
-      {showIOSGuide && (
-        <IOSInstallModal onClose={() => setShowIOSGuide(false)} />
+      {showInstallGuide && (
+        <UniversalInstallModal onClose={() => setShowInstallGuide(false)} isIOS={isIOS} />
       )}
     </>
   );
 };
 
-// Modal for iOS Safari users with step-by-step guidance
-const IOSInstallModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+// Modal providing guided install instructions across devices & browsers
+const UniversalInstallModal: React.FC<{ onClose: () => void; isIOS: boolean }> = ({ onClose, isIOS }) => {
+  const isInIframe = window.self !== window.top;
+
+  const handleOpenDirectTab = () => {
+    window.open(window.location.href, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in"
@@ -160,7 +152,7 @@ const IOSInstallModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         <div className="flex items-center justify-between border-b border-surface-container pb-3">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[24px] text-primary">install_mobile</span>
-            <h3 className="font-title-md text-title-md font-bold text-on-surface">Install on iPhone / iPad</h3>
+            <h3 className="font-title-md text-title-md font-bold text-on-surface">Install CutiSG</h3>
           </div>
           <button
             onClick={onClose}
@@ -170,39 +162,80 @@ const IOSInstallModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </button>
         </div>
 
-        <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-          Apple iOS Safari allows installation directly from the Safari toolbar without going through the App Store:
-        </p>
+        {isInIframe && (
+          <div className="p-3 rounded-xl bg-primary-fixed/20 border border-primary/20 text-on-surface text-xs space-y-1.5">
+            <p className="font-semibold text-primary flex items-center gap-1">
+              <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+              Running in Web Preview
+            </p>
+            <p className="text-on-surface-variant">
+              Browser security restricts PWA installation inside embedded iframes. Open the app in its own browser tab to install directly:
+            </p>
+            <button
+              onClick={handleOpenDirectTab}
+              className="w-full py-1.5 rounded-lg bg-primary text-on-primary font-semibold hover:opacity-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 mt-1"
+            >
+              <span>Open in New Browser Window</span>
+              <span className="material-symbols-outlined text-[14px]">arrow_outward</span>
+            </button>
+          </div>
+        )}
 
-        <div className="space-y-2.5 bg-surface-container-low p-3 rounded-xl border border-surface-container">
-          <div className="flex items-start gap-2.5 text-body-sm">
-            <span className="w-6 h-6 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center shrink-0">1</span>
-            <div>
-              <p className="font-medium text-on-surface">Tap the <strong>Share</strong> button</p>
-              <p className="text-[12px] text-on-surface-variant">Located at the bottom of the Safari screen (square with arrow up).</p>
+        {isIOS ? (
+          <div className="space-y-2 bg-surface-container-low p-3 rounded-xl border border-surface-container">
+            <p className="font-label-sm font-semibold text-on-surface mb-1">For iPhone / iPad (Safari):</p>
+            <div className="flex items-start gap-2.5 text-body-sm">
+              <span className="w-5 h-5 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center shrink-0">1</span>
+              <div>
+                <p className="font-medium text-on-surface">Tap <strong>Share</strong> button</p>
+                <p className="text-[12px] text-on-surface-variant">Located at the bottom toolbar (square with upward arrow).</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 text-body-sm">
+              <span className="w-5 h-5 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center shrink-0">2</span>
+              <div>
+                <p className="font-medium text-on-surface">Tap <strong>Add to Home Screen</strong></p>
+                <p className="text-[12px] text-on-surface-variant">Scroll down in the share sheet and tap &ldquo;Add to Home Screen&rdquo;.</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5 text-body-sm">
+              <span className="w-5 h-5 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center shrink-0">3</span>
+              <div>
+                <p className="font-medium text-on-surface">Tap <strong>Add</strong></p>
+                <p className="text-[12px] text-on-surface-variant">CutiSG will install on your home screen for instant offline access.</p>
+              </div>
             </div>
           </div>
+        ) : (
+          <div className="space-y-2.5 bg-surface-container-low p-3 rounded-xl border border-surface-container">
+            <p className="font-label-sm font-semibold text-on-surface mb-0.5">Desktop &amp; Android (Chrome / Edge):</p>
+            <div className="flex items-start gap-2.5 text-body-sm">
+              <span className="w-5 h-5 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center shrink-0">1</span>
+              <div>
+                <p className="font-medium text-on-surface">Browser Menu or Address Bar</p>
+                <p className="text-[12px] text-on-surface-variant">
+                  Click the <strong>Install CutiSG</strong> icon in the address bar, or tap the three dots <strong>⋮</strong> menu.
+                </p>
+              </div>
+            </div>
 
-          <div className="flex items-start gap-2.5 text-body-sm">
-            <span className="w-6 h-6 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center shrink-0">2</span>
-            <div>
-              <p className="font-medium text-on-surface">Select <strong>Add to Home Screen</strong></p>
-              <p className="text-[12px] text-on-surface-variant">Scroll down the sharing options sheet and tap &ldquo;Add to Home Screen&rdquo;.</p>
+            <div className="flex items-start gap-2.5 text-body-sm">
+              <span className="w-5 h-5 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center shrink-0">2</span>
+              <div>
+                <p className="font-medium text-on-surface">Select <strong>Install App</strong></p>
+                <p className="text-[12px] text-on-surface-variant">
+                  Choose &ldquo;Install CutiSG&rdquo; or &ldquo;Add to Home screen&rdquo; and click Confirm.
+                </p>
+              </div>
             </div>
           </div>
-
-          <div className="flex items-start gap-2.5 text-body-sm">
-            <span className="w-6 h-6 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center shrink-0">3</span>
-            <div>
-              <p className="font-medium text-on-surface">Tap <strong>Add</strong></p>
-              <p className="text-[12px] text-on-surface-variant">CutiSG will appear as an app icon with standalone full-screen access.</p>
-            </div>
-          </div>
-        </div>
+        )}
 
         <button
           onClick={onClose}
-          className="w-full py-2.5 rounded-full bg-primary text-on-primary font-label-md text-label-md font-semibold hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
+          className="w-full py-2.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md font-semibold hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer"
         >
           Got it
         </button>

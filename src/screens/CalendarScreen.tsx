@@ -417,12 +417,12 @@ export const CalendarScreen: React.FC = () => {
           {/* Contextual Date Status Display */}
           <div className="flex flex-col gap-2 pt-1">
             <div className="flex items-center justify-between gap-space-sm">
-              {isGazettedPH ? (
+              {selectedHoliday ? (
                 <div
                   className="flex-1 h-11 rounded-full bg-surface-container-highest text-on-surface-variant font-label-md text-label-md flex items-center justify-center gap-2 select-none"
                 >
-                  <span className="material-symbols-outlined text-[18px]">verified</span>
-                  <span>Gazetted Public Holiday (Paid Off-Day)</span>
+                  <span className="material-symbols-outlined text-[18px]">celebration</span>
+                  <span>{selectedHoliday.name} (Holiday — Leave Not Allowed)</span>
                 </div>
               ) : bookedRecord ? (
                 <div className="flex items-center gap-2 w-full">
@@ -448,7 +448,7 @@ export const CalendarScreen: React.FC = () => {
                   className="flex-1 h-11 rounded-full bg-surface-container-highest text-on-surface-variant font-label-md text-label-md flex items-center justify-center gap-2 select-none"
                 >
                   <span className="material-symbols-outlined text-[18px]">weekend</span>
-                  <span>Rest Day (Non-Working Day)</span>
+                  <span>Rest Day (Saturday/Sunday — Leave Not Allowed)</span>
                 </div>
               ) : (
                 <button

@@ -8,17 +8,12 @@ export const CompOffModal: React.FC = () => {
     setIsCompOffModalOpen,
     coAvailable,
     autoCompOffEarned,
-    saturdayCompOffHolidays,
-    excludedHolidayDates,
-    toggleHolidayCompOff,
     expiredCompOffCount,
-    nonExpiredCompOffCount,
     oldCycleSaturdayHolidays,
     futureSaturdayHolidays,
     todayDateStr,
     cycleStartDateStr,
-    cycleEndDateStr,
-    setIsEditCycleModalOpen
+    cycleEndDateStr
   } = useLeave();
 
   if (!isCompOffModalOpen) return null;
@@ -34,14 +29,8 @@ export const CompOffModal: React.FC = () => {
               <h2 className="font-title-md text-title-md text-on-surface font-bold">
                 Comp-Off Ledger
               </h2>
-              <div className="flex items-center gap-2 text-body-sm text-on-surface-variant">
+              <div className="text-body-sm text-on-surface-variant">
                 <span>{formatDateDDMMYYYY(cycleStartDateStr)} – {formatDateDDMMYYYY(cycleEndDateStr)}</span>
-                <button
-                  onClick={() => setIsEditCycleModalOpen(true)}
-                  className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
-                >
-                  Edit Cycle
-                </button>
               </div>
             </div>
           </div>
@@ -131,7 +120,6 @@ export const CompOffModal: React.FC = () => {
                 {oldCycleSaturdayHolidays.map((h) => {
                   const validityEnd = addDaysToDate(h.date, 90);
                   const isPreCycle = h.date < cycleStartDateStr;
-                  const isExcluded = excludedHolidayDates?.includes(h.date);
                   return (
                     <div
                       key={h.date}
@@ -149,21 +137,10 @@ export const CompOffModal: React.FC = () => {
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-medium">
+                      <div className="shrink-0">
+                        <span className="font-label-sm text-label-sm px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-medium">
                           Expired (Usable)
                         </span>
-                        <button
-                          onClick={() => toggleHolidayCompOff(h.date)}
-                          className={`px-2 py-0.5 rounded text-[11px] font-semibold cursor-pointer transition-colors ${
-                            isExcluded
-                              ? 'bg-primary text-on-primary hover:opacity-90'
-                              : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest'
-                          }`}
-                          title={isExcluded ? 'Include in available comp-offs' : 'Exclude from available comp-offs'}
-                        >
-                          {isExcluded ? 'Include' : 'Exclude'}
-                        </button>
                       </div>
                     </div>
                   );
@@ -198,7 +175,6 @@ export const CompOffModal: React.FC = () => {
             {futureSaturdayHolidays.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {futureSaturdayHolidays.map((h) => {
-                  const isExcluded = excludedHolidayDates?.includes(h.date);
                   const isCNY = h.name.toLowerCase().includes('chinese new year');
                   const hasPassed = h.date < todayDateStr;
 
@@ -241,25 +217,12 @@ export const CompOffModal: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-1 border-t border-surface-container/60 text-xs">
+                      <div className="pt-1 border-t border-surface-container/60 text-xs">
                         <span className="text-on-surface-variant">
                           {hasPassed
                             ? 'Credited automatically by app based on SG calendar'
                             : `Will be credited automatically after passing ${formatDateDDMMYYYY(h.date)}`}
                         </span>
-
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            onClick={() => toggleHolidayCompOff(h.date)}
-                            className={`px-2 py-1 rounded text-[11px] font-semibold cursor-pointer transition-colors ${
-                              isExcluded
-                                ? 'bg-primary text-on-primary hover:opacity-90'
-                                : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest'
-                            }`}
-                          >
-                            {isExcluded ? 'Include' : 'Exclude'}
-                          </button>
-                        </div>
                       </div>
                     </div>
                   );

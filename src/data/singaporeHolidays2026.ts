@@ -476,11 +476,11 @@ export function isWeekend(dateStr: string): boolean {
 }
 
 // Calculate actual working days between start and end (inclusive)
-// Excludes weekends and gazetted Singapore public holidays.
-// Special holidays added under Comp-off are permitted for leave application!
+// Excludes weekends (Saturday/Sunday) and all Singapore public & special holidays.
 export function calculateWorkingDays(
   startDateStr: string,
-  endDateStr: string
+  endDateStr: string,
+  customHolidays: PublicHoliday[] = []
 ): number {
   if (!startDateStr || !endDateStr) return 0;
 
@@ -488,6 +488,8 @@ export function calculateWorkingDays(
   const end = new Date(endDateStr + 'T00:00:00');
 
   if (start > end) return 0;
+
+  const allHols = [...ALL_GAZETTED_HOLIDAYS, ...customHolidays];
 
   let workingDays = 0;
   const cur = new Date(start);
@@ -500,9 +502,9 @@ export function calculateWorkingDays(
 
     const dayOfWeek = cur.getDay();
     const isWknd = dayOfWeek === 0 || dayOfWeek === 6;
-    const isGazettedHoliday = !!getGazettedHolidayForDate(curStr);
+    const isHoliday = allHols.some((h) => h.date === curStr || h.observedDate === curStr);
 
-    if (!isWknd && !isGazettedHoliday) {
+    if (!isWknd && !isHoliday) {
       workingDays++;
     }
 

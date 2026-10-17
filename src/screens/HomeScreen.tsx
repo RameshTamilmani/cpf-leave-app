@@ -7,6 +7,9 @@ export const HomeScreen: React.FC = () => {
     alAvailable,
     slAvailable,
     coAvailable,
+    alLOP,
+    slLOP,
+    totalLOP,
     saturdayCompOffHolidays,
     expiredHolidayDates,
     expiredCompOffCount,
@@ -148,6 +151,40 @@ export const HomeScreen: React.FC = () => {
                 {Number.isInteger(coAvailable) ? coAvailable : coAvailable.toFixed(1)}
               </span>
               <span className="font-title-sm text-title-sm font-semibold text-leave-compoff-on-container opacity-90">Days</span>
+            </div>
+          </article>
+
+          {/* Loss of Pay (LOP) Card - Additional to AL, SL and Comp-off */}
+          <article className="w-full bg-surface-container-high rounded-xl p-4 shadow-xs flex items-center justify-between text-on-surface border border-surface-container">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-surface-container-lowest flex items-center justify-center text-error shrink-0 shadow-2xs">
+                <span className="material-symbols-outlined text-[24px]">
+                  money_off
+                </span>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h3 className="font-title-md text-title-md font-semibold text-on-surface leading-tight">
+                    Loss of Pay (LOP)
+                  </h3>
+                  {totalLOP > 0 && (
+                    <span className="px-2 py-0.2 rounded-full bg-error-container text-on-error-container font-label-sm text-[11px] font-bold">
+                      Unpaid
+                    </span>
+                  )}
+                </div>
+                <span className="font-label-sm text-label-sm text-on-surface-variant">
+                  {totalLOP > 0
+                    ? `${alLOP > 0 ? `${Number.isInteger(alLOP) ? alLOP : alLOP.toFixed(1)}d AL` : ''}${alLOP > 0 && slLOP > 0 ? ' • ' : ''}${slLOP > 0 ? `${Number.isInteger(slLOP) ? slLOP : slLOP.toFixed(1)}d SL` : ''} over entitlement`
+                    : 'Leaves applied exceeding 12-day entitlement'}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-baseline gap-1.5 text-right">
+              <span className={`font-headline-lg-mobile text-headline-lg-mobile font-bold leading-none ${totalLOP > 0 ? 'text-error' : 'text-on-surface'}`}>
+                {Number.isInteger(totalLOP) ? totalLOP : totalLOP.toFixed(1)}
+              </span>
+              <span className="font-title-sm text-title-sm font-semibold text-on-surface-variant opacity-90">Days</span>
             </div>
           </article>
         </div>
