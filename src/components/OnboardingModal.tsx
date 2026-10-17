@@ -67,7 +67,7 @@ export const OnboardingModal: React.FC = () => {
 
     localStorage.setItem('cutisg_profile_setup_prompted', 'true');
     setIsOpen(false);
-    showToast('Profile saved successfully! Welcome to CutiSG.');
+    showToast('Profile saved successfully! Welcome to CutiSG');
   };
 
   const handleSkip = () => {

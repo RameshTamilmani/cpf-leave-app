@@ -83,7 +83,7 @@ export const NotificationsModal: React.FC = () => {
             }}
             className="px-4 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md font-semibold cursor-pointer"
           >
-            Go to Leave Calendar
+            Go to Calendar
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLeave } from '../context/LeaveContext';
-import { addDaysToDate } from '../data/singaporeHolidays2026';
+import { addDaysToDate, formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
 
 export const CompOffModal: React.FC = () => {
   const {
@@ -35,7 +35,7 @@ export const CompOffModal: React.FC = () => {
                 Comp-Off Ledger
               </h2>
               <div className="flex items-center gap-2 text-body-sm text-on-surface-variant">
-                <span>{cycleStartDateStr} – {cycleEndDateStr}</span>
+                <span>{formatDateDDMMYYYY(cycleStartDateStr)} – {formatDateDDMMYYYY(cycleEndDateStr)}</span>
                 <button
                   onClick={() => setIsEditCycleModalOpen(true)}
                   className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
@@ -116,7 +116,7 @@ export const CompOffModal: React.FC = () => {
                     Default Comp-Offs in Cycle
                   </span>
                   <span className="text-[11px] text-on-surface-variant">
-                    {cycleStartDateStr} to {todayDateStr}
+                    {formatDateDDMMYYYY(cycleStartDateStr)} to {formatDateDDMMYYYY(todayDateStr)}
                   </span>
                 </div>
               </div>
@@ -144,8 +144,8 @@ export const CompOffModal: React.FC = () => {
                             {h.name}
                           </span>
                           <span className="text-[11px] text-on-surface-variant">
-                            Holiday: {h.date} • 90-day Validity: Expired {validityEnd}
-                            {isPreCycle && ` (Valid past cycle start ${cycleStartDateStr})`}
+                            Holiday: {formatDateDDMMYYYY(h.date)} • 90-day Validity: Expired {formatDateDDMMYYYY(validityEnd)}
+                            {isPreCycle && ` (Valid past cycle start ${formatDateDDMMYYYY(cycleStartDateStr)})`}
                           </span>
                         </div>
                       </div>
@@ -171,7 +171,7 @@ export const CompOffModal: React.FC = () => {
               </div>
             ) : (
               <div className="p-2.5 rounded-lg bg-surface-card text-xs text-on-surface-variant text-center">
-                No Saturday holidays passed between {cycleStartDateStr} and {todayDateStr}.
+                No Saturday holidays passed between {formatDateDDMMYYYY(cycleStartDateStr)} and {formatDateDDMMYYYY(todayDateStr)}.
               </div>
             )}
           </div>
@@ -220,7 +220,7 @@ export const CompOffModal: React.FC = () => {
                               )}
                             </span>
                             <span className="font-label-sm text-label-sm text-on-surface-variant">
-                              Holiday Date: {h.date}
+                              Holiday Date: {formatDateDDMMYYYY(h.date)}
                             </span>
                           </div>
                         </div>
@@ -245,7 +245,7 @@ export const CompOffModal: React.FC = () => {
                         <span className="text-on-surface-variant">
                           {hasPassed
                             ? 'Credited automatically by app based on SG calendar'
-                            : `Will be credited automatically after passing ${h.date}`}
+                            : `Will be credited automatically after passing ${formatDateDDMMYYYY(h.date)}`}
                         </span>
 
                         <div className="flex items-center gap-1.5 shrink-0">

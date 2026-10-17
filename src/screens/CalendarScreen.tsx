@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
-import { isWeekend } from '../data/singaporeHolidays2026';
+import { isWeekend, formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
 
 export const CalendarScreen: React.FC = () => {
   const {
@@ -10,7 +10,6 @@ export const CalendarScreen: React.FC = () => {
     setSelectedCalendarDate,
     allHolidays,
     todayDateStr,
-    setIsAddSpecialHolidayOpen,
     openApplyModal,
     showToast
   } = useLeave();
@@ -83,13 +82,8 @@ export const CalendarScreen: React.FC = () => {
   }
 
   // Selected date metadata
+  const selectedDateFormatted = formatDateDDMMYYYY(selectedCalendarDate);
   const selectedDateObj = new Date(selectedCalendarDate + 'T00:00:00');
-  const selectedDateFormatted = selectedDateObj.toLocaleDateString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
 
   const selectedHoliday = allHolidays.find(
     (h) => h.date === selectedCalendarDate || h.observedDate === selectedCalendarDate
@@ -175,9 +169,6 @@ export const CalendarScreen: React.FC = () => {
               <h1 className="font-headline-md text-headline-md text-on-surface leading-tight tracking-tight">
                 {monthNames[currentMonth]} {currentYear}
               </h1>
-              <span className="font-label-sm text-label-sm text-on-surface-variant">
-                5 Weeks • {holidaysInMonth.length} Public Holiday{holidaysInMonth.length !== 1 ? 's' : ''}
-              </span>
             </div>
           </div>
           <div className="flex items-center gap-space-xs">

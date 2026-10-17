@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { PWAInstallButton } from '../components/PWAInstallButton';
 import { AboutModal } from '../components/AboutModal';
+import { formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
 
 export const SettingsScreen: React.FC = () => {
   const {
@@ -262,7 +263,6 @@ export const SettingsScreen: React.FC = () => {
               </div>
               <div className="min-w-0">
                 <p className="font-title-sm text-title-sm text-on-surface font-semibold">Annual Leave</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant truncate">Paid annual vacation entitlement</p>
               </div>
             </div>
             <div className="flex items-center px-3 py-1 rounded-full bg-surface-container-low border border-surface-container shrink-0">
@@ -283,7 +283,6 @@ export const SettingsScreen: React.FC = () => {
               </div>
               <div className="min-w-0">
                 <p className="font-title-sm text-title-sm text-on-surface font-semibold">Sick Leave</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant truncate">Certified Outpatient MC quota</p>
               </div>
             </div>
             <div className="flex items-center px-3 py-1 rounded-full bg-surface-container-low border border-surface-container shrink-0">
@@ -310,7 +309,7 @@ export const SettingsScreen: React.FC = () => {
                   )}
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant truncate">
-                  {settings.cycle} ({cycleStartDateStr} to {cycleEndDateStr})
+                  {settings.cycle} ({formatDateDDMMYYYY(cycleStartDateStr)} to {formatDateDDMMYYYY(cycleEndDateStr)})
                 </p>
               </div>
             </div>
@@ -325,7 +324,7 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. Special Holidays (Rare Cases) */}
+      {/* 3. Special Holidays (Rare Cases) - Kept exactly one button */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
           <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
@@ -336,7 +335,7 @@ export const SettingsScreen: React.FC = () => {
             className="font-label-sm text-label-sm text-primary font-bold hover:underline cursor-pointer flex items-center gap-1"
           >
             <span className="material-symbols-outlined text-[16px]">add</span>
-            <span>Add Special</span>
+            <span>Add Special Holiday</span>
           </button>
         </div>
         <div className="rounded-xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-space-sm">
@@ -363,7 +362,7 @@ export const SettingsScreen: React.FC = () => {
                         </span>
                       </div>
                       <span className="font-label-sm text-label-sm text-on-surface-variant">
-                        {sh.dayOfWeek}, {sh.date}
+                        {sh.dayOfWeek}, {formatDateDDMMYYYY(sh.date)}
                       </span>
                     </div>
                   </div>
@@ -380,12 +379,6 @@ export const SettingsScreen: React.FC = () => {
           ) : (
             <div className="p-3 rounded-lg bg-surface-container-low text-center flex flex-col items-center gap-1">
               <span className="text-on-surface-variant font-label-md text-label-md">No custom special holidays added</span>
-              <button
-                onClick={() => setIsAddSpecialHolidayOpen(true)}
-                className="mt-1 px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold hover:bg-primary-fixed-dim transition-colors cursor-pointer"
-              >
-                + Add Special Holiday
-              </button>
             </div>
           )}
         </div>
@@ -588,7 +581,7 @@ export const SettingsScreen: React.FC = () => {
                 Reset All Leave Data?
               </h3>
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1.5 leading-relaxed">
-                This will erase all logged Annual Leave and Sick Leave requests, reset your leave calendar, and restore balances back to the initial default entitlements (12 days AL, 12 days SL).
+                This will erase all logged Annual Leave and Sick Leave requests, reset your calendar, and restore balances back to the initial default entitlements (12 days AL, 12 days SL).
               </p>
             </div>
 

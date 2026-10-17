@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { LeaveType, LeaveStatus } from '../types/leave';
-import { calculateWorkingDays, getPublicHolidayForDate, getGazettedHolidayForDate } from '../data/singaporeHolidays2026';
+import { calculateWorkingDays, getPublicHolidayForDate, getGazettedHolidayForDate, formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
 
 export const ApplyLeaveModal: React.FC = () => {
   const {
@@ -143,8 +143,8 @@ export const ApplyLeaveModal: React.FC = () => {
     if (duplicateConflict) {
       const spanStr =
         duplicateConflict.startDate === duplicateConflict.endDate
-          ? duplicateConflict.startDate
-          : `${duplicateConflict.startDate} to ${duplicateConflict.endDate}`;
+          ? formatDateDDMMYYYY(duplicateConflict.startDate)
+          : `${formatDateDDMMYYYY(duplicateConflict.startDate)} to ${formatDateDDMMYYYY(duplicateConflict.endDate)}`;
       setValidationError(
         `Duplicate leave detected: You already have a booked leave '${duplicateConflict.title}' (${duplicateConflict.type}) for ${spanStr}. Duplicate leaves are not allowed for the same date.`
       );
@@ -198,7 +198,7 @@ export const ApplyLeaveModal: React.FC = () => {
       const isExactMatch = daysToDeduct === workingDays || daysToDeduct === Number((workingDays - 0.5).toFixed(1));
       if (!isExactMatch) {
         setValidationError(
-          `Validation Rule: For the ${workingDays} working days selected in the date picker (${startDate} to ${endDate}), the system allows deducting strictly ${workingDays} days or ${(workingDays - 0.5).toFixed(1)} days (for half-day adjustments). Entering ${daysToDeduct} days is blocked.`
+          `Validation Rule: For the ${workingDays} working days selected in the date picker (${formatDateDDMMYYYY(startDate)} to ${formatDateDDMMYYYY(endDate)}), the system allows deducting strictly ${workingDays} days or ${(workingDays - 0.5).toFixed(1)} days (for half-day adjustments). Entering ${daysToDeduct} days is blocked.`
         );
         return;
       }
@@ -270,8 +270,8 @@ export const ApplyLeaveModal: React.FC = () => {
     if (duplicateConflict) {
       const spanStr =
         duplicateConflict.startDate === duplicateConflict.endDate
-          ? duplicateConflict.startDate
-          : `${duplicateConflict.startDate} to ${duplicateConflict.endDate}`;
+          ? formatDateDDMMYYYY(duplicateConflict.startDate)
+          : `${formatDateDDMMYYYY(duplicateConflict.startDate)} to ${formatDateDDMMYYYY(duplicateConflict.endDate)}`;
       setValidationError(
         `Duplicate leave detected: You already have a booked leave '${duplicateConflict.title}' (${duplicateConflict.type}) on ${spanStr}. Duplicate leaves are not allowed for the same date.`
       );
@@ -339,7 +339,8 @@ export const ApplyLeaveModal: React.FC = () => {
 
     const finalTitle = title.trim();
     const finalDays = Math.max(0.5, Number(daysToDeduct) || 1.0);
-    const status: LeaveStatus = endDate < todayDateStr ? 'taken' : 'planned';
+    // Leave on the current date is considered taken; only leave greater than current date is planned
+    const status: LeaveStatus = startDate > todayDateStr ? 'planned' : 'taken';
     const halfDay = durationMode === 'half-am' ? 'am' : durationMode === 'half-pm' ? 'pm' : 'full';
 
     addRecord({
@@ -674,8 +675,8 @@ export const ApplyLeaveModal: React.FC = () => {
             <div className="flex items-center justify-between pt-1 border-t border-surface-container text-[11px] text-on-surface-variant">
               <span>
                 {isMultiDay
-                  ? `Selected: ${workingDays} Working Day${workingDays !== 1 ? 's' : ''} (${startDate} to ${endDate})`
-                  : `Selected: Single Day (${startDate})`}
+                  ? `Selected: ${workingDays} Working Day${workingDays !== 1 ? 's' : ''} (${formatDateDDMMYYYY(startDate)} to ${formatDateDDMMYYYY(endDate)})`
+                  : `Selected: Single Day (${formatDateDDMMYYYY(startDate)})`}
               </span>
               <span>
                 Allowed: <strong className="text-primary">{isMultiDay ? `${workingDays}d or ${(workingDays - 0.5).toFixed(1)}d` : '1.0d or 0.5d'}</strong>

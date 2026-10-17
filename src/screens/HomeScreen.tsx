@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLeave } from '../context/LeaveContext';
+import { formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
 
 export const HomeScreen: React.FC = () => {
   const {
@@ -11,31 +12,19 @@ export const HomeScreen: React.FC = () => {
     expiredCompOffCount,
     upcomingHolidays,
     todayDateStr,
-    cycleStartDateStr,
-    cycleEndDateStr,
     settings,
-    setCurrentTab,
     openApplyModal,
     setIsHolidaysModalOpen,
     setIsCompOffModalOpen,
-    setIsAddSpecialHolidayOpen,
-    setIsEditCycleModalOpen,
     setSelectedCalendarDate
   } = useLeave();
 
   // Next 4 strictly upcoming holidays (from current date onward)
   const displayedUpcomingHolidays = upcomingHolidays.slice(0, 4);
 
-  const todayObj = new Date(todayDateStr + 'T00:00:00');
-  const todayFormatted = todayObj.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  });
-
   return (
     <div className="flex flex-col w-full px-margin pb-6 gap-space-md max-w-xl mx-auto">
-      {/* 1. Employee Profile & Cycle Header */}
+      {/* 1. Employee Profile Header (Employee profile setting button & Cycle removed) */}
       <section className="w-full bg-surface-container rounded-2xl p-3.5 shadow-xs flex items-center justify-between gap-space-sm border border-surface-container">
         <div className="flex items-center gap-3 min-w-0">
           <div className="relative">
@@ -75,26 +64,14 @@ export const HomeScreen: React.FC = () => {
                 </span>
               )}
             </div>
-            <span className="text-[11px] text-on-surface-variant">
-              Cycle: {cycleStartDateStr} to {cycleEndDateStr}
-            </span>
           </div>
         </div>
-        <button
-          onClick={() => setCurrentTab('settings')}
-          aria-label="Profile & Settings"
-          className="w-9 h-9 rounded-full bg-surface-container-lowest flex items-center justify-center text-on-surface-variant hover:bg-surface-variant active:scale-90 transition-all shrink-0 cursor-pointer shadow-xs"
-          title="Profile & Settings"
-        >
-          <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
-        </button>
       </section>
 
       {/* 2. Leave Balance Cards */}
       <section className="flex flex-col gap-space-sm">
         <div className="flex items-center justify-between px-1">
           <h2 className="font-title-md text-title-md text-on-surface font-semibold">Leave Balances</h2>
-          <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Active Cycle</span>
         </div>
         <div className="flex flex-col gap-space-sm">
           {/* Annual Leave Card - Always beach_access icon */}
@@ -151,7 +128,7 @@ export const HomeScreen: React.FC = () => {
             </div>
           </article>
 
-          {/* Comp-off Leave Card - Always update icon, Auto-Calculated removed */}
+          {/* Comp-off Leave Card - Always update icon */}
           <article className="w-full bg-leave-compoff-container rounded-xl p-4 shadow-xs flex items-center justify-between text-leave-compoff-on-container">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-surface-container-lowest/80 flex items-center justify-center text-leave-compoff shrink-0">
@@ -176,13 +153,13 @@ export const HomeScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. Quick Action Buttons - Only Apply Leave and Comp-off Ledger (Leave Calendar & History removed) */}
+      {/* 3. Quick Action Buttons - Only Apply Leave and Comp-off Ledger */}
       <section className="flex flex-col gap-space-xs mt-1">
         <div className="flex items-center justify-between px-1">
           <h2 className="font-title-md text-title-md text-on-surface font-semibold">Quick Actions</h2>
         </div>
         <div className="grid grid-cols-2 gap-space-sm">
-          {/* Apply Leave Button (Only in Home tab) */}
+          {/* Apply Leave Button */}
           <button
             onClick={() => openApplyModal({ initialType: 'AL' })}
             className="flex flex-col items-start justify-between p-4 rounded-xl bg-primary text-on-primary shadow-xs hover:opacity-95 active:scale-95 transition-all text-left cursor-pointer"
@@ -217,7 +194,7 @@ export const HomeScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. Comp-off Expiry Tracker - Simplified, neat and clean */}
+      {/* 4. Comp-off Expiry Tracker - (Cycle display removed, dates in DD-MM-YYYY) */}
       <section className="w-full rounded-2xl p-4 shadow-xs flex flex-col gap-3 bg-surface-container-lowest border border-surface-container">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -226,17 +203,8 @@ export const HomeScreen: React.FC = () => {
             </div>
             <div>
               <h3 className="font-title-sm text-title-sm font-bold text-on-surface">Comp-off Expiry Tracker</h3>
-              <span className="text-[11px] text-on-surface-variant">
-                {cycleStartDateStr} to {cycleEndDateStr}
-              </span>
             </div>
           </div>
-          <button
-            onClick={() => setIsEditCycleModalOpen(true)}
-            className="font-label-sm text-label-sm font-semibold text-primary hover:underline cursor-pointer"
-          >
-            Edit Cycle
-          </button>
         </div>
 
         {/* Clean Summary Stats Strip */}
@@ -255,7 +223,7 @@ export const HomeScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Simple & Neat Holiday List */}
+        {/* Simple & Neat Holiday List (Dates in DD-MM-YYYY) */}
         {saturdayCompOffHolidays.length > 0 ? (
           <div className="flex flex-col divide-y divide-surface-container pt-1">
             {saturdayCompOffHolidays.map((h) => {
@@ -271,7 +239,7 @@ export const HomeScreen: React.FC = () => {
                         {h.name}
                       </span>
                       <span className="text-[11px] text-on-surface-variant">
-                        {h.date}
+                        {formatDateDDMMYYYY(h.date)}
                       </span>
                     </div>
                   </div>
@@ -298,20 +266,14 @@ export const HomeScreen: React.FC = () => {
         )}
       </section>
 
-      {/* 5. Upcoming Singapore Public Holidays - Neat, Simple & Clean */}
+      {/* 5. Upcoming Singapore Public Holidays - (Dates in DD-MM-YYYY) */}
       <section className="flex flex-col gap-space-sm mt-1">
         <div className="flex items-center justify-between px-1">
           <div>
             <h2 className="font-title-md text-title-md text-on-surface font-semibold">Upcoming Public Holidays</h2>
-            <p className="text-[11px] text-on-surface-variant">From current date ({todayFormatted}) onward</p>
+            <p className="text-[11px] text-on-surface-variant">From current date ({formatDateDDMMYYYY(todayDateStr)}) onward</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsAddSpecialHolidayOpen(true)}
-              className="font-label-sm text-label-sm text-primary font-semibold hover:underline cursor-pointer"
-            >
-              + Special
-            </button>
             <button
               onClick={() => setIsHolidaysModalOpen(true)}
               className="font-label-sm text-label-sm text-primary font-semibold hover:underline cursor-pointer"
@@ -321,13 +283,11 @@ export const HomeScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Clean Holiday Cards */}
+        {/* Clean Holiday Cards with DD-MM-YYYY */}
         {displayedUpcomingHolidays.length > 0 ? (
           <div className="flex flex-col gap-2">
             {displayedUpcomingHolidays.map((holiday) => {
               const d = new Date(holiday.date + 'T00:00:00');
-              const monthStr = d.toLocaleDateString('en-US', { month: 'short' });
-              const dayStr = String(d.getDate()).padStart(2, '0');
               const isSat = d.getDay() === 6;
 
               const dToday = new Date(todayDateStr + 'T00:00:00');
@@ -339,14 +299,14 @@ export const HomeScreen: React.FC = () => {
                   key={holiday.date}
                   onClick={() => {
                     setSelectedCalendarDate(holiday.date);
-                    setCurrentTab('calendar');
                   }}
-                  className="bg-surface-container-lowest rounded-xl p-3 shadow-xs flex items-center justify-between transition-transform active:scale-[0.99] border border-surface-container cursor-pointer hover:bg-surface-container-low"
+                  className="bg-surface-container-lowest rounded-xl p-3 shadow-xs flex items-center justify-between transition-transform active:scale-[0.99] border border-surface-container hover:bg-surface-container-low"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-holiday-public-container text-holiday-public-on-container flex flex-col items-center justify-center shrink-0">
-                      <span className="font-label-sm text-[9px] font-bold uppercase leading-none">{monthStr}</span>
-                      <span className="font-title-sm text-title-sm font-bold leading-tight">{dayStr}</span>
+                    <div className="px-2.5 py-1.5 rounded-lg bg-holiday-public-container text-holiday-public-on-container flex flex-col items-center justify-center shrink-0">
+                      <span className="font-label-sm text-[11px] font-bold font-mono leading-tight">
+                        {formatDateDDMMYYYY(holiday.date)}
+                      </span>
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -356,7 +316,7 @@ export const HomeScreen: React.FC = () => {
                         <span className="text-xs">{holiday.emoji || '🇸🇬'}</span>
                       </div>
                       <span className="font-body-sm text-[12px] text-on-surface-variant">
-                        {holiday.dayOfWeek} {holiday.observedDate ? `• Observed Mon ${new Date(holiday.observedDate + 'T00:00:00').getDate()}` : ''}
+                        {holiday.dayOfWeek} {holiday.observedDate ? `• Observed ${formatDateDDMMYYYY(holiday.observedDate)}` : ''}
                       </span>
                     </div>
                   </div>

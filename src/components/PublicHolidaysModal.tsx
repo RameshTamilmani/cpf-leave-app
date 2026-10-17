@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
+import { formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
 
 export const PublicHolidaysModal: React.FC = () => {
   const {
@@ -10,7 +11,6 @@ export const PublicHolidaysModal: React.FC = () => {
     allHolidays,
     upcomingHolidays,
     todayDateStr,
-    setIsAddSpecialHolidayOpen,
     deleteSpecialHoliday
   } = useLeave();
 
@@ -78,14 +78,6 @@ export const PublicHolidaysModal: React.FC = () => {
               Special ({allHolidays.filter((h) => h.isSpecial).length})
             </button>
           </div>
-
-          <button
-            onClick={() => setIsAddSpecialHolidayOpen(true)}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold hover:bg-primary-fixed-dim transition-colors cursor-pointer shadow-2xs"
-          >
-            <span className="material-symbols-outlined text-[16px]">add</span>
-            <span>Add Special</span>
-          </button>
         </div>
 
         <div className="p-4 overflow-y-auto flex flex-col gap-2.5">
@@ -133,8 +125,8 @@ export const PublicHolidaysModal: React.FC = () => {
                       )}
                     </div>
                     <span className="font-body-sm text-body-sm text-on-surface-variant">
-                      {holiday.dayOfWeek} • {holiday.date}
-                      {holiday.observedDate ? ` (Observed Mon)` : ''}
+                      {holiday.dayOfWeek} • {formatDateDDMMYYYY(holiday.date)}
+                      {holiday.observedDate ? ` (Observed ${formatDateDDMMYYYY(holiday.observedDate)})` : ''}
                     </span>
                   </div>
                 </div>

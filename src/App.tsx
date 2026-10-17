@@ -26,7 +26,7 @@ const MainAppContent: React.FC = () => {
       <Header />
 
       {/* Main Screen Content with responsive container padding */}
-      <main className="flex-1 flex flex-col relative w-full pt-28 pb-32 bg-surface min-h-screen">
+      <main className="flex-1 flex flex-col relative w-full pt-20 pb-32 bg-surface min-h-screen">
         {currentTab === 'home' && <HomeScreen />}
         {currentTab === 'calendar' && <CalendarScreen />}
         {currentTab === 'history' && <HistoryScreen />}

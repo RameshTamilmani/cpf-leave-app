@@ -1,54 +1,60 @@
 import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { LeaveType, LeaveRecord } from '../types/leave';
+import { formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
 
 export const HistoryScreen: React.FC = () => {
   const {
     records,
     deleteRecord,
-    openApplyModal,
     exportCSV,
     alAvailable,
     slAvailable,
     coAvailable,
-    settings,
-    setIsEditCycleModalOpen
+    todayDateStr
   } = useLeave();
 
   const [typeFilter, setTypeFilter] = useState<'ALL' | LeaveType>('ALL');
 
-  // Active record action sheet state
+  // Active record action sheet state for delete confirmation
   const [selectedRecordForSheet, setSelectedRecordForSheet] = useState<LeaveRecord | null>(null);
 
-  // Filter records by leave type only (second filter removed as requested)
+  // Helper to determine effective status:
+  // "Leave on the current date should be considered taken, not planned. Only leave greater than the current date should be considered as planned."
+  const getEffectiveStatus = (r: LeaveRecord) => {
+    if (r.status === 'planned' && r.startDate <= todayDateStr) {
+      return 'taken';
+    }
+    return r.status;
+  };
+
+  // Filter records by leave type
   const filteredRecords = records.filter((r) => {
     if (typeFilter !== 'ALL' && r.type !== typeFilter) return false;
     return true;
   });
 
-  // Calculate live stats
+  // Sort logged entries based on Leave Date in descending order
+  const sortedRecords = [...filteredRecords].sort((a, b) => b.startDate.localeCompare(a.startDate));
+
+  // Calculate live stats respecting the taken/planned rule
   const consumedDays = records
-    .filter((r) => r.status === 'taken' || r.status === 'retroactive')
+    .filter((r) => {
+      const eff = getEffectiveStatus(r);
+      return eff === 'taken' || eff === 'retroactive';
+    })
     .reduce((s, r) => s + (Number(r.days) || 0), 0);
 
   const scheduledDays = records
-    .filter((r) => r.status === 'planned')
+    .filter((r) => {
+      const eff = getEffectiveStatus(r);
+      return eff === 'planned';
+    })
     .reduce((s, r) => s + (Number(r.days) || 0), 0);
 
   const statutoryLeft = alAvailable + slAvailable + coAvailable;
 
-  const getCycleBadgeText = () => {
-    if (settings.cycleStartMonth && settings.cycleStartDay && settings.cycleEndMonth && settings.cycleEndDay) {
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return `${settings.cycleStartDay} ${months[settings.cycleStartMonth - 1]} – ${settings.cycleEndDay} ${months[settings.cycleEndMonth - 1]}`;
-    }
-    if (settings.cycle.includes('Jun 13')) return '13 Jun – 12 Jun';
-    if (settings.cycle.includes('1 Apr')) return '1 Apr – 31 Mar';
-    if (settings.cycle.includes('1 Jul')) return '1 Jul – 30 Jun';
-    return 'Jan – Dec';
-  };
-
-  // Helper to get full name consistently
+  // Helper to get full name consistently (never show AL/SL abbreviations in display)
   const getLeaveTypeFullName = (type: LeaveType) => {
     switch (type) {
       case 'AL':
@@ -63,47 +69,8 @@ export const HistoryScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col w-full px-margin pb-6 gap-space-md max-w-xl mx-auto">
-      {/* Top Action & FY Selector Bar */}
-      <div className="flex items-center justify-between pt-1">
-        <div className="flex items-center gap-space-xs">
-          <button
-            onClick={() => setIsEditCycleModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors shadow-xs cursor-pointer"
-            title="Configure Leave Year Cycle"
-          >
-            <span className="material-symbols-outlined text-[18px] text-primary">calendar_today</span>
-            <span className="font-title-sm text-title-sm">Active Cycle</span>
-            <span className="material-symbols-outlined text-[18px] text-on-surface-variant">expand_more</span>
-          </button>
-          <button
-            onClick={() => setIsEditCycleModalOpen(true)}
-            className="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-variant font-label-sm text-label-sm cursor-pointer transition-colors"
-            title="Configure Leave Year Cycle"
-          >
-            {getCycleBadgeText()}
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => openApplyModal({ initialType: 'AL' })}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-on-primary shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer font-label-sm text-label-sm font-semibold"
-          >
-            <span className="material-symbols-outlined text-[16px]">add</span>
-            <span>Apply Leave</span>
-          </button>
-          <button
-            onClick={exportCSV}
-            aria-label="Export leave records"
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-card text-primary shadow-xs hover:bg-primary-container/20 active:scale-95 transition-all cursor-pointer border border-surface-container"
-          >
-            <span className="material-symbols-outlined text-[18px]">ios_share</span>
-            <span className="font-label-sm text-label-sm font-semibold">Export</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Category Filter Chips - Displays full names (No AL/SL short names) */}
+    <div className="flex flex-col w-full px-margin pb-6 gap-space-md max-w-xl mx-auto pt-2">
+      {/* Category Filter Chips - Displays full names only */}
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-margin px-margin py-1">
         <button
           onClick={() => setTypeFilter('ALL')}
@@ -189,18 +156,36 @@ export const HistoryScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Real Logged Records List */}
-      {filteredRecords.length > 0 ? (
+      {/* Logged Entries Header with Export Button */}
+      <div className="flex items-center justify-between px-1">
+        <h3 className="font-title-sm text-title-sm text-on-surface font-semibold">
+          Logged Entries ({sortedRecords.length})
+        </h3>
+        {/* Export button placed near Logged Entries, enabled only when records exist */}
+        <button
+          onClick={exportCSV}
+          disabled={records.length === 0}
+          aria-label="Export leave records"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-xs transition-all font-label-sm text-label-sm font-semibold border ${
+            records.length > 0
+              ? 'bg-surface-card text-primary border-surface-container hover:bg-primary-container/20 active:scale-95 cursor-pointer'
+              : 'bg-surface-container-low text-on-surface-variant/40 border-surface-container cursor-not-allowed opacity-50'
+          }`}
+          title={records.length > 0 ? 'Export leave entries to CSV' : 'No records to export'}
+        >
+          <span className="material-symbols-outlined text-[18px]">ios_share</span>
+          <span>Export</span>
+        </button>
+      </div>
+
+      {/* Real Logged Records List (Sorted by date descending, dates in DD-MM-YYYY) */}
+      {sortedRecords.length > 0 ? (
         <div className="flex flex-col gap-2.5">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="font-title-sm text-title-sm text-on-surface font-semibold">
-              Logged Entries ({filteredRecords.length})
-            </h3>
-          </div>
-          {filteredRecords.map((record) => {
+          {sortedRecords.map((record) => {
             const isAL = record.type === 'AL';
             const isSL = record.type === 'SL';
             const fullName = getLeaveTypeFullName(record.type);
+            const effStatus = getEffectiveStatus(record);
 
             return (
               <div
@@ -209,7 +194,7 @@ export const HistoryScreen: React.FC = () => {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    {/* Consistent icon: beach_access for AL, medical_services for SL, update for CO */}
+                    {/* Consistent icons: beach_access for AL, medical_services for SL, update for CO */}
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                         isAL
@@ -243,15 +228,17 @@ export const HistoryScreen: React.FC = () => {
                         </span>
                       </div>
                       <span className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                        {record.startDate} {record.startDate !== record.endDate ? `– ${record.endDate}` : ''} • {Number(record.days).toFixed(1)} day{Number(record.days) !== 1 ? 's' : ''}
+                        {formatDateDDMMYYYY(record.startDate)}
+                        {record.startDate !== record.endDate ? ` – ${formatDateDDMMYYYY(record.endDate)}` : ''} • {Number(record.days).toFixed(1)} day{Number(record.days) !== 1 ? 's' : ''}
                       </span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm capitalize">
-                      {record.status}
+                    <span className="px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm capitalize font-medium">
+                      {effStatus}
                     </span>
+                    {/* Only delete option - editing is not allowed */}
                     <button
                       onClick={() => setSelectedRecordForSheet(record)}
                       aria-label="Delete leave record"
@@ -267,7 +254,7 @@ export const HistoryScreen: React.FC = () => {
           })}
         </div>
       ) : (
-        /* Empty State Card */
+        /* Empty State Card - No apply button or clean slate text */
         <div className="bg-surface-card rounded-2xl p-6 shadow-xs border border-surface-container flex flex-col items-center text-center">
           <div className="w-14 h-14 rounded-2xl bg-surface-container-high flex items-center justify-center text-on-surface-variant mb-2">
             <span className="material-symbols-outlined text-[28px]">event_busy</span>
@@ -278,13 +265,6 @@ export const HistoryScreen: React.FC = () => {
           <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
             Recorded leaves will be listed here.
           </p>
-          <button
-            onClick={() => openApplyModal({ initialType: 'AL' })}
-            className="mt-3 px-4 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md font-semibold hover:opacity-95 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-          >
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            <span>Apply Leave</span>
-          </button>
         </div>
       )}
 
@@ -319,32 +299,28 @@ export const HistoryScreen: React.FC = () => {
             <div className="p-3 rounded-xl bg-error-container/20 border border-error/20 flex flex-col gap-1">
               <span className="font-title-sm text-title-sm text-error font-semibold flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-[18px]">warning</span>
-                Confirm Deletion
+                <span>Confirm Deletion</span>
               </span>
-              <p className="text-body-sm text-on-surface-variant text-[12px] leading-snug">
-                Deleting this record will restore {Number(selectedRecordForSheet.days).toFixed(1)} day(s) back to your {getLeaveTypeFullName(selectedRecordForSheet.type)} balance.
+              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                Are you sure you want to delete this {getLeaveTypeFullName(selectedRecordForSheet.type)} booking? {Number(selectedRecordForSheet.days).toFixed(1)} day will be returned to your balance.
               </p>
             </div>
 
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-2 pt-2">
               <button
-                type="button"
                 onClick={() => setSelectedRecordForSheet(null)}
-                className="flex-1 py-2.5 rounded-full bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold hover:bg-surface-variant transition-colors cursor-pointer"
+                className="flex-1 py-3 rounded-full bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold hover:bg-surface-variant transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
-                type="button"
                 onClick={() => {
-                  const idToDelete = selectedRecordForSheet.id;
+                  deleteRecord(selectedRecordForSheet.id);
                   setSelectedRecordForSheet(null);
-                  deleteRecord(idToDelete);
                 }}
-                className="flex-1 py-2.5 rounded-full bg-error text-on-error flex items-center justify-center gap-1.5 font-label-md text-label-md font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
+                className="flex-1 py-3 rounded-full bg-error text-on-error font-label-md text-label-md font-semibold hover:opacity-90 active:scale-98 transition-all cursor-pointer shadow-xs"
               >
-                <span className="material-symbols-outlined text-[18px]">delete</span>
-                <span>Delete Record</span>
+                Delete Record
               </button>
             </div>
           </div>
