@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
+import { ImageCropModal } from './ImageCropModal';
 
 export const OnboardingModal: React.FC = () => {
   const { settings, updateSettings, showToast } = useLeave();
@@ -7,8 +8,11 @@ export const OnboardingModal: React.FC = () => {
   const [name, setName] = useState('');
   const [employeeId, setEmployeeId] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [dateOfJoining, setDateOfJoining] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [cropModalSrc, setCropModalSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const datePickerRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Check if user has already been prompted or profile is set
@@ -20,8 +24,9 @@ export const OnboardingModal: React.FC = () => {
       setName(settings.userName || '');
       setEmployeeId(settings.employeeId || '');
       setAvatarUrl(settings.avatarUrl || '');
+      setDateOfJoining(settings.dateOfJoining || '');
     }
-  }, [settings.userName, settings.employeeId, settings.avatarUrl]);
+  }, [settings.userName, settings.employeeId, settings.avatarUrl, settings.dateOfJoining]);
 
   if (!isOpen) return null;
 
@@ -29,10 +34,10 @@ export const OnboardingModal: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Allowed up to 5MB
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMsg('Profile photo must be 5MB or smaller.');
-      showToast('Profile photo must be 5MB or smaller.');
+    // Allowed up to 8MB
+    if (file.size > 8 * 1024 * 1024) {
+      setErrorMsg('Profile photo must be 8MB or smaller.');
+      showToast('Profile photo must be 8MB or smaller.');
       return;
     }
 
@@ -41,7 +46,7 @@ export const OnboardingModal: React.FC = () => {
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
       if (dataUrl) {
-        setAvatarUrl(dataUrl);
+        setCropModalSrc(dataUrl);
       }
     };
     reader.readAsDataURL(file);
@@ -62,7 +67,8 @@ export const OnboardingModal: React.FC = () => {
     updateSettings({
       userName: name.trim(),
       employeeId: employeeId.trim(),
-      avatarUrl
+      avatarUrl,
+      dateOfJoining: dateOfJoining.trim()
     });
 
     localStorage.setItem('cutisg_profile_setup_prompted', 'true');
@@ -116,7 +122,7 @@ export const OnboardingModal: React.FC = () => {
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap justify-center">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -127,6 +133,17 @@ export const OnboardingModal: React.FC = () => {
               {avatarUrl && (
                 <button
                   type="button"
+                  onClick={() => setCropModalSrc(avatarUrl)}
+                  className="px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold cursor-pointer transition-colors flex items-center gap-1 border border-surface-container"
+                  title="Crop or adjust profile photo"
+                >
+                  <span className="material-symbols-outlined text-[14px]">crop</span>
+                  <span>Adjust &amp; Crop</span>
+                </button>
+              )}
+              {avatarUrl && (
+                <button
+                  type="button"
                   onClick={() => setAvatarUrl('')}
                   className="px-2.5 py-1 rounded-full text-error font-label-sm text-label-sm hover:bg-error-container/30 cursor-pointer transition-colors"
                 >
@@ -134,7 +151,6 @@ export const OnboardingModal: React.FC = () => {
                 </button>
               )}
             </div>
-            <span className="text-[11px] text-on-surface-variant">Max file size: 5MB</span>
             <input
               type="file"
               ref={fileInputRef}
@@ -145,26 +161,33 @@ export const OnboardingModal: React.FC = () => {
           </div>
 
           {/* Form Fields */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3.5">
             <div>
               <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
                 FULL NAME *
               </label>
-              <div className="relative">
+              <div className="relative flex items-center">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant pointer-events-none">
+                  person
+                </span>
                 <input
                   type="text"
                   required
+                  maxLength={40}
                   value={name}
+                  onKeyDown={(e) => {
+                    if (/^[0-9]$/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   onChange={(e) => {
-                    setName(e.target.value);
+                    const stringOnly = e.target.value.replace(/[0-9]/g, '').slice(0, 40);
+                    setName(stringOnly);
                     if (errorMsg) setErrorMsg('');
                   }}
                   placeholder="Enter full name"
-                  className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full pl-10 pr-3.5 py-2.5 h-11 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-                <span className="material-symbols-outlined absolute left-3 top-2.5 text-[20px] text-on-surface-variant">
-                  person
-                </span>
               </div>
             </div>
 
@@ -172,21 +195,78 @@ export const OnboardingModal: React.FC = () => {
               <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
                 EMPLOYEE ID *
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  required
-                  value={employeeId}
-                  onChange={(e) => {
-                    setEmployeeId(e.target.value);
-                    if (errorMsg) setErrorMsg('');
-                  }}
-                  placeholder="Enter Employee ID"
-                  className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono font-medium text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <span className="material-symbols-outlined absolute left-3 top-2.5 text-[20px] text-on-surface-variant">
+              <div className="relative flex items-center">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant pointer-events-none">
                   badge
                 </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={12}
+                  required
+                  value={employeeId}
+                  onKeyDown={(e) => {
+                    if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) || e.ctrlKey || e.metaKey) {
+                      return;
+                    }
+                    if (!/^[0-9]$/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onChange={(e) => {
+                    const numbersOnly = e.target.value.replace(/\D/g, '').slice(0, 12);
+                    setEmployeeId(numbersOnly);
+                    if (errorMsg) setErrorMsg('');
+                  }}
+                  placeholder="e.g. 10245"
+                  className="w-full pl-10 pr-3.5 py-2.5 h-11 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono font-medium text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
+                DATE OF JOINING
+              </label>
+              <div className="relative flex items-center">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant pointer-events-none">
+                  calendar_today
+                </span>
+                <input
+                  type="text"
+                  placeholder="YYYY-MM-DD"
+                  value={dateOfJoining}
+                  maxLength={10}
+                  onChange={(e) => setDateOfJoining(e.target.value)}
+                  className="w-full pl-10 pr-12 py-2.5 h-11 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+
+                {/* Hidden native date picker */}
+                <input
+                  type="date"
+                  ref={datePickerRef}
+                  value={dateOfJoining}
+                  max={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setDateOfJoining(e.target.value)}
+                  className="sr-only"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      datePickerRef.current?.showPicker?.();
+                    } catch {
+                      datePickerRef.current?.focus();
+                      datePickerRef.current?.click();
+                    }
+                  }}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center cursor-pointer transition-colors border border-surface-container"
+                  title="Open Calendar Date Picker"
+                >
+                  <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                </button>
               </div>
             </div>
           </div>
@@ -216,6 +296,20 @@ export const OnboardingModal: React.FC = () => {
           </div>
         </form>
       </div>
+
+      {/* Profile Picture Crop & Adjustment Modal */}
+      {cropModalSrc && (
+        <ImageCropModal
+          isOpen={Boolean(cropModalSrc)}
+          imageSrc={cropModalSrc}
+          onCropComplete={(croppedDataUrl) => {
+            setAvatarUrl(croppedDataUrl);
+            setCropModalSrc(null);
+            showToast('Profile photo cropped & updated');
+          }}
+          onClose={() => setCropModalSrc(null)}
+        />
+      )}
     </div>
   );
 };

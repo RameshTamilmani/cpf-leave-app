@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { LeaveType, LeaveStatus } from '../types/leave';
-import { calculateWorkingDays, formatDateDDMMYYYY, isWeekend } from '../data/singaporeHolidays2026';
+import { calculateWorkingDays, formatDateDDMMYYYY, isWeekend, addDaysToDate } from '../data/singaporeHolidays2026';
 
 export const ApplyLeaveModal: React.FC = () => {
   const {
@@ -14,7 +14,8 @@ export const ApplyLeaveModal: React.FC = () => {
     todayDateStr,
     alAvailable,
     slAvailable,
-    coAvailable
+    coAvailable,
+    crossedSaturdayHolidays
   } = useLeave();
 
   const [type, setType] = useState<LeaveType>('AL');
@@ -25,6 +26,9 @@ export const ApplyLeaveModal: React.FC = () => {
   const [daysToDeduct, setDaysToDeduct] = useState<number>(1.0);
   const [notes, setNotes] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  const startDatePickerRef = useRef<HTMLInputElement>(null);
+  const endDatePickerRef = useRef<HTMLInputElement>(null);
 
   // When modal opens, initialize fields
   useEffect(() => {
@@ -235,8 +239,55 @@ export const ApplyLeaveModal: React.FC = () => {
       return;
     }
 
+    // Comp-off 90-day period validation:
+    // "Comp-off leave should not be allowed to apply for the date post 90 days period. It should be applied for date, below the expire date. Leave apply can be done post expiry but date should be within the 90 days period."
+    if (type === 'CO') {
+      if (crossedSaturdayHolidays.length === 0) {
+        setValidationError(
+          'No earned Comp-Off credits available. Comp-Off credits are earned when a gazetted holiday falls on a Saturday.'
+        );
+        return;
+      }
+
+      const isWithin90Days = crossedSaturdayHolidays.some((h) => {
+        const expireDate = addDaysToDate(h.date, 90);
+        return startDate >= h.date && endDate <= expireDate;
+      });
+
+      if (!isWithin90Days) {
+        const maxExpire = crossedSaturdayHolidays.reduce((max, h) => {
+          const exp = addDaysToDate(h.date, 90);
+          return exp > max ? exp : max;
+        }, '');
+        const refHol = crossedSaturdayHolidays.find((h) => addDaysToDate(h.date, 90) === maxExpire);
+
+        if (maxExpire && endDate > maxExpire) {
+          setValidationError(
+            `Comp-off leave cannot be applied for date post 90-day period. Leave date must be on or below the expire date (${formatDateDDMMYYYY(maxExpire)} for ${refHol?.name || 'credited holiday'}). Leave apply can be done post expiry but date should be within the 90 days period.`
+          );
+          return;
+        }
+
+        const earliestDate = crossedSaturdayHolidays.reduce((min, h) => {
+          return !min || h.date < min ? h.date : min;
+        }, '');
+
+        if (earliestDate && startDate < earliestDate) {
+          setValidationError(
+            `Comp-off leave cannot be applied for a date before the credited holiday occurred (${formatDateDDMMYYYY(earliestDate)}).`
+          );
+          return;
+        }
+
+        setValidationError(
+          'Comp-off leave cannot be applied for date post 90-day period. It should be applied for date, below the expire date.'
+        );
+        return;
+      }
+    }
+
     setValidationError(null);
-  }, [duplicateConflict, daysToDeduct, isMultiDay, workingDays, startDate, endDate, type, alAvailable, slAvailable, coAvailable]);
+  }, [duplicateConflict, daysToDeduct, isMultiDay, workingDays, startDate, endDate, type, alAvailable, slAvailable, coAvailable, crossedSaturdayHolidays]);
 
   if (!isApplyModalOpen) return null;
 
@@ -261,6 +312,17 @@ export const ApplyLeaveModal: React.FC = () => {
   const isHolidayRange = isMultiDay && (Boolean(holidayOnStart) || Boolean(holidayOnEnd) || workingDays === 0);
   const isHolidayBlocked = Boolean(isHolidaySingle || isHolidayRange);
 
+  // Comp-off 90-day validity check:
+  // "Comp-off leave should not be allowed to apply for the date post 90 days period. It should be applied for date, below the expire date. Leave apply can be done post expiry but date should be within the 90 days period."
+  const isCompOffWithin90Days =
+    type !== 'CO' ||
+    (crossedSaturdayHolidays.length > 0 &&
+      crossedSaturdayHolidays.some((h) => {
+        const expireDate = addDaysToDate(h.date, 90);
+        return startDate >= h.date && endDate <= expireDate;
+      }));
+  const isCompOffPost90Days = type === 'CO' && !isCompOffWithin90Days;
+
   const isTitleMissing = !title.trim();
   // Only Comp-off is restricted by quota; AL and SL allow exceeding quota and count as Loss of Pay (LOP)
   const isExceedingQuota = type === 'CO' && daysToDeduct > getAvailableBalance();
@@ -273,6 +335,7 @@ export const ApplyLeaveModal: React.FC = () => {
     isDuplicate ||
     isWeekendBlocked ||
     isHolidayBlocked ||
+    isCompOffPost90Days ||
     isDeductionMismatch ||
     isExceedingQuota ||
     isInvalidDate ||
@@ -371,6 +434,21 @@ export const ApplyLeaveModal: React.FC = () => {
         `Requested ${daysToDeduct} days exceeds your available Comp-Off quota of ${getAvailableBalance()} day(s).`
       );
       return;
+    }
+
+    // Strict Comp-off 90-day period validation:
+    // "Comp-off leave should not be allowed to apply for the date post 90 days period. It should be applied for date, below the expire date. Leave apply can be done post expiry but date should be within the 90 days period."
+    if (type === 'CO') {
+      const isWithin90Days = crossedSaturdayHolidays.some((h) => {
+        const expireDate = addDaysToDate(h.date, 90);
+        return startDate >= h.date && endDate <= expireDate;
+      });
+      if (!isWithin90Days) {
+        setValidationError(
+          'Comp-off leave cannot be applied for date post 90-day period. It should be applied for date, below the expire date (within the 90-day window).'
+        );
+        return;
+      }
     }
 
     const finalTitle = title.trim();
@@ -473,14 +551,11 @@ export const ApplyLeaveModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Title / Description - MANDATORY, NO AUTO-FILLER */}
+          {/* Title / Description */}
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="font-label-md text-label-md text-on-surface-variant font-semibold">
-                REASON / LEAVE TITLE <span className="text-error">*</span>
-              </label>
-              <span className="text-[11px] text-error font-medium">Required</span>
-            </div>
+            <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
+              REASON / LEAVE TITLE *
+            </label>
             <input
               type="text"
               required
@@ -491,46 +566,120 @@ export const ApplyLeaveModal: React.FC = () => {
                   setValidationError(null);
                 }
               }}
-              placeholder="Enter reason for leave (mandatory)"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary text-body-md"
+              placeholder="Enter reason for leave"
+              className="w-full px-3.5 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary text-body-md"
             />
           </div>
 
           {/* Dates & Duration Mode */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
                 START DATE
               </label>
-              <input
-                type="date"
-                required
-                value={startDate}
-                onChange={(e) => {
-                  const newStart = e.target.value;
-                  setStartDate(newStart);
-                  if (!endDate || endDate < newStart) {
-                    setEndDate(newStart);
-                  }
-                }}
-                className="w-full px-3 py-2 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-label-md focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+              <div className="relative flex items-center">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">
+                  calendar_today
+                </span>
+                <input
+                  type="text"
+                  required
+                  placeholder="YYYY-MM-DD"
+                  maxLength={10}
+                  value={startDate}
+                  onChange={(e) => {
+                    const newStart = e.target.value;
+                    setStartDate(newStart);
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(newStart) && (!endDate || endDate < newStart)) {
+                      setEndDate(newStart);
+                    }
+                  }}
+                  className="w-full pl-9 pr-11 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+
+                {/* Hidden native date picker */}
+                <input
+                  type="date"
+                  ref={startDatePickerRef}
+                  value={startDate}
+                  onChange={(e) => {
+                    const newStart = e.target.value;
+                    setStartDate(newStart);
+                    if (!endDate || endDate < newStart) {
+                      setEndDate(newStart);
+                    }
+                  }}
+                  className="sr-only"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      startDatePickerRef.current?.showPicker?.();
+                    } catch {
+                      startDatePickerRef.current?.focus();
+                      startDatePickerRef.current?.click();
+                    }
+                  }}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center cursor-pointer transition-colors border border-surface-container"
+                  title="Open Calendar Date Picker"
+                >
+                  <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                </button>
+              </div>
             </div>
+
             <div>
               <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
                 END DATE
               </label>
-              <input
-                type="date"
-                required
-                value={endDate}
-                min={startDate}
-                onChange={(e) => {
-                  const newEnd = e.target.value;
-                  setEndDate(newEnd);
-                }}
-                className="w-full px-3 py-2 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-label-md focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+              <div className="relative flex items-center">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">
+                  calendar_today
+                </span>
+                <input
+                  type="text"
+                  required
+                  placeholder="YYYY-MM-DD"
+                  maxLength={10}
+                  value={endDate}
+                  onChange={(e) => {
+                    const newEnd = e.target.value;
+                    setEndDate(newEnd);
+                  }}
+                  className="w-full pl-9 pr-11 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+
+                {/* Hidden native date picker */}
+                <input
+                  type="date"
+                  ref={endDatePickerRef}
+                  value={endDate}
+                  min={startDate}
+                  onChange={(e) => {
+                    const newEnd = e.target.value;
+                    setEndDate(newEnd);
+                  }}
+                  className="sr-only"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      endDatePickerRef.current?.showPicker?.();
+                    } catch {
+                      endDatePickerRef.current?.focus();
+                      endDatePickerRef.current?.click();
+                    }
+                  }}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center cursor-pointer transition-colors border border-surface-container"
+                  title="Open Calendar Date Picker"
+                >
+                  <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -788,6 +937,29 @@ export const ApplyLeaveModal: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Comp-Off 90-Day Validity Guidance Notice */}
+            {type === 'CO' && (
+              <div className={`p-2.5 rounded-lg flex items-start gap-2 border text-xs mt-1 ${
+                isCompOffPost90Days
+                  ? 'bg-error-container text-on-error-container border-error/30'
+                  : 'bg-leave-compoff-container text-leave-compoff-on-container border-leave-compoff/30'
+              }`}>
+                <span className={`material-symbols-outlined text-[18px] shrink-0 mt-0.5 ${isCompOffPost90Days ? 'text-error' : 'text-leave-compoff'}`}>
+                  {isCompOffPost90Days ? 'event_busy' : 'schedule'}
+                </span>
+                <div className="flex-1">
+                  <span className={`font-semibold block ${isCompOffPost90Days ? 'text-error' : 'text-leave-compoff'}`}>
+                    {isCompOffPost90Days ? 'Comp-Off 90-Day Expiry Restriction:' : 'Comp-Off 90-Day Validity Window:'}
+                  </span>
+                  <span className="leading-snug block mt-0.5 opacity-90">
+                    {isCompOffPost90Days
+                      ? 'Comp-off leave cannot be applied for date post 90-day period. Leave date must be on or below the expire date. Applications can be submitted post expiry, but the leave date must be within 90 days.'
+                      : 'Leave must be applied for a date below the expire date (within 90 days of earned Saturday holiday). Submissions can be done post expiry.'}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Submit & Cancel Buttons */}
@@ -822,6 +994,8 @@ export const ApplyLeaveModal: React.FC = () => {
                 ? 'Days Must Match Date Range'
                 : isExceedingQuota
                 ? 'Exceeds Available Comp-Off'
+                : isCompOffPost90Days
+                ? 'Date Post 90 Days (Below Expiry Only)'
                 : 'Confirm'}
             </button>
           </div>

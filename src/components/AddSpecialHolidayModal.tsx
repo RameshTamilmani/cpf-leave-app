@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useLeave } from '../context/LeaveContext';
 
 const EMOJI_OPTIONS = ['🗳️', '🇸🇬', '🌟', '🏛️', '🎈', '🕊️', '🧧', '✨', '🏆', '🎉', '🪔'];
@@ -20,6 +20,8 @@ export const AddSpecialHolidayModal: React.FC = () => {
   const [emoji, setEmoji] = useState('🗳️');
   const [notes, setNotes] = useState('');
   const [forceCompOff, setForceCompOff] = useState(false);
+
+  const datePickerRef = useRef<HTMLInputElement>(null);
 
   if (!isAddSpecialHolidayOpen) return null;
 
@@ -185,15 +187,47 @@ export const AddSpecialHolidayModal: React.FC = () => {
           <div className="grid grid-cols-3 gap-2.5">
             <div className="col-span-2">
               <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-                DATE ({dayName || 'Select Date'})
+                DATE {dayName ? `(${dayName})` : ''}
               </label>
-              <input
-                type="date"
-                required
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-label-md focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+              <div className="relative flex items-center">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">
+                  calendar_today
+                </span>
+                <input
+                  type="text"
+                  required
+                  placeholder="YYYY-MM-DD"
+                  maxLength={10}
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full pl-9 pr-11 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+
+                {/* Hidden native date picker */}
+                <input
+                  type="date"
+                  ref={datePickerRef}
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="sr-only"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      datePickerRef.current?.showPicker?.();
+                    } catch {
+                      datePickerRef.current?.focus();
+                      datePickerRef.current?.click();
+                    }
+                  }}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center cursor-pointer transition-colors border border-surface-container"
+                  title="Open Calendar Date Picker"
+                >
+                  <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                </button>
+              </div>
             </div>
 
             <div>

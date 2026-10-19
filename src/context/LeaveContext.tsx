@@ -52,6 +52,7 @@ interface LeaveContextType {
   oldExpiredCompOffCount: number;
   oldCycleSaturdayHolidays: PublicHoliday[];
   futureSaturdayHolidays: PublicHoliday[];
+  crossedSaturdayHolidays: PublicHoliday[];
   manualExpiredCompOffCount: number;
   setManualExpiredCompOffCount: (count: number) => void;
   carryForwardCompOff: number;
@@ -108,12 +109,14 @@ interface LeaveContextType {
   exportCSV: () => void;
   restoreCSV: (csvStr: string) => boolean;
   resetAllData: () => void;
+  resetEntireAppToDefaults: () => void;
 }
 
 const defaultSettings: UserSettings = {
   userName: '',
   employeeId: '',
   avatarUrl: '',
+  dateOfJoining: '',
   alEntitlement: 12,
   slEntitlement: 12,
   cycle: 'Jun 13 – Jun 12 (Next Year)',
@@ -129,7 +132,12 @@ const defaultSettings: UserSettings = {
   excludedHolidayDates: [],
   expiredHolidayDates: [],
   carryForwardCompOff: 0,
-  manualExpiredCompOffCount: 0
+  manualExpiredCompOffCount: 0,
+  notificationsEnabled: true,
+  wishesEnabled: true,
+  weekendWishesEnabled: true,
+  anniversaryWishesEnabled: true,
+  holidayWishesEnabled: true
 };
 
 const LeaveContext = createContext<LeaveContextType | undefined>(undefined);
@@ -195,6 +203,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const parsed = JSON.parse(saved);
         if (parsed.userName === 'Employee') parsed.userName = '';
         if (parsed.employeeId === 'EMP-1103118') parsed.employeeId = '';
+        if (parsed.dateOfJoining === '2023-08-15') parsed.dateOfJoining = '';
         return { ...defaultSettings, ...parsed, alEntitlement: 12, slEntitlement: 12 };
       }
       return defaultSettings;
@@ -306,7 +315,8 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id: 'cuti_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
       createdAt: new Date().toISOString()
     };
-    setRecords((prev) => [newRecord, ...prev]);
+    // Sorting of dates in logged entries should be based on descending order of dates
+    setRecords((prev) => [newRecord, ...prev].sort((a, b) => b.startDate.localeCompare(a.startDate)));
     showToast(`Leave logged: ${record.title} (-${record.days} day${record.days !== 1 ? 's' : ''})`);
   };
 
@@ -530,12 +540,14 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Export CSV with ONLY mandatory data: Type, Title, Start Date, End Date, Days, Status
   // Only executed when records exist (no false download popup)
+  // While exporting, it should be based on ascending dates
   const exportCSV = () => {
     if (!records || records.length === 0) {
       return;
     }
+    const sortedForExport = [...records].sort((a, b) => a.startDate.localeCompare(b.startDate));
     const headers = ['Type', 'Title', 'Start Date', 'End Date', 'Days', 'Status'];
-    const rows = records.map((r) => [
+    const rows = sortedForExport.map((r) => [
       `"${r.type}"`,
       `"${r.title.replace(/"/g, '""')}"`,
       `"${r.startDate}"`,
@@ -662,7 +674,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         id: 'cuti_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 4),
         ...row,
         createdAt: new Date().toISOString()
-      }));
+      })).sort((a, b) => b.startDate.localeCompare(a.startDate));
 
       setRecords(imported);
       localStorage.setItem('cutisg_records', JSON.stringify(imported));
@@ -680,12 +692,30 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  // "Reset All Leave Data": deletes ONLY the leave records, preserving user profile info
   const resetAllData = () => {
+    setRecords([]);
+    setManualCompOffCredits(0);
+    try {
+      localStorage.setItem('cutisg_records', '[]');
+      localStorage.setItem('cutisg_manual_compoff', '0');
+    } catch (e) {
+      console.error(e);
+    }
+    showToast('All leave records deleted. Profile info & settings preserved.');
+  };
+
+  // "Factory Reset": resets entire app, all records, profile details, and settings to defaults
+  const resetEntireAppToDefaults = () => {
     setRecords([]);
     setSettings(defaultSettings);
     setSpecialHolidays([]);
     setManualCompOffCredits(0);
     try {
+      localStorage.removeItem('cutisg_records');
+      localStorage.removeItem('cutisg_special_holidays');
+      localStorage.removeItem('cutisg_manual_compoff');
+      localStorage.removeItem('cutisg_profile_setup_prompted');
       localStorage.setItem('cutisg_records', '[]');
       localStorage.setItem('cutisg_special_holidays', '[]');
       localStorage.setItem('cutisg_manual_compoff', '0');
@@ -693,7 +723,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (e) {
       console.error(e);
     }
-    showToast('All leave data reset to MOM initial defaults.');
+    showToast('Entire app, profile details, and settings reset to factory defaults.');
   };
 
   return (
@@ -707,6 +737,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateRecord,
         settings,
         updateSettings,
+        resetEntireAppToDefaults,
         alUsed,
         slUsed,
         coUsed,
@@ -735,6 +766,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         oldExpiredCompOffCount,
         oldCycleSaturdayHolidays,
         futureSaturdayHolidays,
+        crossedSaturdayHolidays,
         manualExpiredCompOffCount,
         setManualExpiredCompOffCount,
         carryForwardCompOff,

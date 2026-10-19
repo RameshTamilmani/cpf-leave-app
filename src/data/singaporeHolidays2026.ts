@@ -538,3 +538,43 @@ export function formatDateDDMMYYYY(dateStr: string): string {
   const year = d.getFullYear();
   return `${day}-${month}-${year}`;
 }
+
+// Calculate years and months of work experience from Date of Joining
+// Formatted like: "3 Years 2 Months", "1 Year 6 Months", "5 Months", "1 Year"
+export function calculateExperience(
+  dateOfJoiningStr?: string,
+  referenceDateStr?: string
+): string | null {
+  if (!dateOfJoiningStr) return null;
+  const doj = new Date(dateOfJoiningStr + 'T00:00:00');
+  if (isNaN(doj.getTime())) return null;
+
+  const now = referenceDateStr ? new Date(referenceDateStr + 'T00:00:00') : new Date();
+  if (doj > now) return '0 Months';
+
+  let years = now.getFullYear() - doj.getFullYear();
+  let months = now.getMonth() - doj.getMonth();
+  if (now.getDate() < doj.getDate()) {
+    months--;
+  }
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+  if (years < 0) {
+    return '0 Months';
+  }
+  if (years === 0 && months === 0) {
+    const diffMs = Math.abs(now.getTime() - doj.getTime());
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    return days <= 1 ? '1 Day' : `${days} Days`;
+  }
+  if (years === 0) {
+    return `${months} Month${months !== 1 ? 's' : ''}`;
+  }
+  if (months === 0) {
+    return `${years} Year${years !== 1 ? 's' : ''}`;
+  }
+  return `${years} Year${years !== 1 ? 's' : ''} ${months} Month${months !== 1 ? 's' : ''}`;
+}
+

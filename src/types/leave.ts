@@ -43,6 +43,7 @@ export interface UserSettings {
   userName?: string;
   employeeId?: string;
   avatarUrl?: string;
+  dateOfJoining?: string; // YYYY-MM-DD
   alEntitlement: number;
   slEntitlement: number;
   cycle: string;
@@ -59,4 +60,9 @@ export interface UserSettings {
   expiredHolidayDates?: string[];
   carryForwardCompOff?: number;
   manualExpiredCompOffCount?: number;
+  notificationsEnabled?: boolean;
+  wishesEnabled?: boolean;
+  weekendWishesEnabled?: boolean;
+  anniversaryWishesEnabled?: boolean;
+  holidayWishesEnabled?: boolean;
 }

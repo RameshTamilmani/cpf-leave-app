@@ -2,7 +2,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { PWAInstallButton } from '../components/PWAInstallButton';
 import { AboutModal } from '../components/AboutModal';
-import { formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
+import { ImageCropModal } from '../components/ImageCropModal';
+import { formatDateDDMMYYYY, calculateExperience } from '../data/singaporeHolidays2026';
 
 export const SettingsScreen: React.FC = () => {
   const {
@@ -12,6 +13,7 @@ export const SettingsScreen: React.FC = () => {
     exportCSV,
     restoreCSV,
     resetAllData,
+    resetEntireAppToDefaults,
     setIsEditCycleModalOpen,
     setIsAddSpecialHolidayOpen,
     autoCompOffEarned,
@@ -19,6 +21,7 @@ export const SettingsScreen: React.FC = () => {
     cycleEndDateStr,
     specialHolidays,
     deleteSpecialHoliday,
+    todayDateStr,
     showToast
   } = useLeave();
 
@@ -26,33 +29,40 @@ export const SettingsScreen: React.FC = () => {
   const [draftName, setDraftName] = useState(settings.userName || '');
   const [draftEmpId, setDraftEmpId] = useState(settings.employeeId || '');
   const [draftAvatar, setDraftAvatar] = useState(settings.avatarUrl || '');
+  const [draftDoj, setDraftDoj] = useState(settings.dateOfJoining || '');
   const [isSavedFeedback, setIsSavedFeedback] = useState(false);
 
   // Modals state
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isFactoryResetModalOpen, setIsFactoryResetModalOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
+  const [cropModalSrc, setCropModalSrc] = useState<string | null>(null);
 
   const csvInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const datePickerRef = useRef<HTMLInputElement>(null);
 
   // Sync draft state if settings change outside
   useEffect(() => {
     setDraftName(settings.userName || '');
     setDraftEmpId(settings.employeeId || '');
     setDraftAvatar(settings.avatarUrl || '');
-  }, [settings.userName, settings.employeeId, settings.avatarUrl]);
+    setDraftDoj(settings.dateOfJoining || '');
+  }, [settings.userName, settings.employeeId, settings.avatarUrl, settings.dateOfJoining]);
 
   // Check if profile was modified
   const isProfileModified =
     draftName !== (settings.userName || '') ||
     draftEmpId !== (settings.employeeId || '') ||
-    draftAvatar !== (settings.avatarUrl || '');
+    draftAvatar !== (settings.avatarUrl || '') ||
+    draftDoj !== (settings.dateOfJoining || '');
 
   const handleSaveProfile = () => {
     updateSettings({
       userName: draftName.trim(),
       employeeId: draftEmpId.trim(),
-      avatarUrl: draftAvatar
+      avatarUrl: draftAvatar,
+      dateOfJoining: draftDoj
     });
     setIsSavedFeedback(true);
     showToast('Profile updated and saved successfully!');
@@ -65,9 +75,9 @@ export const SettingsScreen: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Limit up to 5MB
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('Profile photo must be under 5MB');
+    // Limit up to 8MB
+    if (file.size > 8 * 1024 * 1024) {
+      showToast('Profile photo must be under 8MB');
       return;
     }
 
@@ -75,8 +85,7 @@ export const SettingsScreen: React.FC = () => {
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
       if (dataUrl) {
-        setDraftAvatar(dataUrl);
-        showToast('Photo selected. Press Save to confirm changes.');
+        setCropModalSrc(dataUrl);
       }
     };
     reader.readAsDataURL(file);
@@ -113,7 +122,7 @@ export const SettingsScreen: React.FC = () => {
         </div>
 
         <div className="rounded-2xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-space-md">
-          {/* Avatar & Photo Upload (Up to 5MB, No URL field) */}
+          {/* Avatar & Photo Upload (Up to 8MB with Crop & Adjustments) */}
           <div className="flex items-start gap-4">
             <div className="relative shrink-0 mt-1">
               {draftAvatar ? (
@@ -131,7 +140,7 @@ export const SettingsScreen: React.FC = () => {
                 type="button"
                 onClick={() => avatarInputRef.current?.click()}
                 className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-xs hover:opacity-90 cursor-pointer transition-transform active:scale-95"
-                title="Upload Photo File (Up to 5MB)"
+                title="Upload Photo File (Up to 8MB)"
               >
                 <span className="material-symbols-outlined text-[14px]">photo_camera</span>
               </button>
@@ -153,6 +162,17 @@ export const SettingsScreen: React.FC = () => {
                 {draftAvatar && (
                   <button
                     type="button"
+                    onClick={() => setCropModalSrc(draftAvatar)}
+                    className="px-3 py-1 rounded-full bg-surface-container text-on-surface font-label-sm text-label-sm font-semibold hover:bg-surface-container-high transition-colors cursor-pointer flex items-center gap-1 shadow-2xs border border-surface-container"
+                    title="Crop or adjust current profile photo"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">crop</span>
+                    <span>Adjust &amp; Crop</span>
+                  </button>
+                )}
+                {draftAvatar && (
+                  <button
+                    type="button"
                     onClick={() => {
                       setDraftAvatar('');
                       showToast('Photo removed. Press Save to confirm.');
@@ -170,29 +190,44 @@ export const SettingsScreen: React.FC = () => {
                   className="hidden"
                 />
               </div>
-              <span className="text-[11px] text-on-surface-variant">Allowed file size up to 5MB</span>
             </div>
           </div>
 
           <div className="h-[1px] bg-surface-container" />
 
-          {/* Employee ID & Name Inputs (No suggestions like 'Ramesh') */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Employee ID, Name & Date of Joining Inputs */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
                 EMPLOYEE ID
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={draftEmpId}
-                  onChange={(e) => setDraftEmpId(e.target.value)}
-                  placeholder="Enter Employee ID"
-                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono font-medium text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <span className="material-symbols-outlined absolute left-2.5 top-2.5 text-[18px] text-on-surface-variant">
+              <div className="relative flex items-center">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">
                   badge
                 </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={12}
+                  value={draftEmpId}
+                  onKeyDown={(e) => {
+                    // Allow navigation and edit controls
+                    if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) || e.ctrlKey || e.metaKey) {
+                      return;
+                    }
+                    // Block non-numeric characters
+                    if (!/^[0-9]$/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onChange={(e) => {
+                    const numbersOnly = e.target.value.replace(/\D/g, '').slice(0, 12);
+                    setDraftEmpId(numbersOnly);
+                  }}
+                  placeholder="e.g. 10245"
+                  className="w-full pl-9 pr-3.5 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono font-medium text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
               </div>
             </div>
 
@@ -200,18 +235,81 @@ export const SettingsScreen: React.FC = () => {
               <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
                 FULL NAME
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={draftName}
-                  onChange={(e) => setDraftName(e.target.value)}
-                  placeholder="Enter full name"
-                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-medium text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <span className="material-symbols-outlined absolute left-2.5 top-2.5 text-[18px] text-on-surface-variant">
+              <div className="relative flex items-center">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">
                   person
                 </span>
+                <input
+                  type="text"
+                  maxLength={40}
+                  value={draftName}
+                  onKeyDown={(e) => {
+                    // Block numeric keys (0-9)
+                    if (/^[0-9]$/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onChange={(e) => {
+                    const stringOnly = e.target.value.replace(/[0-9]/g, '').slice(0, 40);
+                    setDraftName(stringOnly);
+                  }}
+                  placeholder="Enter full name"
+                  className="w-full pl-9 pr-3.5 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-medium text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
               </div>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
+                DATE OF JOINING
+              </label>
+              <div className="relative flex items-center">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">
+                  calendar_today
+                </span>
+                <input
+                  type="text"
+                  placeholder="YYYY-MM-DD"
+                  value={draftDoj}
+                  maxLength={10}
+                  onChange={(e) => {
+                    setDraftDoj(e.target.value);
+                  }}
+                  className="w-full pl-9 pr-12 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono font-medium text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+
+                {/* Hidden native Date Picker element */}
+                <input
+                  type="date"
+                  ref={datePickerRef}
+                  value={draftDoj}
+                  max={todayDateStr}
+                  onChange={(e) => setDraftDoj(e.target.value)}
+                  className="sr-only"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      datePickerRef.current?.showPicker?.();
+                    } catch {
+                      datePickerRef.current?.focus();
+                      datePickerRef.current?.click();
+                    }
+                  }}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center cursor-pointer transition-colors border border-surface-container"
+                  title="Open Calendar Date Picker"
+                >
+                  <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                </button>
+              </div>
+              {draftDoj && (
+                <div className="flex items-center gap-1.5 text-[12px] text-primary font-medium mt-1">
+                  <span className="material-symbols-outlined text-[15px]">work_history</span>
+                  <span>Calculated Experience: {calculateExperience(draftDoj, todayDateStr) || 'Enter valid YYYY-MM-DD'}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -385,64 +483,76 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. Alerts & Reminders */}
+      {/* 4. Notifications & Wishes Preferences - Separate Toggles */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
           <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
-            Alerts &amp; Reminders
+            Notifications &amp; Wishes
           </h2>
-          <span className="font-label-sm text-label-sm text-on-surface-variant">Notifications</span>
+          <span className="font-label-sm text-label-sm text-primary font-semibold">Customizable</span>
         </div>
-        <div className="rounded-xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-space-md">
-          {/* Toggle 1: Public Holiday Alerts */}
-          <div className="flex items-center justify-between gap-space-sm">
+        <div className="rounded-xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-3">
+          {/* Toggle 1: Weekend Reminder & Wishes */}
+          <div className="flex items-center justify-between gap-space-sm p-3.5 rounded-xl bg-surface-container-low border border-surface-container">
             <div className="flex items-center gap-space-sm min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-surface-container text-primary flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[22px]">campaign</span>
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[22px]">weekend</span>
               </div>
               <div className="min-w-0">
-                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Public Holiday Alerts</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant truncate">Notify 3 days before upcoming gazetted holiday</p>
+                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Weekend Reminder &amp; Wishes</p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant text-xs mt-0.5">
+                  Automated wish sent on previous day evening (Friday 3:00 PM IST) before weekend
+                </p>
               </div>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer shrink-0">
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
               <input
                 type="checkbox"
-                checked={settings.phAlertsEnabled}
+                checked={settings.notificationsEnabled !== false && settings.weekendWishesEnabled !== false}
                 onChange={(e) => {
-                  updateSettings({ phAlertsEnabled: e.target.checked });
-                  showToast(e.target.checked ? 'Public holiday alerts enabled' : 'Public holiday alerts disabled');
+                  const isChecked = e.target.checked;
+                  updateSettings({
+                    weekendWishesEnabled: isChecked,
+                    ...(isChecked ? { notificationsEnabled: true } : {})
+                  });
+                  showToast(isChecked ? 'Weekend reminder & wishes turned on' : 'Weekend wishes turned off');
                 }}
                 className="sr-only peer"
               />
-              <div className="w-12 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
+              <div className="w-12 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-xs" />
             </label>
           </div>
 
-          <div className="h-[1px] bg-surface-container" />
-
-          {/* Toggle 2: Comp-off Expiry Alerts */}
-          <div className="flex items-center justify-between gap-space-sm">
+          {/* Toggle 2: Special Wishes & Celebrations */}
+          <div className="flex items-center justify-between gap-space-sm p-3.5 rounded-xl bg-surface-container-low border border-surface-container">
             <div className="flex items-center gap-space-sm min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-alert-warning-container text-alert-warning flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[22px]">notification_important</span>
+              <div className="w-10 h-10 rounded-lg bg-primary-container text-on-primary-fixed flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[22px]">celebration</span>
               </div>
               <div className="min-w-0">
-                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Comp-off Expiry Alerts</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant truncate">Nudge prior to lapse</p>
+                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Special Wishes &amp; Celebrations</p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant text-xs mt-0.5">
+                  Work anniversaries and Indian festivals &amp; special holidays on the day at 8:00 AM IST
+                </p>
               </div>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer shrink-0">
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
               <input
                 type="checkbox"
-                checked={settings.expiryAlertsEnabled}
+                checked={settings.notificationsEnabled !== false && settings.wishesEnabled !== false && settings.anniversaryWishesEnabled !== false}
                 onChange={(e) => {
-                  updateSettings({ expiryAlertsEnabled: e.target.checked });
-                  showToast(e.target.checked ? 'Expiry alerts enabled' : 'Expiry alerts disabled');
+                  const isChecked = e.target.checked;
+                  updateSettings({
+                    wishesEnabled: isChecked,
+                    anniversaryWishesEnabled: isChecked,
+                    holidayWishesEnabled: isChecked,
+                    ...(isChecked ? { notificationsEnabled: true } : {})
+                  });
+                  showToast(isChecked ? 'Special wishes & holiday greetings turned on' : 'Special wishes & greetings turned off');
                 }}
                 className="sr-only peer"
               />
-              <div className="w-12 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
+              <div className="w-12 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-xs" />
             </label>
           </div>
         </div>
@@ -509,23 +619,44 @@ export const SettingsScreen: React.FC = () => {
 
           <div className="h-[1px] bg-surface-container" />
 
-          {/* Destructive Action: Reset */}
+          {/* Action 1: Reset Leave Records Only (Preserves Profile Info) */}
           <button
             onClick={() => setIsResetModalOpen(true)}
             className="w-full flex items-center justify-between py-2 text-left group cursor-pointer"
           >
             <div className="flex items-center gap-space-sm">
-              <div className="w-10 h-10 rounded-lg bg-error-container text-on-error-container flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[22px]">delete_forever</span>
+              <div className="w-10 h-10 rounded-lg bg-error-container/60 text-error flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[22px]">event_busy</span>
               </div>
               <div>
-                <p className="font-title-sm text-title-sm text-error font-semibold">Reset All Leave Data</p>
+                <p className="font-title-sm text-title-sm text-error font-semibold">Reset All Leave Records</p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Erase leave logs and reset balances to default 12 AL &amp; 12 SL
+                  Erase leave logs and reset balances (keeps Name, Emp ID &amp; Profile info)
                 </p>
               </div>
             </div>
             <span className="material-symbols-outlined text-error text-[20px]">warning</span>
+          </button>
+
+          <div className="h-[1px] bg-surface-container" />
+
+          {/* Action 2: Factory Reset (Reset Entire App, Profile Details & Settings to Defaults) */}
+          <button
+            onClick={() => setIsFactoryResetModalOpen(true)}
+            className="w-full flex items-center justify-between py-2 text-left group cursor-pointer"
+          >
+            <div className="flex items-center gap-space-sm">
+              <div className="w-10 h-10 rounded-lg bg-error text-on-error flex items-center justify-center shrink-0 shadow-2xs">
+                <span className="material-symbols-outlined text-[22px]">restart_alt</span>
+              </div>
+              <div>
+                <p className="font-title-sm text-title-sm text-error font-semibold">Factory Reset (Reset All &amp; Profile)</p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">
+                  Restore entire app including profile details, custom holidays &amp; settings to defaults
+                </p>
+              </div>
+            </div>
+            <span className="material-symbols-outlined text-error text-[20px]">delete_forever</span>
           </button>
         </div>
       </section>
@@ -569,7 +700,7 @@ export const SettingsScreen: React.FC = () => {
         onClose={() => setIsAboutModalOpen(false)}
       />
 
-      {/* Reset Confirmation Modal */}
+      {/* Modal 1: Reset Leave Records Only (Preserves Profile) */}
       {isResetModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in"
@@ -580,15 +711,15 @@ export const SettingsScreen: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-12 h-12 rounded-full bg-error-container text-on-error-container flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-[28px] text-error">warning</span>
+              <span className="material-symbols-outlined text-[28px] text-error">event_busy</span>
             </div>
 
             <div>
               <h3 className="font-title-md text-title-md font-bold text-on-surface">
-                Reset All Leave Data?
+                Reset Leave Records Only?
               </h3>
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1.5 leading-relaxed">
-                This will erase all logged Annual Leave and Sick Leave requests, reset your calendar, and restore balances back to the initial default entitlements (12 days AL, 12 days SL).
+                This will erase all logged Annual Leave, Sick Leave, and Comp-Off records and restore your balances back to full entitlement. <strong className="text-on-surface">Your Name, Employee ID, Date of Joining, and Profile photo will be safely preserved.</strong>
               </p>
             </div>
 
@@ -608,11 +739,75 @@ export const SettingsScreen: React.FC = () => {
                 }}
                 className="flex-1 py-2.5 rounded-full bg-error text-on-error font-label-md text-label-md font-semibold hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
               >
-                Reset Data
+                Reset Records
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal 2: Factory Reset Entire App & Profile to Defaults */}
+      {isFactoryResetModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in"
+          onClick={() => setIsFactoryResetModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-surface-card rounded-2xl shadow-2xl p-5 border border-surface-container flex flex-col gap-3.5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-full bg-error text-on-error flex items-center justify-center shrink-0 shadow-sm">
+              <span className="material-symbols-outlined text-[28px]">restart_alt</span>
+            </div>
+
+            <div>
+              <h3 className="font-title-md text-title-md font-bold text-on-surface">
+                Factory Reset Entire App?
+              </h3>
+              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1.5 leading-relaxed">
+                This action is irreversible. It will erase all leave records AND reset your Name, Employee ID, Date of Joining, Profile Picture, custom holidays, and all settings back to factory defaults.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsFactoryResetModalOpen(false)}
+                className="flex-1 py-2.5 rounded-full bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold hover:bg-surface-variant transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  resetEntireAppToDefaults();
+                  setIsFactoryResetModalOpen(false);
+                  setDraftName('');
+                  setDraftEmpId('');
+                  setDraftAvatar('');
+                  setDraftDoj('');
+                }}
+                className="flex-1 py-2.5 rounded-full bg-error text-on-error font-label-md text-label-md font-semibold hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
+              >
+                Reset Everything
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Picture Crop & Adjustment Modal */}
+      {cropModalSrc && (
+        <ImageCropModal
+          isOpen={Boolean(cropModalSrc)}
+          imageSrc={cropModalSrc}
+          onCropComplete={(croppedDataUrl) => {
+            setDraftAvatar(croppedDataUrl);
+            setCropModalSrc(null);
+            showToast('Profile photo adjusted. Press Save Profile Changes to save.');
+          }}
+          onClose={() => setCropModalSrc(null)}
+        />
       )}
     </div>
   );
