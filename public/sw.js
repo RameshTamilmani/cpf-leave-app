@@ -23,6 +23,13 @@ self.addEventListener('install', (event) => {
   );
 });
 
+// Listen for user-triggered update from the in-app Update Available popup
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // Activate: Clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(

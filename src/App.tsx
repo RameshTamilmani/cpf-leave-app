@@ -16,9 +16,12 @@ import { CalendarScreen } from './screens/CalendarScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { UpdateAvailableModal } from './components/UpdateAvailableModal';
+import { useAppUpdate } from './hooks/useAppUpdate';
 
 const MainAppContent: React.FC = () => {
   const { currentTab, isEditCycleModalOpen, setIsEditCycleModalOpen } = useLeave();
+  const { hasUpdate, updateInfo, currentVersion, applyUpdate, dismissUpdate } = useAppUpdate();
 
   return (
     <div className="bg-surface text-on-surface font-body-md text-body-md min-h-screen flex flex-col antialiased selection:bg-primary-fixed selection:text-on-primary-fixed">
@@ -53,6 +56,15 @@ const MainAppContent: React.FC = () => {
 
       {/* Offline Connectivity Status Badge */}
       <OfflineIndicator />
+
+      {/* Cloud & PWA Deployment Update Notification Modal */}
+      <UpdateAvailableModal
+        isOpen={hasUpdate}
+        updateInfo={updateInfo}
+        currentVersion={currentVersion}
+        onUpdate={applyUpdate}
+        onDismiss={dismissUpdate}
+      />
 
       {/* Universal Floating Toast Banner */}
       <Toast />

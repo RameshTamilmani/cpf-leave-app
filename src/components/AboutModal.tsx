@@ -22,10 +22,11 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             <div className="w-10 h-10 rounded-xl bg-primary-container text-on-primary-fixed flex items-center justify-center">
               <span className="material-symbols-outlined text-[24px]">info</span>
             </div>
-            <div>
-              <h3 className="font-title-md text-title-md font-bold text-on-surface">About CutiSG</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-title-md text-title-md font-bold text-on-surface">About CutiSG</h3>
+                <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">v1.2.0</span>
+              </div>
               <p className="text-[12px] text-on-surface-variant">Singapore Leave Planner &amp; Public Holiday Tracker</p>
-            </div>
           </div>
           <button
             onClick={onClose}

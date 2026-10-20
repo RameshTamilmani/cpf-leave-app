@@ -4,6 +4,7 @@ import { PWAInstallButton } from '../components/PWAInstallButton';
 import { AboutModal } from '../components/AboutModal';
 import { ImageCropModal } from '../components/ImageCropModal';
 import { formatDateDDMMYYYY, parseDDMMYYYYToISO, calculateExperience } from '../data/singaporeHolidays2026';
+import { useAppUpdate } from '../hooks/useAppUpdate';
 
 export const SettingsScreen: React.FC = () => {
   const {
@@ -38,6 +39,16 @@ export const SettingsScreen: React.FC = () => {
   const [isFactoryResetModalOpen, setIsFactoryResetModalOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [cropModalSrc, setCropModalSrc] = useState<string | null>(null);
+
+  // App Cloud Update hook
+  const { checkForUpdate, isChecking: isCheckingUpdate, currentVersion } = useAppUpdate();
+
+  const handleManualCheckUpdate = async () => {
+    const res = await checkForUpdate(true);
+    if (!res.hasUpdate) {
+      showToast(`You are on the latest version of CutiSG (v${currentVersion})`);
+    }
+  };
 
   const csvInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -669,7 +680,41 @@ export const SettingsScreen: React.FC = () => {
         <PWAInstallButton variant="card" />
       </section>
 
-      {/* 7. About CutiSG - Separate Button opening modal */}
+      {/* 7. App Version & Cloud Update Status */}
+      <section className="space-y-space-xs">
+        <div className="px-1 flex items-center justify-between">
+          <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
+            App Version &amp; Updates
+          </h2>
+          <span className="font-label-sm text-label-sm text-on-surface-variant font-mono">v{currentVersion}</span>
+        </div>
+        <div className="p-3.5 rounded-2xl bg-surface-container-lowest border border-surface-container flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-primary-container text-on-primary-fixed flex items-center justify-center shrink-0 shadow-xs">
+              <span className="material-symbols-outlined text-[22px]">system_update</span>
+            </div>
+            <div className="min-w-0">
+              <p className="font-title-sm text-title-sm text-on-surface font-semibold truncate">CutiSG Release v{currentVersion}</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant text-[12px] truncate">
+                MOM 2026 Compliant • Vercel Cloud Sync
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleManualCheckUpdate}
+            disabled={isCheckingUpdate}
+            className="px-3.5 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 border border-surface-container active:scale-95"
+          >
+            <span className={`material-symbols-outlined text-[16px] text-primary ${isCheckingUpdate ? 'animate-spin' : ''}`}>
+              {isCheckingUpdate ? 'progress_activity' : 'sync'}
+            </span>
+            <span>{isCheckingUpdate ? 'Checking...' : 'Check Update'}</span>
+          </button>
+        </div>
+      </section>
+
+      {/* 8. About CutiSG - Separate Button opening modal */}
       <section className="pt-1">
         <button
           type="button"

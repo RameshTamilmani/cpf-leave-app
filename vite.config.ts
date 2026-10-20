@@ -31,7 +31,6 @@ export default defineConfig(() => {
           background_color: '#FFFFFF',
           display: 'standalone',
           display_override: [
-            'window-controls-overlay',
             'standalone',
             'minimal-ui',
             'browser'
