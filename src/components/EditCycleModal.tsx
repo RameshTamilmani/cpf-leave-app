@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
+import { formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
 
 interface EditCycleModalProps {
   isOpen: boolean;
@@ -22,16 +23,18 @@ const MONTHS = [
 ];
 
 export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose }) => {
-  const { settings, updateSettings, allHolidays, showToast } = useLeave();
+  const { settings, resetCycleWithWarningConfirm, allHolidays, showToast } = useLeave();
 
   const [startMonth, setStartMonth] = useState<number>(settings.cycleStartMonth || 6);
   const [startDay, setStartDay] = useState<number>(settings.cycleStartDay || 13);
   const [endMonth, setEndMonth] = useState<number>(settings.cycleEndMonth || 6);
   const [endDay, setEndDay] = useState<number>(settings.cycleEndDay || 12);
   const [selectedPreset, setSelectedPreset] = useState<string>('custom');
+  const [showWarningModal, setShowWarningModal] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
+      setShowWarningModal(false);
       if (settings.cycle.includes('Jun 13') || (settings.cycleStartMonth === 6 && settings.cycleStartDay === 13)) {
         setStartMonth(6);
         setStartDay(13);
@@ -89,19 +92,26 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
     }
   };
 
-  const handleSave = () => {
-    let cycleTitle = '';
+  const getComputedCycleTitle = () => {
     if (startMonth === 6 && startDay === 13 && endMonth === 6 && endDay === 12) {
-      cycleTitle = 'Jun 13 – Jun 12 (Next Year)';
+      return 'Jun 13 – Jun 12 (Next Year)';
     } else if (startMonth === 1 && startDay === 1 && endMonth === 12 && endDay === 31) {
-      cycleTitle = 'Calendar Year (1 Jan – 31 Dec)';
+      return 'Calendar Year (1 Jan – 31 Dec)';
     } else if (startMonth === 4 && startDay === 1 && endMonth === 3 && endDay === 31) {
-      cycleTitle = 'Financial Year (1 Apr – 31 Mar)';
+      return 'Financial Year (1 Apr – 31 Mar)';
     } else {
-      cycleTitle = `${startDay} ${monthShort(startMonth)} – ${endDay} ${monthShort(endMonth)} (Next Year)`;
+      return `${startDay} ${monthShort(startMonth)} – ${endDay} ${monthShort(endMonth)} (Next Year)`;
     }
+  };
 
-    updateSettings({
+  const handleOpenWarning = () => {
+    setShowWarningModal(true);
+  };
+
+  const handleConfirmResetAndSave = () => {
+    const cycleTitle = getComputedCycleTitle();
+
+    resetCycleWithWarningConfirm({
       cycle: cycleTitle,
       cycleStartMonth: startMonth,
       cycleStartDay: startDay,
@@ -109,10 +119,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
       cycleEndDay: endDay
     });
 
-    const accruedText = previewSaturdayHolidays.length > 0
-      ? ` • ${previewSaturdayHolidays.length} Saturday PH comp-off day${previewSaturdayHolidays.length > 1 ? 's' : ''} auto-credited!`
-      : '';
-    showToast(`Leave year cycle updated: ${cycleTitle}${accruedText}`);
+    setShowWarningModal(false);
     onClose();
   };
 
@@ -399,7 +406,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
                               CNY 2027
                             </span>
                           )}
-                          <span className="text-[11px] text-on-surface-variant">({h.date})</span>
+                          <span className="text-[11px] text-on-surface-variant">({formatDateDDMMYYYY(h.date)})</span>
                         </span>
                         <span className="font-label-sm text-label-sm text-leave-compoff font-semibold">
                           +1 Comp-off
@@ -433,12 +440,64 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
           </button>
           <button
             type="button"
-            onClick={handleSave}
+            onClick={handleOpenWarning}
             className="flex-1 py-2.5 rounded-full bg-primary text-on-primary font-label-md text-label-md font-semibold hover:opacity-95 active:scale-95 transition-all shadow-xs cursor-pointer"
           >
             Save Leave Cycle
           </button>
         </div>
+
+        {/* Warning Confirmation Modal */}
+        {showWarningModal && (
+          <div
+            className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in"
+            onClick={() => setShowWarningModal(false)}
+          >
+            <div
+              className="w-full max-w-sm bg-surface-card rounded-2xl p-5 shadow-2xl border border-error/30 flex flex-col gap-3.5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2.5 text-error">
+                <div className="w-10 h-10 rounded-xl bg-error-container text-on-error-container flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[24px]">warning</span>
+                </div>
+                <div>
+                  <h3 className="font-title-md text-title-md font-bold text-on-surface">Change Leave Cycle?</h3>
+                  <span className="text-xs text-error font-semibold">Important Confirmation</span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-error-container/20 border border-error/20 text-xs text-on-surface leading-relaxed">
+                <p className="font-semibold text-error mb-1">
+                  Warning: Changing the leave year cycle will delete all the leave logs.
+                </p>
+                <p className="text-on-surface-variant">
+                  If you click confirm, all logged leave entries will be deleted and all leave balances will be reset to default values (12 days Annual Leave, 12 days Sick Leave, 0 Comp-Off days).
+                </p>
+                <div className="mt-2 pt-2 border-t border-error/20 text-[11px] text-on-surface">
+                  <strong>New Cycle:</strong> {getComputedCycleTitle()}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowWarningModal(false)}
+                  className="flex-1 py-2.5 rounded-full bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold hover:bg-surface-variant transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmResetAndSave}
+                  className="flex-1 py-2.5 rounded-full bg-error text-on-error font-label-md text-label-md font-semibold hover:bg-error/90 active:scale-95 transition-all shadow-xs cursor-pointer"
+                >
+                  Confirm & Reset
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

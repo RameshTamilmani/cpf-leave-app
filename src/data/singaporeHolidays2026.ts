@@ -524,19 +524,42 @@ export function addDaysToDate(dateStr: string, days: number): string {
   return `${year}-${month}-${day}`;
 }
 
-// Format date string to DD-MM-YYYY
+// Format date string to DD/MM/YYYY
 export function formatDateDDMMYYYY(dateStr: string): string {
   if (!dateStr) return '';
-  const parts = dateStr.split('-');
+  const trimmed = dateStr.trim();
+  const parts = trimmed.split(/[-/]/);
+  // YYYY-MM-DD -> DD/MM/YYYY
   if (parts.length === 3 && parts[0].length === 4) {
-    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
   }
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
+  // If already DD/MM/YYYY or DD-MM-YYYY
+  if (parts.length === 3 && parts[2].length === 4) {
+    return `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[2]}`;
+  }
+  const d = new Date(trimmed);
+  if (isNaN(d.getTime())) return trimmed;
   const day = String(d.getDate()).padStart(2, '0');
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const year = d.getFullYear();
-  return `${day}-${month}-${year}`;
+  return `${day}/${month}/${year}`;
+}
+
+// Parse DD/MM/YYYY or DD-MM-YYYY or YYYY-MM-DD to ISO YYYY-MM-DD string
+export function parseDDMMYYYYToISO(dateStr: string): string {
+  if (!dateStr) return '';
+  const trimmed = dateStr.trim();
+  const match = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (match) {
+    const day = match[1].padStart(2, '0');
+    const month = match[2].padStart(2, '0');
+    const year = match[3];
+    return `${year}-${month}-${day}`;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return trimmed;
+  }
+  return trimmed;
 }
 
 // Calculate years and months of work experience from Date of Joining

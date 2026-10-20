@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { LeaveRecord, UserSettings, LeaveType, LeaveStatus, PublicHoliday, SpecialHoliday } from '../types/leave';
-import { ALL_GAZETTED_HOLIDAYS, addDaysToDate } from '../data/singaporeHolidays2026';
+import { ALL_GAZETTED_HOLIDAYS, addDaysToDate, formatDateDDMMYYYY, parseDDMMYYYYToISO } from '../data/singaporeHolidays2026';
 
 interface ToastState {
   show: boolean;
@@ -110,6 +110,7 @@ interface LeaveContextType {
   restoreCSV: (csvStr: string) => boolean;
   resetAllData: () => void;
   resetEntireAppToDefaults: () => void;
+  resetCycleWithWarningConfirm: (newCycleSettings: Partial<UserSettings>) => void;
 }
 
 const defaultSettings: UserSettings = {
@@ -546,14 +547,15 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return;
     }
     const sortedForExport = [...records].sort((a, b) => a.startDate.localeCompare(b.startDate));
-    const headers = ['Type', 'Title', 'Start Date', 'End Date', 'Days', 'Status'];
+    const headers = ['Type', 'Title', 'Start Date', 'End Date', 'Days', 'Status', 'Remarks'];
     const rows = sortedForExport.map((r) => [
       `"${r.type}"`,
       `"${r.title.replace(/"/g, '""')}"`,
-      `"${r.startDate}"`,
-      `"${r.endDate}"`,
+      `"${formatDateDDMMYYYY(r.startDate)}"`,
+      `"${formatDateDDMMYYYY(r.endDate)}"`,
       r.days,
-      `"${r.status}"`
+      `"${r.status}"`,
+      `"${(r.notes || '').replace(/"/g, '""')}"`
     ]);
 
     const csvContent = [headers.join(','), ...rows.map((e) => e.join(','))].join('\r\n');
@@ -567,10 +569,10 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     link.click();
     document.body.removeChild(link);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast(`Exported ${records.length} leave record${records.length !== 1 ? 's' : ''} to CSV`);
+    showToast(`Exported ${records.length} leave record${records.length !== 1 ? 's' : ''} to CSV (DD/MM/YYYY)`);
   };
 
-  // Restore CSV containing mandatory data with strict duplicate validation
+  // Restore CSV containing mandatory data with strict duplicate validation and DD/MM/YYYY support
   const restoreCSV = (csvStr: string): boolean => {
     try {
       const lines = csvStr.trim().split(/\r?\n/).filter(Boolean);
@@ -587,6 +589,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const endIdx = headers.findIndex((h) => h.includes('end'));
       const daysIdx = headers.findIndex((h) => h.includes('day'));
       const statusIdx = headers.findIndex((h) => h.includes('status'));
+      const remarksIdx = headers.findIndex((h) => h.includes('remark') || h.includes('note'));
 
       const validRows: {
         type: LeaveType;
@@ -595,6 +598,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         endDate: string;
         days: number;
         status: LeaveStatus;
+        notes?: string;
       }[] = [];
 
       let duplicateCount = 0;
@@ -620,12 +624,15 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         const typeRaw = cols[typeIdx >= 0 ? typeIdx : 0]?.toUpperCase() || 'AL';
         const type: LeaveType = typeRaw === 'SL' ? 'SL' : typeRaw === 'CO' ? 'CO' : 'AL';
-        const title = cols[titleIdx >= 0 ? titleIdx : 1] || 'Leave';
-        const startDate = cols[startIdx >= 0 ? startIdx : 2] || todayDateStr;
-        const endDate = cols[endIdx >= 0 ? endIdx : 3] || startDate;
+        const title = cols[titleIdx >= 0 ? titleIdx : 1] || (type === 'AL' ? 'Annual Leave' : type === 'SL' ? 'Sick Leave' : 'Comp-off Leave');
+        const rawStart = cols[startIdx >= 0 ? startIdx : 2] || todayDateStr;
+        const rawEnd = cols[endIdx >= 0 ? endIdx : 3] || rawStart;
+        const startDate = parseDDMMYYYYToISO(rawStart);
+        const endDate = parseDDMMYYYYToISO(rawEnd);
         const days = Math.max(0.5, Number(cols[daysIdx >= 0 ? daysIdx : 4]) || 1.0);
         const statusRaw = cols[statusIdx >= 0 ? statusIdx : 5]?.toLowerCase();
         const status: LeaveStatus = statusRaw === 'taken' ? 'taken' : 'planned';
+        const notes = remarksIdx >= 0 ? cols[remarksIdx] : undefined;
 
         // Basic date consistency
         if (!startDate || !endDate || endDate < startDate) {
@@ -657,7 +664,8 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           startDate,
           endDate,
           days,
-          status
+          status,
+          notes: notes ? notes.trim() : undefined
         });
       }
 
@@ -680,9 +688,9 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       localStorage.setItem('cutisg_records', JSON.stringify(imported));
 
       if (duplicateCount > 0) {
-        showToast(`Restored ${imported.length} mandatory records (${duplicateCount} duplicate entries blocked).`);
+        showToast(`Restored ${imported.length} records (${duplicateCount} duplicates blocked).`);
       } else {
-        showToast(`Successfully restored ${imported.length} mandatory leave record${imported.length !== 1 ? 's' : ''} from CSV!`);
+        showToast(`Successfully restored ${imported.length} leave record${imported.length !== 1 ? 's' : ''} from CSV!`);
       }
       return true;
     } catch (e) {
@@ -703,6 +711,33 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error(e);
     }
     showToast('All leave records deleted. Profile info & settings preserved.');
+  };
+
+  // Changing leave year cycle: updates cycle, deletes all leave logs, and resets leaves to default values
+  const resetCycleWithWarningConfirm = (newCycleSettings: Partial<UserSettings>) => {
+    setSettings((prev) => {
+      const updated: UserSettings = {
+        ...prev,
+        ...newCycleSettings,
+        alEntitlement: 12,
+        slEntitlement: 12
+      };
+      try {
+        localStorage.setItem('cutisg_settings', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+      return updated;
+    });
+    setRecords([]);
+    setManualCompOffCredits(0);
+    try {
+      localStorage.setItem('cutisg_records', '[]');
+      localStorage.setItem('cutisg_manual_compoff', '0');
+    } catch (e) {
+      console.error(e);
+    }
+    showToast('Leave cycle updated: all leave entries deleted and balances reset to default values.');
   };
 
   // "Factory Reset": resets entire app, all records, profile details, and settings to defaults
@@ -801,7 +836,8 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isSyncing,
         exportCSV,
         restoreCSV,
-        resetAllData
+        resetAllData,
+        resetCycleWithWarningConfirm
       }}
     >
       {children}

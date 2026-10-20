@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { ImageCropModal } from './ImageCropModal';
+import { formatDateDDMMYYYY, parseDDMMYYYYToISO } from '../data/singaporeHolidays2026';
 
 export const OnboardingModal: React.FC = () => {
   const { settings, updateSettings, showToast } = useLeave();
@@ -9,10 +10,10 @@ export const OnboardingModal: React.FC = () => {
   const [employeeId, setEmployeeId] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [dateOfJoining, setDateOfJoining] = useState('');
+  const [dateOfJoiningInput, setDateOfJoiningInput] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [cropModalSrc, setCropModalSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const datePickerRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Check if user has already been prompted or profile is set
@@ -25,6 +26,7 @@ export const OnboardingModal: React.FC = () => {
       setEmployeeId(settings.employeeId || '');
       setAvatarUrl(settings.avatarUrl || '');
       setDateOfJoining(settings.dateOfJoining || '');
+      setDateOfJoiningInput(settings.dateOfJoining ? formatDateDDMMYYYY(settings.dateOfJoining) : '');
     }
   }, [settings.userName, settings.employeeId, settings.avatarUrl, settings.dateOfJoining]);
 
@@ -64,11 +66,13 @@ export const OnboardingModal: React.FC = () => {
       return;
     }
 
+    const finalDoj = dateOfJoiningInput.trim() ? parseDDMMYYYYToISO(dateOfJoiningInput.trim()) : '';
+
     updateSettings({
       userName: name.trim(),
       employeeId: employeeId.trim(),
       avatarUrl,
-      dateOfJoining: dateOfJoining.trim()
+      dateOfJoining: finalDoj
     });
 
     localStorage.setItem('cutisg_profile_setup_prompted', 'true');
@@ -235,38 +239,34 @@ export const OnboardingModal: React.FC = () => {
                 </span>
                 <input
                   type="text"
-                  placeholder="YYYY-MM-DD"
-                  value={dateOfJoining}
+                  placeholder="DD/MM/YYYY"
+                  value={dateOfJoiningInput}
                   maxLength={10}
-                  onChange={(e) => setDateOfJoining(e.target.value)}
+                  onChange={(e) => {
+                    const typed = e.target.value;
+                    setDateOfJoiningInput(typed);
+                    const parsed = parseDDMMYYYYToISO(typed);
+                    setDateOfJoining(parsed);
+                  }}
                   className="w-full pl-10 pr-12 py-2.5 h-11 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
                 />
 
-                {/* Hidden native date picker */}
-                <input
-                  type="date"
-                  ref={datePickerRef}
-                  value={dateOfJoining}
-                  max={new Date().toISOString().slice(0, 10)}
-                  onChange={(e) => setDateOfJoining(e.target.value)}
-                  className="sr-only"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    try {
-                      datePickerRef.current?.showPicker?.();
-                    } catch {
-                      datePickerRef.current?.focus();
-                      datePickerRef.current?.click();
-                    }
-                  }}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center cursor-pointer transition-colors border border-surface-container"
-                  title="Open Calendar Date Picker"
-                >
-                  <span className="material-symbols-outlined text-[18px]">calendar_month</span>
-                </button>
+                {/* Overlaid calendar icon + native date picker */}
+                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center transition-colors border border-surface-container overflow-hidden">
+                  <span className="material-symbols-outlined text-[18px] pointer-events-none">calendar_month</span>
+                  <input
+                    type="date"
+                    value={dateOfJoining}
+                    max={new Date().toISOString().slice(0, 10)}
+                    onChange={(e) => {
+                      const iso = e.target.value;
+                      setDateOfJoining(iso);
+                      setDateOfJoiningInput(formatDateDDMMYYYY(iso));
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    title="Choose Date of Joining"
+                  />
+                </div>
               </div>
             </div>
           </div>

@@ -3,13 +3,58 @@
   "name": "CutiSG - Singapore Leave & Public Holiday Tracker",
   "short_name": "CutiSG",
   "description": "Singapore MOM compliant personal leave planner, gazetted public holiday tracker, and comp-off ledger for FY 2026.",
+  "lang": "en",
+  "dir": "ltr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
   "orientation": "portrait-primary",
   "background_color": "#FFFFFF",
   "theme_color": "#EE2C38",
-  "categories": ["productivity", "business", "lifestyle"],
+  "categories": ["productivity", "business", "lifestyle", "utilities"],
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "share_target": {
+    "action": "/?action=share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+cutisg",
+      "url": "/?url=%s"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/?action=import",
+      "name": "Leave Backup Files",
+      "accept": {
+        "text/csv": [".csv"],
+        "application/json": [".json"]
+      }
+    }
+  ],
+  "note_taking": {
+    "new_note_url": "/?action=apply"
+  },
   "icons": [
     {
       "src": "/pwa-192x192.png",
@@ -28,6 +73,41 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "CutiSG Desktop Dashboard"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "CutiSG Mobile App"
+    }
+  ],
+  "widgets": [
+    {
+      "name": "Leave Balances",
+      "short_name": "Leaves",
+      "description": "Quick view of remaining leave balance",
+      "tag": "leave-balance",
+      "template": "widget",
+      "ms_ac_template": "widget.json",
+      "data": "widget-data.json",
+      "type": "application/json",
+      "screenshots": [
+        {
+          "src": "/pwa-512x512.png",
+          "sizes": "512x512",
+          "label": "Leave Balance Widget"
+        }
+      ]
     }
   ],
   "shortcuts": [

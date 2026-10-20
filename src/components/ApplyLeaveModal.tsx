@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { LeaveType, LeaveStatus } from '../types/leave';
-import { calculateWorkingDays, formatDateDDMMYYYY, isWeekend, addDaysToDate } from '../data/singaporeHolidays2026';
+import { calculateWorkingDays, formatDateDDMMYYYY, parseDDMMYYYYToISO, isWeekend, addDaysToDate } from '../data/singaporeHolidays2026';
 
 export const ApplyLeaveModal: React.FC = () => {
   const {
@@ -19,16 +19,14 @@ export const ApplyLeaveModal: React.FC = () => {
   } = useLeave();
 
   const [type, setType] = useState<LeaveType>('AL');
-  const [title, setTitle] = useState('');
+  const [remarks, setRemarks] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [startDateInput, setStartDateInput] = useState('');
+  const [endDateInput, setEndDateInput] = useState('');
   const [durationMode, setDurationMode] = useState<'full' | 'half-am' | 'half-pm'>('full');
   const [daysToDeduct, setDaysToDeduct] = useState<number>(1.0);
-  const [notes, setNotes] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
-
-  const startDatePickerRef = useRef<HTMLInputElement>(null);
-  const endDatePickerRef = useRef<HTMLInputElement>(null);
 
   // When modal opens, initialize fields
   useEffect(() => {
@@ -40,10 +38,12 @@ export const ApplyLeaveModal: React.FC = () => {
       const initial = applyModalConfig.initialDate || todayDateStr || '2026-10-12';
       setStartDate(initial);
       setEndDate(initial);
+      setStartDateInput(formatDateDDMMYYYY(initial));
+      setEndDateInput(formatDateDDMMYYYY(initial));
       setDurationMode('full');
       setDaysToDeduct(1.0);
       setValidationError(null);
-      setTitle('');
+      setRemarks('');
     }
   }, [applyModalConfig]);
 
@@ -323,7 +323,6 @@ export const ApplyLeaveModal: React.FC = () => {
       }));
   const isCompOffPost90Days = type === 'CO' && !isCompOffWithin90Days;
 
-  const isTitleMissing = !title.trim();
   // Only Comp-off is restricted by quota; AL and SL allow exceeding quota and count as Loss of Pay (LOP)
   const isExceedingQuota = type === 'CO' && daysToDeduct > getAvailableBalance();
   const isLOPApplicable = (type === 'AL' || type === 'SL') && daysToDeduct > getAvailableBalance();
@@ -331,7 +330,6 @@ export const ApplyLeaveModal: React.FC = () => {
   const isInvalidDate = Boolean(startDate && endDate && endDate < startDate);
   const isHalfDayMultiDay = Boolean(isMultiDay && daysToDeduct === 0.5);
   const isFormInvalid = Boolean(
-    isTitleMissing ||
     isDuplicate ||
     isWeekendBlocked ||
     isHolidayBlocked ||
@@ -423,11 +421,6 @@ export const ApplyLeaveModal: React.FC = () => {
       }
     }
 
-    if (!title.trim()) {
-      setValidationError('Reason / Leave Title is mandatory. Please enter a reason.');
-      return;
-    }
-
     // Only Comp-Off cannot exceed available quota; AL/SL calculate excess as LOP
     if (type === 'CO' && daysToDeduct > getAvailableBalance()) {
       setValidationError(
@@ -451,7 +444,8 @@ export const ApplyLeaveModal: React.FC = () => {
       }
     }
 
-    const finalTitle = title.trim();
+    // Always store the default title based on the type of leaves selected
+    const defaultTitle = type === 'AL' ? 'Annual Leave' : type === 'SL' ? 'Sick Leave' : 'Comp-off Leave';
     const finalDays = Math.max(0.5, Number(daysToDeduct) || 1.0);
     // Leave on the current date is considered taken; only leave greater than current date is planned
     const status: LeaveStatus = startDate > todayDateStr ? 'planned' : 'taken';
@@ -459,13 +453,13 @@ export const ApplyLeaveModal: React.FC = () => {
 
     addRecord({
       type,
-      title: finalTitle,
+      title: defaultTitle,
       startDate,
       endDate,
       days: finalDays,
       halfDay,
       status,
-      notes: notes.trim() || undefined
+      notes: remarks.trim() || undefined
     });
 
     closeApplyModal();
@@ -551,26 +545,6 @@ export const ApplyLeaveModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Title / Description */}
-          <div>
-            <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-              REASON / LEAVE TITLE *
-            </label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                if (validationError && validationError.includes('Reason')) {
-                  setValidationError(null);
-                }
-              }}
-              placeholder="Enter reason for leave"
-              className="w-full px-3.5 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary text-body-md"
-            />
-          </div>
-
           {/* Dates & Duration Mode */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
@@ -584,49 +558,45 @@ export const ApplyLeaveModal: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="YYYY-MM-DD"
+                  placeholder="DD/MM/YYYY"
                   maxLength={10}
-                  value={startDate}
+                  value={startDateInput}
                   onChange={(e) => {
-                    const newStart = e.target.value;
-                    setStartDate(newStart);
-                    if (/^\d{4}-\d{2}-\d{2}$/.test(newStart) && (!endDate || endDate < newStart)) {
-                      setEndDate(newStart);
+                    const typed = e.target.value;
+                    setStartDateInput(typed);
+                    const parsed = parseDDMMYYYYToISO(typed);
+                    if (parsed) {
+                      setStartDate(parsed);
+                      if (!endDate || endDate < parsed) {
+                        setEndDate(parsed);
+                        setEndDateInput(formatDateDDMMYYYY(parsed));
+                      }
                     }
                   }}
                   className="w-full pl-9 pr-11 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
 
-                {/* Hidden native date picker */}
-                <input
-                  type="date"
-                  ref={startDatePickerRef}
-                  value={startDate}
-                  onChange={(e) => {
-                    const newStart = e.target.value;
-                    setStartDate(newStart);
-                    if (!endDate || endDate < newStart) {
-                      setEndDate(newStart);
-                    }
-                  }}
-                  className="sr-only"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    try {
-                      startDatePickerRef.current?.showPicker?.();
-                    } catch {
-                      startDatePickerRef.current?.focus();
-                      startDatePickerRef.current?.click();
-                    }
-                  }}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center cursor-pointer transition-colors border border-surface-container"
-                  title="Open Calendar Date Picker"
-                >
-                  <span className="material-symbols-outlined text-[18px]">calendar_month</span>
-                </button>
+                {/* Overlaid calendar icon + native date picker */}
+                <div className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center transition-colors border border-surface-container overflow-hidden">
+                  <span className="material-symbols-outlined text-[18px] pointer-events-none">calendar_month</span>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => {
+                      const newStart = e.target.value;
+                      if (newStart) {
+                        setStartDate(newStart);
+                        setStartDateInput(formatDateDDMMYYYY(newStart));
+                        if (!endDate || endDate < newStart) {
+                          setEndDate(newStart);
+                          setEndDateInput(formatDateDDMMYYYY(newStart));
+                        }
+                      }
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    title="Choose Start Date"
+                  />
+                </div>
               </div>
             </div>
 
@@ -641,44 +611,38 @@ export const ApplyLeaveModal: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="YYYY-MM-DD"
+                  placeholder="DD/MM/YYYY"
                   maxLength={10}
-                  value={endDate}
+                  value={endDateInput}
                   onChange={(e) => {
-                    const newEnd = e.target.value;
-                    setEndDate(newEnd);
+                    const typed = e.target.value;
+                    setEndDateInput(typed);
+                    const parsed = parseDDMMYYYYToISO(typed);
+                    if (parsed) {
+                      setEndDate(parsed);
+                    }
                   }}
                   className="w-full pl-9 pr-11 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
 
-                {/* Hidden native date picker */}
-                <input
-                  type="date"
-                  ref={endDatePickerRef}
-                  value={endDate}
-                  min={startDate}
-                  onChange={(e) => {
-                    const newEnd = e.target.value;
-                    setEndDate(newEnd);
-                  }}
-                  className="sr-only"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    try {
-                      endDatePickerRef.current?.showPicker?.();
-                    } catch {
-                      endDatePickerRef.current?.focus();
-                      endDatePickerRef.current?.click();
-                    }
-                  }}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center cursor-pointer transition-colors border border-surface-container"
-                  title="Open Calendar Date Picker"
-                >
-                  <span className="material-symbols-outlined text-[18px]">calendar_month</span>
-                </button>
+                {/* Overlaid calendar icon + native date picker */}
+                <div className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center transition-colors border border-surface-container overflow-hidden">
+                  <span className="material-symbols-outlined text-[18px] pointer-events-none">calendar_month</span>
+                  <input
+                    type="date"
+                    value={endDate}
+                    min={startDate}
+                    onChange={(e) => {
+                      const newEnd = e.target.value;
+                      if (newEnd) {
+                        setEndDate(newEnd);
+                        setEndDateInput(formatDateDDMMYYYY(newEnd));
+                      }
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    title="Choose End Date"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -869,6 +833,20 @@ export const ApplyLeaveModal: React.FC = () => {
             </div>
           </div>
 
+          {/* Remarks (Optional) - placed at the last */}
+          <div>
+            <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
+              REMARKS (OPTIONAL)
+            </label>
+            <input
+              type="text"
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              placeholder="Add optional remarks..."
+              className="w-full px-3.5 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary text-body-md"
+            />
+          </div>
+
           {/* Validation Error Banner */}
           {validationError && (
             <div className="p-3 rounded-xl bg-error-container text-on-error-container text-body-sm flex items-start gap-2.5 border border-error/20 animate-fade-in">
@@ -980,9 +958,7 @@ export const ApplyLeaveModal: React.FC = () => {
                   : 'bg-primary text-on-primary hover:opacity-95 active:scale-98 cursor-pointer'
               }`}
             >
-              {isTitleMissing
-                ? 'Enter Reason / Leave Title'
-                : isWeekendBlocked
+              {isWeekendBlocked
                 ? 'Cannot Apply on Weekends (Sat/Sun)'
                 : isHolidayBlocked
                 ? 'Cannot Apply on Holidays'
@@ -996,7 +972,7 @@ export const ApplyLeaveModal: React.FC = () => {
                 ? 'Exceeds Available Comp-Off'
                 : isCompOffPost90Days
                 ? 'Date Post 90 Days (Below Expiry Only)'
-                : 'Confirm'}
+                : 'Confirm & Log Leave'}
             </button>
           </div>
         </form>

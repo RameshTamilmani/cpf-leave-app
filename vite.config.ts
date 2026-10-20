@@ -10,7 +10,8 @@ export default defineConfig(() => {
       react(),
       tailwindcss(),
       VitePWA({
-        registerType: 'autoUpdate',
+        registerType: 'prompt',
+        injectRegister: null,
         includeAssets: [
           'icon.svg',
           'favicon.svg',
@@ -24,13 +25,37 @@ export default defineConfig(() => {
           name: 'CutiSG - Singapore Leave & Public Holiday Tracker',
           short_name: 'CutiSG',
           description: 'Singapore MOM compliant personal leave planner, gazetted public holiday tracker, and comp-off ledger for FY 2026.',
+          lang: 'en',
+          dir: 'ltr',
           theme_color: '#EE2C38',
           background_color: '#FFFFFF',
           display: 'standalone',
+          display_override: [
+            'window-controls-overlay',
+            'standalone',
+            'minimal-ui',
+            'browser'
+          ],
           orientation: 'portrait-primary',
           start_url: '/',
           scope: '/',
-          categories: ['productivity', 'business', 'lifestyle'],
+          categories: ['productivity', 'business', 'lifestyle', 'utilities'],
+          prefer_related_applications: false,
+          launch_handler: {
+            client_mode: ['navigate-existing', 'auto']
+          },
+          edge_side_panel: {
+            preferred_width: 400
+          },
+          share_target: {
+            action: '/?action=share',
+            method: 'GET',
+            params: {
+              title: 'title',
+              text: 'text',
+              url: 'url'
+            }
+          },
           icons: [
             {
               src: '/pwa-192x192.png',
@@ -50,6 +75,22 @@ export default defineConfig(() => {
               type: 'image/png',
               purpose: 'maskable',
             },
+          ],
+          screenshots: [
+            {
+              src: '/pwa-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              form_factor: 'wide',
+              label: 'CutiSG Desktop Dashboard'
+            },
+            {
+              src: '/pwa-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              form_factor: 'narrow',
+              label: 'CutiSG Mobile App'
+            }
           ],
         },
         workbox: {
@@ -86,8 +127,7 @@ export default defineConfig(() => {
           ],
         },
         devOptions: {
-          enabled: true,
-          type: 'module',
+          enabled: false,
         },
       }),
     ],

@@ -213,9 +213,6 @@ export const HomeScreen: React.FC = () => {
                 <h3 className="font-title-md text-title-md font-semibold text-leave-annual-on-container leading-tight">
                   Annual Leave
                 </h3>
-                <span className="font-label-sm text-label-sm opacity-80">
-                  {Number.isInteger(alAvailable) ? alAvailable : alAvailable.toFixed(1)} / {settings.alEntitlement} Days Available
-                </span>
               </div>
             </div>
             <div className="flex items-baseline gap-1 text-right">
@@ -243,9 +240,6 @@ export const HomeScreen: React.FC = () => {
                 <h3 className="font-title-md text-title-md font-semibold text-leave-sick-on-container leading-tight">
                   Sick Leave
                 </h3>
-                <span className="font-label-sm text-label-sm opacity-80">
-                  {Number.isInteger(slAvailable) ? slAvailable : slAvailable.toFixed(1)} / {settings.slEntitlement} Days Available
-                </span>
               </div>
             </div>
             <div className="flex items-baseline gap-1 text-right">
@@ -273,7 +267,6 @@ export const HomeScreen: React.FC = () => {
                 <h3 className="font-title-md text-title-md font-semibold text-leave-compoff-on-container leading-tight">
                   Comp-off Leave
                 </h3>
-                <span className="font-label-sm text-label-sm opacity-80">Available Balance</span>
               </div>
             </div>
             <div className="flex items-baseline gap-1.5 text-right">
@@ -306,11 +299,6 @@ export const HomeScreen: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <span className="font-label-sm text-label-sm text-rose-800/80">
-                  {totalLOP > 0
-                    ? `${alLOP > 0 ? `${Number.isInteger(alLOP) ? alLOP : alLOP.toFixed(1)}d AL` : ''}${alLOP > 0 && slLOP > 0 ? ' • ' : ''}${slLOP > 0 ? `${Number.isInteger(slLOP) ? slLOP : slLOP.toFixed(1)}d SL` : ''} over entitlement`
-                    : 'Leaves applied exceeding 12-day entitlement'}
-                </span>
               </div>
             </div>
             <div className="flex items-baseline gap-1.5 text-right">
@@ -343,11 +331,6 @@ export const HomeScreen: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <span className="font-label-sm text-label-sm text-purple-800/80">
-                  {specialHolidays.length > 0
-                    ? `${specialHolidays.length} special holiday${specialHolidays.length !== 1 ? 's' : ''} added`
-                    : 'Company & ad-hoc holidays'}
-                </span>
               </div>
             </div>
             <div className="flex items-baseline gap-1.5 text-right">
@@ -393,46 +376,6 @@ export const HomeScreen: React.FC = () => {
               <p className="font-body-sm text-body-sm text-on-surface-variant">View Saturday holiday credits</p>
             </div>
           </button>
-        </div>
-      </section>
-
-      {/* 4. Comp-off Expiry Tracker */}
-      <section className="flex flex-col gap-space-sm">
-        <div className="flex items-center justify-between px-1">
-          <h2 className="font-title-md text-title-md text-on-surface font-semibold">
-            Comp-off Expiry Tracker
-          </h2>
-          <button
-            onClick={() => setIsCompOffModalOpen(true)}
-            className="font-label-sm text-label-sm text-primary font-semibold hover:underline cursor-pointer"
-          >
-            View Ledger
-          </button>
-        </div>
-
-        <div className="rounded-2xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[20px] text-error">history_toggle_off</span>
-              <span className="font-title-sm text-title-sm text-on-surface font-semibold">
-                Expired in Active Cycle
-              </span>
-            </div>
-            <span className="font-headline-sm font-bold text-error">
-              {expiredCompOffCount} Day{expiredCompOffCount !== 1 ? 's' : ''}
-            </span>
-          </div>
-
-          <p className="text-body-sm text-on-surface-variant leading-relaxed">
-            Statutory MOM guidelines grant 1 comp-off credit per gazetted Saturday holiday. Comp-off leave dates must be taken within 90 days of the holiday.
-          </p>
-
-          <div className="pt-2 border-t border-surface-container flex items-center justify-between text-label-sm text-on-surface-variant">
-            <span>Credited from Saturday holidays</span>
-            <span className="font-semibold text-primary">
-              {saturdayCompOffHolidays.length} Holidays Tracked
-            </span>
-          </div>
         </div>
       </section>
 

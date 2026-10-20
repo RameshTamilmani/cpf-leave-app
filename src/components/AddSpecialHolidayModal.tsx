@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
+import { formatDateDDMMYYYY, parseDDMMYYYYToISO } from '../data/singaporeHolidays2026';
 
 const EMOJI_OPTIONS = ['🗳️', '🇸🇬', '🌟', '🏛️', '🎈', '🕊️', '🧧', '✨', '🏆', '🎉', '🪔'];
 
@@ -16,12 +17,11 @@ export const AddSpecialHolidayModal: React.FC = () => {
 
   const [name, setName] = useState('');
   const [date, setDate] = useState(todayDateStr || '2026-11-20');
+  const [dateInput, setDateInput] = useState(formatDateDDMMYYYY(todayDateStr || '2026-11-20'));
   const [category, setCategory] = useState<'gazetted_adhoc' | 'company' | 'national'>('gazetted_adhoc');
   const [emoji, setEmoji] = useState('🗳️');
   const [notes, setNotes] = useState('');
   const [forceCompOff, setForceCompOff] = useState(false);
-
-  const datePickerRef = useRef<HTMLInputElement>(null);
 
   if (!isAddSpecialHolidayOpen) return null;
 
@@ -34,18 +34,23 @@ export const AddSpecialHolidayModal: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !date) {
+    const finalDate = dateInput ? parseDDMMYYYYToISO(dateInput) : date;
+    if (!name.trim() || !finalDate) {
       alert('Please provide holiday name and date.');
       return;
     }
 
-    const isLongWeekend = dayOfWeekIndex === 5 || dayOfWeekIndex === 1 || dayOfWeekIndex === 0;
-    const qualifiesForCompOff = isSaturday || forceCompOff;
+    const finalDateObj = new Date(finalDate + 'T00:00:00');
+    const dayIdx = finalDateObj.getDay();
+    const isSat = dayIdx === 6;
+    const isSun = dayIdx === 0;
+    const isLongWeekend = dayIdx === 5 || dayIdx === 1 || dayIdx === 0;
+    const qualifiesForCompOff = isSat || forceCompOff;
 
     addSpecialHoliday({
       name: name.trim(),
-      date,
-      dayOfWeek: dayName,
+      date: finalDate,
+      dayOfWeek: daysOfWeek[dayIdx] || dayName,
       isLongWeekend,
       isCompOffEligible: qualifiesForCompOff,
       longWeekendText: isSaturday || forceCompOff
@@ -196,37 +201,33 @@ export const AddSpecialHolidayModal: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="YYYY-MM-DD"
+                  placeholder="DD/MM/YYYY"
                   maxLength={10}
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
+                  value={dateInput}
+                  onChange={(e) => {
+                    const typed = e.target.value;
+                    setDateInput(typed);
+                    const parsed = parseDDMMYYYYToISO(typed);
+                    setDate(parsed);
+                  }}
                   className="w-full pl-9 pr-11 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
 
-                {/* Hidden native date picker */}
-                <input
-                  type="date"
-                  ref={datePickerRef}
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="sr-only"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    try {
-                      datePickerRef.current?.showPicker?.();
-                    } catch {
-                      datePickerRef.current?.focus();
-                      datePickerRef.current?.click();
-                    }
-                  }}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center cursor-pointer transition-colors border border-surface-container"
-                  title="Open Calendar Date Picker"
-                >
-                  <span className="material-symbols-outlined text-[18px]">calendar_month</span>
-                </button>
+                {/* Overlaid calendar icon + native date picker */}
+                <div className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center transition-colors border border-surface-container overflow-hidden">
+                  <span className="material-symbols-outlined text-[18px] pointer-events-none">calendar_month</span>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => {
+                      const iso = e.target.value;
+                      setDate(iso);
+                      setDateInput(formatDateDDMMYYYY(iso));
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    title="Choose Date"
+                  />
+                </div>
               </div>
             </div>
 
