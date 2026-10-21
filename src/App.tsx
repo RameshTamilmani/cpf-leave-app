@@ -17,6 +17,7 @@ import { HistoryScreen } from './screens/HistoryScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { UpdateAvailableModal } from './components/UpdateAvailableModal';
+import { WishPopupModal } from './components/WishPopupModal';
 import { useAppUpdate } from './hooks/useAppUpdate';
 
 const MainAppContent: React.FC = () => {
@@ -53,6 +54,9 @@ const MainAppContent: React.FC = () => {
         onClose={() => setIsEditCycleModalOpen(false)}
       />
       <OnboardingModal />
+
+      {/* Celebratory Wishes Popup Modal with melodic chime */}
+      <WishPopupModal />
 
       {/* Offline Connectivity Status Badge */}
       <OfflineIndicator />

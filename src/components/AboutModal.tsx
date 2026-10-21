@@ -70,7 +70,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
               Automatic Holiday Synchronization
             </h4>
             <p className="text-on-surface-variant">
-              All Singapore gazetted public holidays are automatically synchronized and cached locally for seamless offline access.
+              All Singapore gazetted public holidays are automatically synchronized according to Ministry of Manpower (MOM) standards.
             </p>
           </div>
         </div>

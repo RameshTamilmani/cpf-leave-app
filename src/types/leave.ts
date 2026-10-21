@@ -65,4 +65,6 @@ export interface UserSettings {
   weekendWishesEnabled?: boolean;
   anniversaryWishesEnabled?: boolean;
   holidayWishesEnabled?: boolean;
+  wishSoundEnabled?: boolean;
+  wishPopupEnabled?: boolean;
 }

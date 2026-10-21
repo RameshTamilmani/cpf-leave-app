@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { LeaveRecord, UserSettings, LeaveType, LeaveStatus, PublicHoliday, SpecialHoliday } from '../types/leave';
 import { ALL_GAZETTED_HOLIDAYS, addDaysToDate, formatDateDDMMYYYY, parseDDMMYYYYToISO } from '../data/singaporeHolidays2026';
+import { AppNotification, generateNotifications } from '../utils/notifications';
+import { playCelebrationChime } from '../utils/sound';
 
 interface ToastState {
   show: boolean;
@@ -102,6 +104,9 @@ interface LeaveContextType {
   hasNewNotification: boolean;
   markNotificationsAsViewed: () => void;
   triggerNewNotification: () => void;
+  activeWishPopup: AppNotification | null;
+  setActiveWishPopup: (wish: AppNotification | null) => void;
+  openWishWithChime: (wish: AppNotification) => void;
 
   // Actions
   triggerSync: () => Promise<void>;
@@ -138,7 +143,9 @@ const defaultSettings: UserSettings = {
   wishesEnabled: true,
   weekendWishesEnabled: true,
   anniversaryWishesEnabled: true,
-  holidayWishesEnabled: true
+  holidayWishesEnabled: true,
+  wishSoundEnabled: true,
+  wishPopupEnabled: true
 };
 
 const LeaveContext = createContext<LeaveContextType | undefined>(undefined);
@@ -281,6 +288,37 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error(e);
     }
   }, [manualCompOffCredits]);
+
+  const [activeWishPopup, setActiveWishPopup] = useState<AppNotification | null>(null);
+
+  const openWishWithChime = (wish: AppNotification) => {
+    setActiveWishPopup(wish);
+    if (settings.wishSoundEnabled !== false) {
+      playCelebrationChime();
+    }
+  };
+
+  // Automated Launch of active celebration wishes as a popup with sound
+  useEffect(() => {
+    if (settings.notificationsEnabled === false || settings.wishPopupEnabled === false) {
+      return;
+    }
+    const notifs = generateNotifications(settings, specialHolidays, ALL_GAZETTED_HOLIDAYS, records, todayDateStr);
+    const activeCelebration = notifs.find(
+      (n) => n.isCelebration || n.type === 'anniversary' || n.type === 'weekend' || n.type === 'indian_holiday' || n.type === 'special_holiday'
+    );
+    if (activeCelebration) {
+      const storageKey = `cutisg_viewed_wish_${activeCelebration.id}`;
+      const viewed = sessionStorage.getItem(storageKey);
+      if (!viewed) {
+        const timer = setTimeout(() => {
+          openWishWithChime(activeCelebration);
+          sessionStorage.setItem(storageKey, 'true');
+        }, 1200);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [settings.notificationsEnabled, settings.wishPopupEnabled, todayDateStr, settings.dateOfJoining]);
 
   const showToast = (message: string) => {
     setToast({ show: true, message });
@@ -551,8 +589,8 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const rows = sortedForExport.map((r) => [
       `"${r.type}"`,
       `"${r.title.replace(/"/g, '""')}"`,
-      `"${formatDateDDMMYYYY(r.startDate)}"`,
-      `"${formatDateDDMMYYYY(r.endDate)}"`,
+      `"${r.startDate}"`,
+      `"${r.endDate}"`,
       r.days,
       `"${r.status}"`,
       `"${(r.notes || '').replace(/"/g, '""')}"`
@@ -581,7 +619,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return false;
       }
       const headerLine = lines[0].toLowerCase();
-      const headers = headerLine.split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
+      const headers = headerLine.split(',').map((h) => h.trim().replace(/^="?|"$/g, '').replace(/^"|"$/g, ''));
 
       const typeIdx = headers.findIndex((h) => h.includes('type'));
       const titleIdx = headers.findIndex((h) => h.includes('title') || h.includes('reason'));
@@ -590,6 +628,18 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const daysIdx = headers.findIndex((h) => h.includes('day'));
       const statusIdx = headers.findIndex((h) => h.includes('status'));
       const remarksIdx = headers.findIndex((h) => h.includes('remark') || h.includes('note'));
+
+      const cleanCell = (str: string) => {
+        let val = str.trim();
+        if (val.startsWith('="') && val.endsWith('"')) {
+          val = val.slice(2, -1);
+        } else if (val.startsWith('"') && val.endsWith('"')) {
+          val = val.slice(1, -1);
+        } else if (val.startsWith('=')) {
+          val = val.slice(1).replace(/^"|"$/g, '');
+        }
+        return val.replace(/""/g, '"').trim();
+      };
 
       const validRows: {
         type: LeaveType;
@@ -614,13 +664,13 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           if (char === '"') {
             inQuotes = !inQuotes;
           } else if (char === ',' && !inQuotes) {
-            cols.push(current.trim().replace(/^"|"$/g, ''));
+            cols.push(cleanCell(current));
             current = '';
           } else {
             current += char;
           }
         }
-        cols.push(current.trim().replace(/^"|"$/g, ''));
+        cols.push(cleanCell(current));
 
         const typeRaw = cols[typeIdx >= 0 ? typeIdx : 0]?.toUpperCase() || 'AL';
         const type: LeaveType = typeRaw === 'SL' ? 'SL' : typeRaw === 'CO' ? 'CO' : 'AL';
@@ -837,7 +887,10 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         exportCSV,
         restoreCSV,
         resetAllData,
-        resetCycleWithWarningConfirm
+        resetCycleWithWarningConfirm,
+        activeWishPopup,
+        setActiveWishPopup,
+        openWishWithChime
       }}
     >
       {children}

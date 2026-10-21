@@ -27,7 +27,8 @@ export const HomeScreen: React.FC = () => {
     setIsAddSpecialHolidayOpen,
     setSelectedCalendarDate,
     setCurrentTab,
-    setIsNotificationsOpen
+    setIsNotificationsOpen,
+    openWishWithChime
   } = useLeave();
 
   const [activeDetailCategory, setActiveDetailCategory] = useState<DetailCategory | null>(null);
@@ -168,9 +169,9 @@ export const HomeScreen: React.FC = () => {
         {/* Bottom Celebration Ribbon (Anniversary / Weekend / Special Holiday Wishes) */}
         {celebrationWish && (
           <div
-            onClick={() => setIsNotificationsOpen(true)}
+            onClick={() => openWishWithChime(celebrationWish)}
             className="p-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-primary-container/40 to-emerald-500/15 border border-amber-500/25 flex items-center justify-between gap-2 cursor-pointer hover:opacity-95 transition-all shadow-2xs"
-            title="Click to view notifications and full message"
+            title="Click to view celebration wish popup with sound"
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <span className="text-xl shrink-0">{celebrationWish.emoji || '🎉'}</span>
@@ -185,7 +186,7 @@ export const HomeScreen: React.FC = () => {
             </div>
             <span className="font-label-sm text-[10px] font-bold text-primary shrink-0 flex items-center gap-0.5">
               <span>View</span>
-              <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+              <span className="material-symbols-outlined text-[14px]">celebration</span>
             </span>
           </div>
         )}

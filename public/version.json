@@ -1,6 +1,6 @@
 {
-  "version": "1.2.0",
-  "buildTime": 1729417200000,
-  "releaseDate": "2026-10-20",
-  "releaseNotes": "Singapore MOM 2026 public holidays, clean leave balances, optional remarks, DD/MM/YYYY formatting, and in-app update notifications."
+  "version": "1.2.1",
+  "buildTime": 1729472400000,
+  "releaseDate": "2026-10-21",
+  "releaseNotes": "Fix date picker clickability and layout clearance, auto-fill '/' with numbers-only input, consistent CSV date datatype alignment, removed Install App info, and celebratory wishes popup notification with sound."
 }

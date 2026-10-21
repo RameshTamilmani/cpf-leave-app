@@ -1,10 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
-import { PWAInstallButton } from '../components/PWAInstallButton';
 import { AboutModal } from '../components/AboutModal';
 import { ImageCropModal } from '../components/ImageCropModal';
-import { formatDateDDMMYYYY, parseDDMMYYYYToISO, calculateExperience } from '../data/singaporeHolidays2026';
+import { formatDateDDMMYYYY, parseDDMMYYYYToISO, calculateExperience, formatDDMMYYYYWithAutoSlash, isValidISODate } from '../data/singaporeHolidays2026';
 import { useAppUpdate } from '../hooks/useAppUpdate';
+import { playCelebrationChime } from '../utils/sound';
 
 export const SettingsScreen: React.FC = () => {
   const {
@@ -23,7 +23,8 @@ export const SettingsScreen: React.FC = () => {
     specialHolidays,
     deleteSpecialHoliday,
     todayDateStr,
-    showToast
+    showToast,
+    openWishWithChime
   } = useLeave();
 
   // Local draft state for Employee Profile
@@ -52,6 +53,21 @@ export const SettingsScreen: React.FC = () => {
 
   const csvInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const dojPickerRef = useRef<HTMLInputElement>(null);
+
+  const openNativeDatePicker = (pickerRef: React.RefObject<HTMLInputElement | null>) => {
+    if (!pickerRef.current) return;
+    try {
+      if (typeof pickerRef.current.showPicker === 'function') {
+        pickerRef.current.showPicker();
+        return;
+      }
+    } catch (err) {
+      console.warn('showPicker error:', err);
+    }
+    pickerRef.current.focus();
+    pickerRef.current.click();
+  };
 
   // Sync draft state if settings change outside
   useEffect(() => {
@@ -277,42 +293,74 @@ export const SettingsScreen: React.FC = () => {
               <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
                 DATE OF JOINING
               </label>
-              <div className="relative flex items-center">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">
-                  calendar_today
-                </span>
+              <div className="relative flex items-center w-full">
+                {/* Left Clickable Calendar Icon */}
+                <button
+                  type="button"
+                  onClick={() => openNativeDatePicker(dojPickerRef)}
+                  className="absolute left-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer z-10"
+                  title="Click to open calendar"
+                  aria-label="Open Date of Joining Calendar"
+                >
+                  <span className="material-symbols-outlined text-[18px]">calendar_today</span>
+                </button>
+
                 <input
                   type="text"
+                  inputMode="numeric"
+                  pattern="[0-9/]*"
                   placeholder="DD/MM/YYYY"
                   value={draftDojInput}
                   maxLength={10}
                   onChange={(e) => {
-                    const typed = e.target.value;
-                    setDraftDojInput(typed);
-                    const parsed = parseDDMMYYYYToISO(typed);
-                    setDraftDoj(parsed);
+                    const formatted = formatDDMMYYYYWithAutoSlash(e.target.value, draftDojInput);
+                    setDraftDojInput(formatted);
+                    if (formatted.length === 10) {
+                      const parsed = parseDDMMYYYYToISO(formatted);
+                      if (parsed && isValidISODate(parsed)) {
+                        setDraftDoj(parsed);
+                      }
+                    } else if (!formatted) {
+                      setDraftDoj('');
+                    }
                   }}
-                  className="w-full pl-9 pr-12 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono font-medium text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full pl-10 pr-12 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono font-medium text-body-md focus:outline-none focus:ring-2 focus:ring-primary z-0"
                 />
 
-                {/* Overlaid calendar icon + native date picker */}
-                <div className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center transition-colors border border-surface-container overflow-hidden">
-                  <span className="material-symbols-outlined text-[18px] pointer-events-none">calendar_month</span>
+                {/* Right Interactive Calendar Button (synchronous showPicker with click fallback) */}
+                <button
+                  type="button"
+                  onClick={() => openNativeDatePicker(dojPickerRef)}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center transition-colors border border-surface-container cursor-pointer z-20 active:scale-95 shadow-2xs"
+                  title="Choose Date of Joining"
+                  aria-label="Choose Date of Joining"
+                >
+                  <span className="material-symbols-outlined text-[19px] pointer-events-none">calendar_month</span>
                   <input
+                    ref={dojPickerRef}
                     type="date"
-                    value={draftDoj}
-                    max={todayDateStr}
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    value={isValidISODate(draftDoj) ? draftDoj : ''}
+                    max={isValidISODate(todayDateStr) ? todayDateStr : undefined}
                     onChange={(e) => {
                       const iso = e.target.value;
-                      setDraftDoj(iso);
-                      setDraftDojInput(formatDateDDMMYYYY(iso));
+                      if (iso && isValidISODate(iso)) {
+                        setDraftDoj(iso);
+                        setDraftDojInput(formatDateDDMMYYYY(iso));
+                      }
                     }}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                    title="Choose Date of Joining"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      try {
+                        (e.currentTarget as HTMLInputElement).showPicker?.();
+                      } catch {}
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-30"
                   />
-                </div>
+                </button>
               </div>
-              {draftDoj && (
+              {draftDoj && isValidISODate(draftDoj) && (
                 <div className="flex items-center gap-1.5 text-[12px] text-primary font-medium mt-1">
                   <span className="material-symbols-outlined text-[15px]">work_history</span>
                   <span>Calculated Experience: {calculateExperience(draftDoj, todayDateStr) || 'Enter valid DD/MM/YYYY'}</span>
@@ -563,6 +611,102 @@ export const SettingsScreen: React.FC = () => {
               <div className="w-12 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-xs" />
             </label>
           </div>
+
+          {/* Toggle 3: Wish Notification Sound */}
+          <div className="flex items-center justify-between gap-space-sm p-3.5 rounded-xl bg-surface-container-low border border-surface-container">
+            <div className="flex items-center gap-space-sm min-w-0">
+              <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[22px]">volume_up</span>
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-title-sm text-title-sm text-on-surface font-semibold">Wish Notification Sound</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playCelebrationChime();
+                      showToast('Playing celebration chime sound');
+                    }}
+                    className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 hover:bg-amber-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                    title="Preview Chime Sound"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">play_arrow</span>
+                    <span>Test Sound</span>
+                  </button>
+                </div>
+                <p className="font-body-sm text-body-sm text-on-surface-variant text-xs mt-0.5">
+                  Play melodic celebratory chime when wishes and festival greetings arrive
+                </p>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
+              <input
+                type="checkbox"
+                checked={settings.wishSoundEnabled !== false}
+                onChange={(e) => {
+                  const isChecked = e.target.checked;
+                  updateSettings({ wishSoundEnabled: isChecked });
+                  if (isChecked) {
+                    playCelebrationChime();
+                  }
+                  showToast(isChecked ? 'Wish chime sound enabled' : 'Wish chime sound muted');
+                }}
+                className="sr-only peer"
+              />
+              <div className="w-12 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-xs" />
+            </label>
+          </div>
+
+          {/* Toggle 4: Wish Popup Notification */}
+          <div className="flex items-center justify-between gap-space-sm p-3.5 rounded-xl bg-surface-container-low border border-surface-container">
+            <div className="flex items-center gap-space-sm min-w-0">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[22px]">auto_awesome</span>
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-title-sm text-title-sm text-on-surface font-semibold">Wish Popup Notification</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      openWishWithChime({
+                        id: `test-wish-popup-${Date.now()}`,
+                        type: 'anniversary',
+                        title: `Happy Work Anniversary, ${settings.userName || 'Employee'}! 🎉`,
+                        subtitle: 'Special Milestone Celebration Wish',
+                        message: `Warm congratulations on your work anniversary! Wishing you great health, happiness, and continued success.`,
+                        emoji: '🎉',
+                        icon: 'celebration',
+                        dateStr: todayDateStr,
+                        isCelebration: true
+                      });
+                    }}
+                    className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 hover:bg-purple-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                    title="Preview Wish Popup Notification with Sound"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">visibility</span>
+                    <span>Test Popup</span>
+                  </button>
+                </div>
+                <p className="font-body-sm text-body-sm text-on-surface-variant text-xs mt-0.5">
+                  Display an animated festive celebration popup banner on screen with chime sound
+                </p>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
+              <input
+                type="checkbox"
+                checked={settings.wishPopupEnabled !== false}
+                onChange={(e) => {
+                  const isChecked = e.target.checked;
+                  updateSettings({ wishPopupEnabled: isChecked });
+                  showToast(isChecked ? 'Celebration popup notifications enabled' : 'Celebration popup notifications disabled');
+                }}
+                className="sr-only peer"
+              />
+              <div className="w-12 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-xs" />
+            </label>
+          </div>
         </div>
       </section>
 
@@ -669,18 +813,7 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 6. Install PWA */}
-      <section className="space-y-space-xs">
-        <div className="px-1 flex items-center justify-between">
-          <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
-            Install App &amp; Offline PWA
-          </h2>
-          <span className="font-label-sm text-label-sm text-on-surface-variant">Home Screen</span>
-        </div>
-        <PWAInstallButton variant="card" />
-      </section>
-
-      {/* 7. App Version & Cloud Update Status */}
+      {/* 6. App Version & Cloud Update Status */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
           <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
