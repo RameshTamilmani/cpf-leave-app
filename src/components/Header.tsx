@@ -1,14 +1,25 @@
 import React from 'react';
 import { useLeave } from '../context/LeaveContext';
+import { usePWAInstall } from '../hooks/usePWAInstall';
+
 export const Header: React.FC = () => {
   const {
-    currentTab,
     settings,
     setIsNotificationsOpen,
     setCurrentTab,
     hasNewNotification,
     markNotificationsAsViewed
   } = useLeave();
+
+  const { isInstalled, isIOS, isAndroid, openGuide, install } = usePWAInstall();
+
+  const handleHeaderInstall = () => {
+    if (isIOS) {
+      openGuide();
+    } else {
+      install();
+    }
+  };
 
   return (
     <header className="fixed top-0 w-full z-40 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)]">
@@ -26,42 +37,61 @@ export const Header: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-space-xs">
+          {/* Suggest Install on Home Screen (ONLY shown when accessing via URL; hidden once installed) */}
+          {!isInstalled && (
             <button
-              onClick={() => {
-                setIsNotificationsOpen(true);
-                markNotificationsAsViewed();
-              }}
-              aria-label="Notifications"
-              className="w-11 h-11 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors relative cursor-pointer"
+              type="button"
+              onClick={handleHeaderInstall}
+              className="h-8.5 px-2.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors border border-primary/20 active:scale-95 shadow-2xs mr-0.5"
+              title={isAndroid ? 'Install CutiSG App on Home Screen' : isIOS ? 'Add CutiSG to iPhone Home Screen' : 'Install App'}
+              aria-label="Install App"
             >
-              <span className="material-symbols-outlined text-[24px]">notifications</span>
-              {hasNewNotification && (
-                <>
-                  <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-holiday-public rounded-full animate-ping opacity-75" />
-                  <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-holiday-public rounded-full" />
-                </>
-              )}
+              <span className="material-symbols-outlined text-[16px]">
+                {isIOS ? 'add_to_home_screen' : 'get_app'}
+              </span>
+              <span className="text-[11.5px] font-bold">
+                {isIOS ? 'Add to Home' : 'Install App'}
+              </span>
             </button>
-            <button
-              onClick={() => setCurrentTab('settings')}
-              aria-label="User profile"
-              className="w-9 h-9 rounded-full bg-primary flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity overflow-hidden border border-primary-fixed shadow-xs"
-              title={settings.userName || 'Settings'}
-            >
-              {settings.avatarUrl ? (
-                <img src={settings.avatarUrl} alt="User" className="w-full h-full object-cover" />
-              ) : settings.userName ? (
-                <span className="text-on-primary font-bold text-sm">
-                  {settings.userName.slice(0, 1).toUpperCase()}
-                </span>
-              ) : (
-                <span className="material-symbols-outlined text-[20px] text-on-primary">
-                  person
-                </span>
-              )}
-            </button>
-          </div>
+          )}
+
+          <button
+            onClick={() => {
+              setIsNotificationsOpen(true);
+              markNotificationsAsViewed();
+            }}
+            aria-label="Notifications"
+            className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors relative cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[24px]">notifications</span>
+            {hasNewNotification && (
+              <>
+                <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-holiday-public rounded-full animate-ping opacity-75" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-holiday-public rounded-full" />
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('settings')}
+            aria-label="User profile"
+            className="w-9 h-9 rounded-full bg-primary flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity overflow-hidden border border-primary-fixed shadow-xs"
+            title={settings.userName || 'Settings'}
+          >
+            {settings.avatarUrl ? (
+              <img src={settings.avatarUrl} alt="User" className="w-full h-full object-cover" />
+            ) : settings.userName ? (
+              <span className="text-on-primary font-bold text-sm">
+                {settings.userName.slice(0, 1).toUpperCase()}
+              </span>
+            ) : (
+              <span className="material-symbols-outlined text-[20px] text-on-primary">
+                person
+              </span>
+            )}
+          </button>
         </div>
+      </div>
     </header>
   );
 };

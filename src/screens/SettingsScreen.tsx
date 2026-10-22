@@ -556,7 +556,124 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. Data Management */}
+      {/* 5. Appearance & Theme */}
+      <section className="space-y-space-xs">
+        <div className="px-1 flex items-center justify-between">
+          <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
+            Appearance &amp; Theme
+          </h2>
+          <span className="font-label-sm text-label-sm text-primary font-semibold flex items-center gap-1">
+            <span className="material-symbols-outlined text-[15px]">
+              {(settings.theme || 'light') === 'dark' ? 'dark_mode' : (settings.theme || 'light') === 'system' ? 'settings_brightness' : 'light_mode'}
+            </span>
+            <span className="capitalize">{(settings.theme || 'light')}</span>
+          </span>
+        </div>
+
+        <div className="rounded-2xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-3.5">
+          <p className="font-body-sm text-body-sm text-on-surface-variant">
+            Choose your preferred color theme or match your device system settings automatically.
+          </p>
+
+          {/* Theme Selector 3-Option Card Grid */}
+          <div className="grid grid-cols-3 gap-2.5">
+            {/* Light Mode */}
+            <button
+              type="button"
+              onClick={() => {
+                updateSettings({ theme: 'light' });
+                showToast('Switched to Light theme');
+              }}
+              className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer relative ${
+                (settings.theme || 'light') === 'light'
+                  ? 'bg-primary/10 border-primary text-primary shadow-xs ring-1 ring-primary/40'
+                  : 'bg-surface-container-low border-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+              }`}
+            >
+              {(settings.theme || 'light') === 'light' && (
+                <span className="absolute top-1.5 right-1.5 material-symbols-outlined text-primary text-[16px]">
+                  check_circle
+                </span>
+              )}
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center mb-1.5 ${
+                (settings.theme || 'light') === 'light' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant'
+              }`}>
+                <span className="material-symbols-outlined text-[20px]">light_mode</span>
+              </div>
+              <span className="font-title-sm text-title-sm font-semibold text-on-surface text-xs sm:text-sm">
+                Light
+              </span>
+              <span className="font-label-sm text-[10px] text-on-surface-variant mt-0.5">
+                Crisp &amp; clear
+              </span>
+            </button>
+
+            {/* Dark Mode */}
+            <button
+              type="button"
+              onClick={() => {
+                updateSettings({ theme: 'dark' });
+                showToast('Switched to Dark theme');
+              }}
+              className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer relative ${
+                settings.theme === 'dark'
+                  ? 'bg-primary/10 border-primary text-primary shadow-xs ring-1 ring-primary/40'
+                  : 'bg-surface-container-low border-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+              }`}
+            >
+              {settings.theme === 'dark' && (
+                <span className="absolute top-1.5 right-1.5 material-symbols-outlined text-primary text-[16px]">
+                  check_circle
+                </span>
+              )}
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center mb-1.5 ${
+                settings.theme === 'dark' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant'
+              }`}>
+                <span className="material-symbols-outlined text-[20px]">dark_mode</span>
+              </div>
+              <span className="font-title-sm text-title-sm font-semibold text-on-surface text-xs sm:text-sm">
+                Dark
+              </span>
+              <span className="font-label-sm text-[10px] text-on-surface-variant mt-0.5">
+                Low eye strain
+              </span>
+            </button>
+
+            {/* System Default */}
+            <button
+              type="button"
+              onClick={() => {
+                updateSettings({ theme: 'system' });
+                showToast('Theme set to System default');
+              }}
+              className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer relative ${
+                settings.theme === 'system'
+                  ? 'bg-primary/10 border-primary text-primary shadow-xs ring-1 ring-primary/40'
+                  : 'bg-surface-container-low border-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+              }`}
+            >
+              {settings.theme === 'system' && (
+                <span className="absolute top-1.5 right-1.5 material-symbols-outlined text-primary text-[16px]">
+                  check_circle
+                </span>
+              )}
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center mb-1.5 ${
+                settings.theme === 'system' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant'
+              }`}>
+                <span className="material-symbols-outlined text-[20px]">settings_brightness</span>
+              </div>
+              <span className="font-title-sm text-title-sm font-semibold text-on-surface text-xs sm:text-sm">
+                System
+              </span>
+              <span className="font-label-sm text-[10px] text-on-surface-variant mt-0.5">
+                Auto-sync
+              </span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Data Management */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
           <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
@@ -661,7 +778,7 @@ export const SettingsScreen: React.FC = () => {
 
 
 
-      {/* 8. About CutiSG - Separate Button opening modal */}
+      {/* 7. About CutiSG - Separate Button opening modal */}
       <section className="pt-1">
         <button
           type="button"

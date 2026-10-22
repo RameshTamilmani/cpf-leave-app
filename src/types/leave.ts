@@ -67,4 +67,5 @@ export interface UserSettings {
   holidayWishesEnabled?: boolean;
   wishSoundEnabled?: boolean;
   wishPopupEnabled?: boolean;
+  theme?: 'light' | 'dark' | 'system';
 }

@@ -146,7 +146,8 @@ const defaultSettings: UserSettings = {
   anniversaryWishesEnabled: true,
   holidayWishesEnabled: true,
   wishSoundEnabled: true,
-  wishPopupEnabled: true
+  wishPopupEnabled: true,
+  theme: 'light'
 };
 
 const LeaveContext = createContext<LeaveContextType | undefined>(undefined);
@@ -265,6 +266,40 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error(e);
     }
   }, [settings]);
+
+  // Dynamically apply Theme (light / dark / system) to root, body, and meta theme-color
+  useEffect(() => {
+    const theme = settings.theme || 'light';
+    const root = document.documentElement;
+    const body = document.body;
+
+    const applyTheme = (isDark: boolean) => {
+      if (isDark) {
+        root.classList.add('dark');
+        root.setAttribute('data-theme', 'dark');
+        body.classList.add('dark');
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#101315');
+      } else {
+        root.classList.remove('dark');
+        root.setAttribute('data-theme', 'light');
+        body.classList.remove('dark');
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#EE2C38');
+      }
+    };
+
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      applyTheme(mediaQuery.matches);
+
+      const handler = (e: MediaQueryListEvent) => {
+        applyTheme(e.matches);
+      };
+      mediaQuery.addEventListener('change', handler);
+      return () => mediaQuery.removeEventListener('change', handler);
+    } else {
+      applyTheme(theme === 'dark');
+    }
+  }, [settings.theme]);
 
   useEffect(() => {
     try {

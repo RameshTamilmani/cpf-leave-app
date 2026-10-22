@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: #005048;
   --color-on-primary: #ffffff;
@@ -93,12 +95,100 @@
   --spacing-space-xl: 2rem;
 }
 
+/* Dark Theme Palette Mapping */
+:root.dark, html.dark, [data-theme="dark"], body.dark {
+  --color-primary: #84d5c8;
+  --color-on-primary: #003731;
+  --color-primary-container: #005048;
+  --color-on-primary-container: #9ff2e4;
+  --color-primary-fixed: #005048;
+  --color-primary-fixed-dim: #003e38;
+  --color-on-primary-fixed: #9ff2e4;
+  --color-on-primary-fixed-variant: #84d5c8;
+
+  --color-secondary: #adc7ff;
+  --color-on-secondary: #002e69;
+  --color-secondary-container: #004493;
+  --color-on-secondary-container: #d8e2ff;
+  --color-secondary-fixed: #004493;
+  --color-secondary-fixed-dim: #00316d;
+  --color-on-secondary-fixed: #d8e2ff;
+
+  --color-tertiary: #ebb2ff;
+  --color-on-tertiary: #4f006e;
+  --color-tertiary-container: #6e0d95;
+  --color-on-tertiary-container: #f8d8ff;
+
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+  --color-error-container: #93000a;
+  --color-on-error-container: #ffdad6;
+
+  --color-surface: #101315;
+  --color-surface-dim: #101315;
+  --color-surface-bright: #36393c;
+  --color-surface-variant: #26292d;
+  --color-surface-container-lowest: #14171a;
+  --color-surface-container-low: #181c1f;
+  --color-surface-container: #1e2226;
+  --color-surface-container-high: #24292d;
+  --color-surface-container-highest: #2b3035;
+  --color-surface-card: #181c1f;
+  --color-surface-outline: #33383f;
+  --color-surface-tint: #84d5c8;
+
+  --color-on-surface: #e6e9ed;
+  --color-on-surface-variant: #a6adb5;
+  --color-inverse-surface: #e6e9ed;
+  --color-inverse-on-surface: #101315;
+  --color-inverse-primary: #006a60;
+
+  --color-outline: #777e87;
+  --color-outline-variant: #383d44;
+  --color-background: #101315;
+  --color-on-background: #e6e9ed;
+
+  /* Leave Categories for Dark Mode - refined contrast */
+  --color-leave-annual: #7da4ff;
+  --color-leave-annual-container: #0e274d;
+  --color-leave-annual-on-container: #c5d9ff;
+
+  --color-leave-sick: #cf98ea;
+  --color-leave-sick-container: #3c1849;
+  --color-leave-sick-on-container: #f5e6fc;
+
+  --color-leave-compoff: #66bb6a;
+  --color-leave-compoff-container: #123417;
+  --color-leave-compoff-on-container: #c8e6c9;
+
+  --color-holiday-public: #ff6e6e;
+  --color-holiday-public-container: #471515;
+  --color-holiday-public-on-container: #ffd2d2;
+
+  --color-weekend-surface: #202429;
+  --color-weekend-on-surface: #98a2ad;
+
+  --color-alert-warning: #ffa726;
+  --color-alert-warning-container: #402300;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html:not(.dark) {
+  color-scheme: light;
+}
+
 @layer base {
   html, body {
     width: 100%;
     margin: 0;
     padding: 0;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--color-surface);
+    color: var(--color-on-surface);
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
   body {
     overscroll-behavior-y: none;

@@ -18,6 +18,7 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { UpdateAvailableModal } from './components/UpdateAvailableModal';
 import { WishPopupModal } from './components/WishPopupModal';
+import { InstallAppPrompt } from './components/InstallAppPrompt';
 import { useAppUpdate } from './hooks/useAppUpdate';
 
 const MainAppContent: React.FC = () => {
@@ -31,6 +32,9 @@ const MainAppContent: React.FC = () => {
 
       {/* Main Screen Content with responsive container padding */}
       <main className="flex-1 flex flex-col relative w-full pt-20 pb-32 bg-surface min-h-screen">
+        {/* Suggest Install as App when accessing via URL (auto-suppressed once installed) */}
+        <InstallAppPrompt />
+
         {currentTab === 'home' && <HomeScreen />}
         {currentTab === 'calendar' && <CalendarScreen />}
         {currentTab === 'history' && <HistoryScreen />}
