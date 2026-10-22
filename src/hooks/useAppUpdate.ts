@@ -8,8 +8,11 @@ export interface VersionInfo {
 }
 
 // Current bundled client build version
-export const CURRENT_APP_VERSION = '1.2.0';
-export const CURRENT_BUILD_TIME = 1729417200000;
+export const CURRENT_APP_VERSION = '1.2.1';
+export const CURRENT_BUILD_TIME = 1729472400000;
+
+const SNOOZE_STORAGE_KEY = 'cutisg_update_snooze_until';
+const APPLIED_VERSION_STORAGE_KEY = 'cutisg_applied_version';
 
 export function useAppUpdate() {
   const [hasUpdate, setHasUpdate] = useState<boolean>(false);
@@ -20,12 +23,20 @@ export function useAppUpdate() {
 
   // Core update check logic against /version.json and active ServiceWorker
   const checkForUpdate = useCallback(async (isManual = false): Promise<{ hasUpdate: boolean; info?: VersionInfo }> => {
+    // 1. Check if user snoozed the update within the last 6 hours
+    try {
+      const snoozeUntil = localStorage.getItem(SNOOZE_STORAGE_KEY);
+      if (snoozeUntil && Date.now() < Number(snoozeUntil) && !isManual) {
+        return { hasUpdate: false };
+      }
+    } catch {}
+
     setIsChecking(true);
     let foundUpdate = false;
     let fetchedInfo: VersionInfo | null = null;
 
     try {
-      // 1. Check Service Worker registration for waiting workers (production / Vercel)
+      // 2. Check Service Worker registration for waiting workers (production / Vercel)
       if ('serviceWorker' in navigator) {
         try {
           const reg = await navigator.serviceWorker.getRegistration();
@@ -43,7 +54,7 @@ export function useAppUpdate() {
         }
       }
 
-      // 2. Check /version.json with cache-busting timestamp
+      // 3. Check /version.json with cache-busting timestamp
       const response = await fetch(`/version.json?_t=${Date.now()}`, {
         cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
@@ -52,8 +63,18 @@ export function useAppUpdate() {
       if (response.ok) {
         const data: VersionInfo = await response.json();
         fetchedInfo = data;
-        // Compare versions or buildTime
-        if (data.version && (data.version !== CURRENT_APP_VERSION || data.buildTime > CURRENT_BUILD_TIME)) {
+
+        // Check if user already updated to this version
+        let alreadyApplied = false;
+        try {
+          const appliedVer = localStorage.getItem(APPLIED_VERSION_STORAGE_KEY);
+          if (appliedVer && appliedVer === data.version) {
+            alreadyApplied = true;
+          }
+        } catch {}
+
+        // Compare versions or buildTime strictly
+        if (!alreadyApplied && data.version && (data.version !== CURRENT_APP_VERSION || data.buildTime > CURRENT_BUILD_TIME)) {
           foundUpdate = true;
           setUpdateInfo(data);
         }
@@ -67,7 +88,7 @@ export function useAppUpdate() {
     if (foundUpdate) {
       setHasUpdate(true);
       if (isManual) {
-        setIsDismissed(false); // Re-open popup if manually triggered
+        setIsDismissed(false);
       }
       return { hasUpdate: true, info: fetchedInfo || undefined };
     }
@@ -117,10 +138,10 @@ export function useAppUpdate() {
 
   // Periodic and on-focus checks
   useEffect(() => {
-    // Initial check after 3 seconds of stable loading
+    // Initial check after 4 seconds of stable loading
     const timer = setTimeout(() => {
       checkForUpdate(false);
-    }, 3000);
+    }, 4000);
 
     // Check when user switches back to the tab/app
     const handleVisibilityChange = () => {
@@ -130,10 +151,10 @@ export function useAppUpdate() {
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Regular polling every 15 minutes
+    // Regular polling every 30 minutes
     const interval = setInterval(() => {
       checkForUpdate(false);
-    }, 15 * 60 * 1000);
+    }, 30 * 60 * 1000);
 
     return () => {
       clearTimeout(timer);
@@ -142,8 +163,14 @@ export function useAppUpdate() {
     };
   }, [checkForUpdate]);
 
-  // Apply update immediately
+  // Apply update immediately and record that this version was successfully applied
   const applyUpdate = useCallback(() => {
+    try {
+      const versionToRecord = updateInfo?.version || CURRENT_APP_VERSION;
+      localStorage.setItem(APPLIED_VERSION_STORAGE_KEY, versionToRecord);
+      localStorage.removeItem(SNOOZE_STORAGE_KEY);
+    } catch {}
+
     if (waitingWorker) {
       waitingWorker.postMessage({ type: 'SKIP_WAITING' });
     }
@@ -159,9 +186,14 @@ export function useAppUpdate() {
     } else {
       window.location.reload();
     }
-  }, [waitingWorker]);
+  }, [waitingWorker, updateInfo]);
 
+  // Snooze update for 6 hours across browser sessions
   const dismissUpdate = useCallback(() => {
+    try {
+      const sixHoursFromNow = Date.now() + 6 * 60 * 60 * 1000;
+      localStorage.setItem(SNOOZE_STORAGE_KEY, sixHoursFromNow.toString());
+    } catch {}
     setIsDismissed(true);
   }, []);
 

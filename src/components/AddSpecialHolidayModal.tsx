@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
-import { formatDateDDMMYYYY, parseDDMMYYYYToISO, formatDDMMYYYYWithAutoSlash, isValidISODate } from '../data/singaporeHolidays2026';
+import { DatePickerField } from './DatePickerField';
 
 const EMOJI_OPTIONS = ['🗳️', '🇸🇬', '🌟', '🏛️', '🎈', '🕊️', '🧧', '✨', '🏆', '🎉', '🪔'];
 
@@ -17,27 +17,10 @@ export const AddSpecialHolidayModal: React.FC = () => {
 
   const [name, setName] = useState('');
   const [date, setDate] = useState(todayDateStr || '2026-11-20');
-  const [dateInput, setDateInput] = useState(formatDateDDMMYYYY(todayDateStr || '2026-11-20'));
   const [category, setCategory] = useState<'gazetted_adhoc' | 'company' | 'national'>('gazetted_adhoc');
   const [emoji, setEmoji] = useState('🗳️');
   const [notes, setNotes] = useState('');
   const [forceCompOff, setForceCompOff] = useState(false);
-
-  const datePickerRef = useRef<HTMLInputElement>(null);
-
-  const openNativeDatePicker = (pickerRef: React.RefObject<HTMLInputElement | null>) => {
-    if (!pickerRef.current) return;
-    try {
-      if (typeof pickerRef.current.showPicker === 'function') {
-        pickerRef.current.showPicker();
-        return;
-      }
-    } catch (err) {
-      console.warn('showPicker error:', err);
-    }
-    pickerRef.current.focus();
-    pickerRef.current.click();
-  };
 
   if (!isAddSpecialHolidayOpen) return null;
 
@@ -49,8 +32,7 @@ export const AddSpecialHolidayModal: React.FC = () => {
   const dayName = dayOfWeekIndex >= 0 ? daysOfWeek[dayOfWeekIndex] : '';
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const finalDate = dateInput ? parseDDMMYYYYToISO(dateInput) : date;
+    const finalDate = date;
     if (!name.trim() || !finalDate) {
       alert('Please provide holiday name and date.');
       return;
@@ -207,76 +189,13 @@ export const AddSpecialHolidayModal: React.FC = () => {
           {/* Date Picker & Emoji */}
           <div className="grid grid-cols-3 gap-2.5">
             <div className="col-span-2">
-              <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-                DATE {dayName ? `(${dayName})` : ''}
-              </label>
-              <div className="relative flex items-center w-full">
-                {/* Left Clickable Calendar Icon */}
-                <button
-                  type="button"
-                  onClick={() => openNativeDatePicker(datePickerRef)}
-                  className="absolute left-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer z-10"
-                  title="Click to open calendar"
-                  aria-label="Open Calendar"
-                >
-                  <span className="material-symbols-outlined text-[18px]">calendar_today</span>
-                </button>
-
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9/]*"
-                  required
-                  placeholder="DD/MM/YYYY"
-                  maxLength={10}
-                  value={dateInput}
-                  onChange={(e) => {
-                    const formatted = formatDDMMYYYYWithAutoSlash(e.target.value, dateInput);
-                    setDateInput(formatted);
-                    if (formatted.length === 10) {
-                      const parsed = parseDDMMYYYYToISO(formatted);
-                      if (parsed && isValidISODate(parsed)) {
-                        setDate(parsed);
-                      }
-                    } else if (!formatted) {
-                      setDate('');
-                    }
-                  }}
-                  className="w-full pl-10 pr-12 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary z-0"
-                />
-
-                {/* Right Interactive Calendar Button (synchronous showPicker with click fallback) */}
-                <button
-                  type="button"
-                  onClick={() => openNativeDatePicker(datePickerRef)}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center transition-colors border border-surface-container cursor-pointer z-20 active:scale-95 shadow-2xs"
-                  title="Choose Date"
-                  aria-label="Choose Date"
-                >
-                  <span className="material-symbols-outlined text-[19px] pointer-events-none">calendar_month</span>
-                  <input
-                    ref={datePickerRef}
-                    type="date"
-                    tabIndex={-1}
-                    aria-hidden="true"
-                    value={isValidISODate(date) ? date : ''}
-                    onChange={(e) => {
-                      const iso = e.target.value;
-                      if (iso && isValidISODate(iso)) {
-                        setDate(iso);
-                        setDateInput(formatDateDDMMYYYY(iso));
-                      }
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      try {
-                        (e.currentTarget as HTMLInputElement).showPicker?.();
-                      } catch {}
-                    }}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-30"
-                  />
-                </button>
-              </div>
+              <DatePickerField
+                label={`DATE ${dayName ? `(${dayName})` : ''}`}
+                value={date}
+                onChange={setDate}
+                required
+                ariaLabel="Choose Special Holiday Date"
+              />
             </div>
 
             <div>

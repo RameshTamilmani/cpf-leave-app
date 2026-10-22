@@ -17,9 +17,6 @@ export const WishPopupModal: React.FC = () => {
     setActiveWishPopup(null);
   };
 
-  const handleReplayChime = () => {
-    playCelebrationChime();
-  };
 
   const isAnniversary = activeWishPopup.type === 'anniversary';
   const isWeekend = activeWishPopup.type === 'weekend';
@@ -97,33 +94,11 @@ export const WishPopupModal: React.FC = () => {
         </div>
 
         {/* Wish Content Body */}
-        <div className="p-6 flex flex-col gap-4 bg-surface-card">
+        <div className="p-6 flex flex-col gap-5 bg-surface-card">
           <div className="p-4 rounded-2xl bg-surface-container-low border border-surface-container text-center">
             <p className="text-body-md text-on-surface leading-relaxed text-sm sm:text-base font-normal">
               {activeWishPopup.message}
             </p>
-          </div>
-
-          {/* Sound Controls & Preview */}
-          <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-surface-container-lowest border border-surface-container text-xs text-on-surface-variant">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-primary">
-                {settings.wishSoundEnabled !== false ? 'volume_up' : 'volume_off'}
-              </span>
-              <span>
-                {settings.wishSoundEnabled !== false ? 'Chime sound played' : 'Sound currently muted in Settings'}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleReplayChime}
-              className="px-2.5 py-1 rounded-full bg-primary-container text-on-primary-fixed hover:bg-primary-fixed text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-              title="Play celebration chime sound"
-            >
-              <span className="material-symbols-outlined text-[14px]">replay</span>
-              <span>Replay</span>
-            </button>
           </div>
 
           {/* Primary Action Button */}

@@ -3,6 +3,7 @@ import { LeaveRecord, UserSettings, LeaveType, LeaveStatus, PublicHoliday, Speci
 import { ALL_GAZETTED_HOLIDAYS, addDaysToDate, formatDateDDMMYYYY, parseDDMMYYYYToISO } from '../data/singaporeHolidays2026';
 import { AppNotification, generateNotifications } from '../utils/notifications';
 import { playCelebrationChime } from '../utils/sound';
+import { sendCelebrationPushNotification } from '../utils/pushNotifications';
 
 interface ToastState {
   show: boolean;
@@ -298,9 +299,9 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Automated Launch of active celebration wishes as a popup with sound
+  // Automated delivery of celebration wishes as push notifications and modal popup
   useEffect(() => {
-    if (settings.notificationsEnabled === false || settings.wishPopupEnabled === false) {
+    if (settings.notificationsEnabled === false) {
       return;
     }
     const notifs = generateNotifications(settings, specialHolidays, ALL_GAZETTED_HOLIDAYS, records, todayDateStr);
@@ -308,14 +309,25 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       (n) => n.isCelebration || n.type === 'anniversary' || n.type === 'weekend' || n.type === 'indian_holiday' || n.type === 'special_holiday'
     );
     if (activeCelebration) {
-      const storageKey = `cutisg_viewed_wish_${activeCelebration.id}`;
-      const viewed = sessionStorage.getItem(storageKey);
-      if (!viewed) {
-        const timer = setTimeout(() => {
-          openWishWithChime(activeCelebration);
-          sessionStorage.setItem(storageKey, 'true');
-        }, 1200);
-        return () => clearTimeout(timer);
+      // 1. Deliver as Browser / Operating System Push Notification (where supported & granted)
+      sendCelebrationPushNotification({
+        title: activeCelebration.title,
+        body: activeCelebration.message,
+        tag: activeCelebration.id,
+        icon: '/pwa-192x192.png'
+      });
+
+      // 2. Deliver in-app celebration popup if wishPopupEnabled is active
+      if (settings.wishPopupEnabled !== false) {
+        const storageKey = `cutisg_viewed_wish_${activeCelebration.id}`;
+        const viewed = sessionStorage.getItem(storageKey);
+        if (!viewed) {
+          const timer = setTimeout(() => {
+            openWishWithChime(activeCelebration);
+            sessionStorage.setItem(storageKey, 'true');
+          }, 1200);
+          return () => clearTimeout(timer);
+        }
       }
     }
   }, [settings.notificationsEnabled, settings.wishPopupEnabled, todayDateStr, settings.dateOfJoining]);

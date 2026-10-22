@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { LeaveType, LeaveStatus } from '../types/leave';
-import { calculateWorkingDays, formatDateDDMMYYYY, parseDDMMYYYYToISO, formatDDMMYYYYWithAutoSlash, isValidISODate, isWeekend, addDaysToDate } from '../data/singaporeHolidays2026';
+import { calculateWorkingDays, formatDateDDMMYYYY, isValidISODate, isWeekend, addDaysToDate } from '../data/singaporeHolidays2026';
+import { DatePickerField } from './DatePickerField';
 
 export const ApplyLeaveModal: React.FC = () => {
   const {
@@ -22,27 +23,22 @@ export const ApplyLeaveModal: React.FC = () => {
   const [remarks, setRemarks] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [startDateInput, setStartDateInput] = useState('');
-  const [endDateInput, setEndDateInput] = useState('');
   const [durationMode, setDurationMode] = useState<'full' | 'half-am' | 'half-pm'>('full');
   const [daysToDeduct, setDaysToDeduct] = useState<number>(1.0);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const startDatePickerRef = useRef<HTMLInputElement>(null);
-  const endDatePickerRef = useRef<HTMLInputElement>(null);
-
-  const openNativeDatePicker = (pickerRef: React.RefObject<HTMLInputElement | null>) => {
-    if (!pickerRef.current) return;
-    try {
-      if (typeof pickerRef.current.showPicker === 'function') {
-        pickerRef.current.showPicker();
-        return;
-      }
-    } catch (err) {
-      console.warn('showPicker error:', err);
+  const handleStartDateChange = (newStart: string) => {
+    setStartDate(newStart);
+    if (newStart && (!endDate || endDate < newStart)) {
+      setEndDate(newStart);
     }
-    pickerRef.current.focus();
-    pickerRef.current.click();
+  };
+
+  const handleEndDateChange = (newEnd: string) => {
+    setEndDate(newEnd);
+    if (newEnd && startDate && newEnd < startDate) {
+      setStartDate(newEnd);
+    }
   };
 
   // When modal opens, initialize fields
@@ -55,8 +51,6 @@ export const ApplyLeaveModal: React.FC = () => {
       const initial = applyModalConfig.initialDate || todayDateStr || '2026-10-12';
       setStartDate(initial);
       setEndDate(initial);
-      setStartDateInput(formatDateDDMMYYYY(initial));
-      setEndDateInput(formatDateDDMMYYYY(initial));
       setDurationMode('full');
       setDaysToDeduct(1.0);
       setValidationError(null);
@@ -565,162 +559,23 @@ export const ApplyLeaveModal: React.FC = () => {
           {/* Dates & Duration Mode */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
-              <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-                START DATE
-              </label>
-              <div className="relative flex items-center w-full">
-                {/* Left Clickable Calendar Icon */}
-                <button
-                  type="button"
-                  onClick={() => openNativeDatePicker(startDatePickerRef)}
-                  className="absolute left-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer z-10"
-                  title="Click to open calendar"
-                  aria-label="Open Start Date Calendar"
-                >
-                  <span className="material-symbols-outlined text-[18px]">calendar_today</span>
-                </button>
-
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9/]*"
-                  required
-                  placeholder="DD/MM/YYYY"
-                  maxLength={10}
-                  value={startDateInput}
-                  onChange={(e) => {
-                    const formatted = formatDDMMYYYYWithAutoSlash(e.target.value, startDateInput);
-                    setStartDateInput(formatted);
-                    if (formatted.length === 10) {
-                      const parsed = parseDDMMYYYYToISO(formatted);
-                      if (parsed && isValidISODate(parsed)) {
-                        setStartDate(parsed);
-                        if (!endDate || endDate < parsed) {
-                          setEndDate(parsed);
-                          setEndDateInput(formatDateDDMMYYYY(parsed));
-                        }
-                      }
-                    }
-                  }}
-                  className="w-full pl-10 pr-12 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary z-0"
-                />
-
-                {/* Right Interactive Calendar Button (synchronous showPicker with click fallback) */}
-                <button
-                  type="button"
-                  onClick={() => openNativeDatePicker(startDatePickerRef)}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center transition-colors border border-surface-container cursor-pointer z-20 active:scale-95 shadow-2xs"
-                  title="Choose Start Date"
-                  aria-label="Choose Start Date"
-                >
-                  <span className="material-symbols-outlined text-[19px] pointer-events-none">calendar_month</span>
-                  <input
-                    ref={startDatePickerRef}
-                    type="date"
-                    tabIndex={-1}
-                    aria-hidden="true"
-                    value={isValidISODate(startDate) ? startDate : ''}
-                    onChange={(e) => {
-                      const newStart = e.target.value;
-                      if (newStart && isValidISODate(newStart)) {
-                        setStartDate(newStart);
-                        setStartDateInput(formatDateDDMMYYYY(newStart));
-                        if (!endDate || endDate < newStart) {
-                          setEndDate(newStart);
-                          setEndDateInput(formatDateDDMMYYYY(newStart));
-                        }
-                      }
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      try {
-                        (e.currentTarget as HTMLInputElement).showPicker?.();
-                      } catch {}
-                    }}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-30"
-                  />
-                </button>
-              </div>
+              <DatePickerField
+                label="START DATE"
+                value={startDate}
+                onChange={handleStartDateChange}
+                required
+                ariaLabel="Select Start Date"
+              />
             </div>
-
             <div>
-              <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-                END DATE
-              </label>
-              <div className="relative flex items-center w-full">
-                {/* Left Clickable Calendar Icon */}
-                <button
-                  type="button"
-                  onClick={() => openNativeDatePicker(endDatePickerRef)}
-                  className="absolute left-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer z-10"
-                  title="Click to open calendar"
-                  aria-label="Open End Date Calendar"
-                >
-                  <span className="material-symbols-outlined text-[18px]">calendar_today</span>
-                </button>
-
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9/]*"
-                  required
-                  placeholder="DD/MM/YYYY"
-                  maxLength={10}
-                  value={endDateInput}
-                  onChange={(e) => {
-                    const formatted = formatDDMMYYYYWithAutoSlash(e.target.value, endDateInput);
-                    setEndDateInput(formatted);
-                    if (formatted.length === 10) {
-                      const parsed = parseDDMMYYYYToISO(formatted);
-                      if (parsed && isValidISODate(parsed)) {
-                        setEndDate(parsed);
-                        if (startDate && parsed < startDate) {
-                          setStartDate(parsed);
-                          setStartDateInput(formatDateDDMMYYYY(parsed));
-                        }
-                      }
-                    }
-                  }}
-                  className="w-full pl-10 pr-12 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary z-0"
-                />
-
-                {/* Right Interactive Calendar Button (synchronous showPicker with click fallback) */}
-                <button
-                  type="button"
-                  onClick={() => openNativeDatePicker(endDatePickerRef)}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center transition-colors border border-surface-container cursor-pointer z-20 active:scale-95 shadow-2xs"
-                  title="Choose End Date"
-                  aria-label="Choose End Date"
-                >
-                  <span className="material-symbols-outlined text-[19px] pointer-events-none">calendar_month</span>
-                  <input
-                    ref={endDatePickerRef}
-                    type="date"
-                    tabIndex={-1}
-                    aria-hidden="true"
-                    value={isValidISODate(endDate) ? endDate : ''}
-                    min={isValidISODate(startDate) ? startDate : undefined}
-                    onChange={(e) => {
-                      const newEnd = e.target.value;
-                      if (newEnd && isValidISODate(newEnd)) {
-                        setEndDate(newEnd);
-                        setEndDateInput(formatDateDDMMYYYY(newEnd));
-                        if (startDate && newEnd < startDate) {
-                          setStartDate(newEnd);
-                          setStartDateInput(formatDateDDMMYYYY(newEnd));
-                        }
-                      }
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      try {
-                        (e.currentTarget as HTMLInputElement).showPicker?.();
-                      } catch {}
-                    }}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-30"
-                  />
-                </button>
-              </div>
+              <DatePickerField
+                label="END DATE"
+                value={endDate}
+                onChange={handleEndDateChange}
+                min={startDate || undefined}
+                required
+                ariaLabel="Select End Date"
+              />
             </div>
           </div>
 

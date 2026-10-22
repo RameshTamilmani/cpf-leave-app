@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { ImageCropModal } from './ImageCropModal';
-import { formatDateDDMMYYYY, parseDDMMYYYYToISO, formatDDMMYYYYWithAutoSlash, isValidISODate } from '../data/singaporeHolidays2026';
+import { DatePickerField } from './DatePickerField';
 
 export const OnboardingModal: React.FC = () => {
   const { settings, updateSettings, showToast } = useLeave();
@@ -10,25 +10,9 @@ export const OnboardingModal: React.FC = () => {
   const [employeeId, setEmployeeId] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [dateOfJoining, setDateOfJoining] = useState('');
-  const [dateOfJoiningInput, setDateOfJoiningInput] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [cropModalSrc, setCropModalSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const dojPickerRef = useRef<HTMLInputElement>(null);
-
-  const openNativeDatePicker = (pickerRef: React.RefObject<HTMLInputElement | null>) => {
-    if (!pickerRef.current) return;
-    try {
-      if (typeof pickerRef.current.showPicker === 'function') {
-        pickerRef.current.showPicker();
-        return;
-      }
-    } catch (err) {
-      console.warn('showPicker error:', err);
-    }
-    pickerRef.current.focus();
-    pickerRef.current.click();
-  };
 
   useEffect(() => {
     // Check if user has already been prompted or profile is set
@@ -41,7 +25,6 @@ export const OnboardingModal: React.FC = () => {
       setEmployeeId(settings.employeeId || '');
       setAvatarUrl(settings.avatarUrl || '');
       setDateOfJoining(settings.dateOfJoining || '');
-      setDateOfJoiningInput(settings.dateOfJoining ? formatDateDDMMYYYY(settings.dateOfJoining) : '');
     }
   }, [settings.userName, settings.employeeId, settings.avatarUrl, settings.dateOfJoining]);
 
@@ -81,13 +64,11 @@ export const OnboardingModal: React.FC = () => {
       return;
     }
 
-    const finalDoj = dateOfJoiningInput.trim() ? parseDDMMYYYYToISO(dateOfJoiningInput.trim()) : '';
-
     updateSettings({
       userName: name.trim(),
       employeeId: employeeId.trim(),
       avatarUrl,
-      dateOfJoining: finalDoj
+      dateOfJoining: dateOfJoining.trim()
     });
 
     localStorage.setItem('cutisg_profile_setup_prompted', 'true');
@@ -244,78 +225,13 @@ export const OnboardingModal: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-                DATE OF JOINING
-              </label>
-              <div className="relative flex items-center w-full">
-                {/* Left Clickable Calendar Icon */}
-                <button
-                  type="button"
-                  onClick={() => openNativeDatePicker(dojPickerRef)}
-                  className="absolute left-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer z-10"
-                  title="Click to open calendar"
-                  aria-label="Open Date of Joining Calendar"
-                >
-                  <span className="material-symbols-outlined text-[19px]">calendar_today</span>
-                </button>
-
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9/]*"
-                  placeholder="DD/MM/YYYY"
-                  value={dateOfJoiningInput}
-                  maxLength={10}
-                  onChange={(e) => {
-                    const formatted = formatDDMMYYYYWithAutoSlash(e.target.value, dateOfJoiningInput);
-                    setDateOfJoiningInput(formatted);
-                    if (formatted.length === 10) {
-                      const parsed = parseDDMMYYYYToISO(formatted);
-                      if (parsed && isValidISODate(parsed)) {
-                        setDateOfJoining(parsed);
-                      }
-                    } else if (!formatted) {
-                      setDateOfJoining('');
-                    }
-                  }}
-                  className="w-full pl-10 pr-12 py-2.5 h-11 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono text-body-md focus:outline-none focus:ring-2 focus:ring-primary z-0"
-                />
-
-                {/* Right Interactive Calendar Button (synchronous showPicker with click fallback) */}
-                <button
-                  type="button"
-                  onClick={() => openNativeDatePicker(dojPickerRef)}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center transition-colors border border-surface-container cursor-pointer z-20 active:scale-95 shadow-2xs"
-                  title="Choose Date of Joining"
-                  aria-label="Choose Date of Joining"
-                >
-                  <span className="material-symbols-outlined text-[19px] pointer-events-none">calendar_month</span>
-                  <input
-                    ref={dojPickerRef}
-                    type="date"
-                    tabIndex={-1}
-                    aria-hidden="true"
-                    value={isValidISODate(dateOfJoining) ? dateOfJoining : ''}
-                    max={new Date().toISOString().slice(0, 10)}
-                    onChange={(e) => {
-                      const iso = e.target.value;
-                      if (iso && isValidISODate(iso)) {
-                        setDateOfJoining(iso);
-                        setDateOfJoiningInput(formatDateDDMMYYYY(iso));
-                      }
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      try {
-                        (e.currentTarget as HTMLInputElement).showPicker?.();
-                      } catch {}
-                    }}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-30"
-                  />
-                </button>
-              </div>
-            </div>
+            <DatePickerField
+              label="DATE OF JOINING"
+              value={dateOfJoining}
+              onChange={setDateOfJoining}
+              max={new Date().toISOString().slice(0, 10)}
+              ariaLabel="Choose Date of Joining"
+            />
           </div>
 
           {errorMsg && (
