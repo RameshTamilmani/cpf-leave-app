@@ -344,23 +344,23 @@ export const HomeScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. Quick Action Buttons - Only Apply Leave and Comp-off Ledger */}
+      {/* 3. Quick Action Buttons - Leave History and Comp-off Ledger */}
       <section className="flex flex-col gap-space-xs mt-1">
         <div className="flex items-center justify-between px-1">
           <h2 className="font-title-md text-title-md text-on-surface font-semibold">Quick Actions</h2>
         </div>
         <div className="grid grid-cols-2 gap-space-sm">
-          {/* Apply Leave Button */}
+          {/* Move to History Tab Button */}
           <button
-            onClick={() => openApplyModal({ initialType: 'AL' })}
+            onClick={() => setCurrentTab('history')}
             className="w-full flex items-center gap-3 p-4 rounded-2xl bg-surface-container-lowest border border-surface-container hover:bg-surface-container transition-all cursor-pointer text-left shadow-xs active:scale-[0.99]"
           >
-            <div className="w-11 h-11 rounded-xl bg-primary-fixed text-on-primary-fixed flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-[24px]">event_note</span>
+            <div className="w-11 h-11 rounded-xl bg-primary-container text-on-primary-fixed flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[24px]">history</span>
             </div>
             <div>
-              <p className="font-title-sm text-title-sm text-on-surface font-semibold">Apply Leave</p>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">Log annual or medical leave</p>
+              <p className="font-title-sm text-title-sm text-on-surface font-semibold">Leave History</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">View all past &amp; planned leaves</p>
             </div>
           </button>
 

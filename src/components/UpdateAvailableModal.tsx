@@ -18,14 +18,73 @@ export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
 }) => {
   const [isApplying, setIsApplying] = useState(false);
 
-  if (!isOpen) return null;
+  // If not open or no updateInfo or version matches currentVersion, do not show
+  if (!isOpen || !updateInfo || updateInfo.version === currentVersion) {
+    return null;
+  }
 
   const handleUpdateClick = () => {
     setIsApplying(true);
     onUpdate();
   };
 
-  const newVersion = updateInfo?.version || 'Latest';
+  const newVersion = updateInfo.version;
+
+  // Get dynamic highlights from version info, or fallback to current release highlights
+  const highlights = updateInfo.highlights && updateInfo.highlights.length > 0
+    ? updateInfo.highlights
+    : [
+        {
+          title: 'Minimalist Celebration Wishes',
+          description: 'Clean, distraction-free wish pop-ups focusing strictly on celebration greetings and warm wishes.',
+          icon: 'celebration',
+          color: 'amber'
+        },
+        {
+          title: 'Unified Sick Leave & History',
+          description: 'Standardized Sick Leave labeling across app, direct Leave History quick action, and streamlined LOP details.',
+          icon: 'medical_services',
+          color: 'emerald'
+        },
+        {
+          title: 'Background Push Notifications',
+          description: 'Celebration wishes and holiday greetings delivered to your mobile notification shade even when closed.',
+          icon: 'notifications_active',
+          color: 'blue'
+        },
+        {
+          title: 'Native Mobile App Feel',
+          description: 'Suppressed browser pull-to-refresh overscroll for a seamless, app-like experience on mobile.',
+          icon: 'smartphone',
+          color: 'purple'
+        }
+      ];
+
+  const getColorClasses = (color?: string) => {
+    switch (color) {
+      case 'amber':
+        return {
+          bg: 'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300',
+          icon: 'text-amber-700 dark:text-amber-300'
+        };
+      case 'emerald':
+        return {
+          bg: 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300',
+          icon: 'text-emerald-700 dark:text-emerald-300'
+        };
+      case 'blue':
+        return {
+          bg: 'bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300',
+          icon: 'text-blue-700 dark:text-blue-300'
+        };
+      case 'purple':
+      default:
+        return {
+          bg: 'bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300',
+          icon: 'text-purple-700 dark:text-purple-300'
+        };
+    }
+  };
 
   return (
     <div
@@ -55,61 +114,32 @@ export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
           </div>
         </div>
 
-        {/* Essential Highlights as attractive bullet points */}
-        <div className="p-4 rounded-2xl bg-surface-container-low border border-surface-container space-y-2.5">
+        {/* Dynamic Highlights from Server Version Info */}
+        <div className="p-4 rounded-2xl bg-surface-container-low border border-surface-container space-y-2.5 max-h-[48vh] overflow-y-auto">
           <p className="text-[11.5px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
             <span className="material-symbols-outlined text-[15px]">auto_awesome</span>
-            <span>What&apos;s New</span>
+            <span>What&apos;s New in v{newVersion}</span>
           </p>
 
           <ul className="space-y-2.5 text-[12.5px] text-on-surface">
-            <li className="flex items-start gap-2.5">
-              <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
-                <span className="text-[12px]">✨</span>
-              </div>
-              <div>
-                <span className="font-semibold text-on-surface">Festive Wishes &amp; Chime:</span>
-                <p className="text-on-surface-variant text-[12px] leading-snug">
-                  Automated celebration greetings for weekends, Singapore public holidays, and work milestones.
-                </p>
-              </div>
-            </li>
-
-            <li className="flex items-start gap-2.5">
-              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 mt-0.5">
-                <span className="material-symbols-outlined text-[13px] text-emerald-700">calendar_month</span>
-              </div>
-              <div>
-                <span className="font-semibold text-on-surface">Reliable Date Selector:</span>
-                <p className="text-on-surface-variant text-[12px] leading-snug">
-                  Smooth, instant calendar picker with smart auto-slashing across all leave and profile forms.
-                </p>
-              </div>
-            </li>
-
-            <li className="flex items-start gap-2.5">
-              <div className="w-5 h-5 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center shrink-0 mt-0.5">
-                <span className="material-symbols-outlined text-[13px] text-purple-700">notifications</span>
-              </div>
-              <div>
-                <span className="font-semibold text-on-surface">Simplified Notifications:</span>
-                <p className="text-on-surface-variant text-[12px] leading-snug">
-                  One simple toggle to control all celebration wishes and pleasant sound alerts.
-                </p>
-              </div>
-            </li>
-
-            <li className="flex items-start gap-2.5">
-              <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center shrink-0 mt-0.5">
-                <span className="material-symbols-outlined text-[13px] text-blue-700">table_chart</span>
-              </div>
-              <div>
-                <span className="font-semibold text-on-surface">Clean Spreadsheet Exports:</span>
-                <p className="text-on-surface-variant text-[12px] leading-snug">
-                  Universal date formatting recognized seamlessly by Microsoft Excel and Google Sheets.
-                </p>
-              </div>
-            </li>
+            {highlights.map((item, idx) => {
+              const colors = getColorClasses(item.color);
+              return (
+                <li key={idx} className="flex items-start gap-2.5">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${colors.bg}`}>
+                    <span className={`material-symbols-outlined text-[13px] ${colors.icon}`}>
+                      {item.icon || 'star'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-on-surface">{item.title}:</span>{' '}
+                    <span className="text-on-surface-variant text-[12px] leading-snug">
+                      {item.description}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </div>
 

@@ -130,11 +130,11 @@ export const CalendarScreen: React.FC = () => {
       inspectorRule = 'Standard Approved';
       inspectorExplanation = `Booked Annual Vacation (${bookedRecord.status}).`;
     } else if (bookedRecord.type === 'SL') {
-      inspectorCategory = 'Medical Outpatient';
+      inspectorCategory = 'Sick Leave';
       inspectorBadgeClass = 'bg-leave-sick-container text-leave-sick';
       inspectorDeduction = `${bookedRecord.days.toFixed(1)} MC Day`;
       inspectorRule = 'MOM Medical Leave';
-      inspectorExplanation = `Certified Outpatient Medical Leave pursuant to MOM Employment Act.`;
+      inspectorExplanation = `Certified Sick Leave pursuant to MOM Employment Act.`;
     } else {
       inspectorCategory = 'Comp-Off Spent';
       inspectorBadgeClass = 'bg-leave-compoff-container text-leave-compoff';

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { LeaveRecord, UserSettings, LeaveType, LeaveStatus, PublicHoliday, SpecialHoliday } from '../types/leave';
 import { ALL_GAZETTED_HOLIDAYS, addDaysToDate, formatDateDDMMYYYY, parseDDMMYYYYToISO } from '../data/singaporeHolidays2026';
 import { AppNotification, generateNotifications } from '../utils/notifications';
@@ -267,13 +267,17 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [settings]);
 
-  // Dynamically apply Theme (light / dark / system) to root, body, and meta theme-color
+  // Ref tracking to skip animation on initial app mount
+  const isFirstThemeRender = useRef(true);
+  const themeTransitionTimerRef = useRef<number | null>(null);
+
+  // Dynamically apply Theme (light / dark / system) with smooth cross-fade animation
   useEffect(() => {
     const theme = settings.theme || 'light';
     const root = document.documentElement;
     const body = document.body;
 
-    const applyTheme = (isDark: boolean) => {
+    const setClasses = (isDark: boolean) => {
       if (isDark) {
         root.classList.add('dark');
         root.setAttribute('data-theme', 'dark');
@@ -287,17 +291,55 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     };
 
+    const applyThemeWithTransition = (isDark: boolean) => {
+      // Skip animation on initial page render to avoid flash
+      if (isFirstThemeRender.current) {
+        isFirstThemeRender.current = false;
+        setClasses(isDark);
+        return;
+      }
+
+      // Check whether user prefers reduced motion
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // 1. Native View Transitions API for 60fps true snapshot cross-fade
+      if (!prefersReducedMotion && typeof document !== 'undefined' && 'startViewTransition' in document) {
+        try {
+          (document as any).startViewTransition(() => {
+            setClasses(isDark);
+          });
+          return;
+        } catch {
+          // Fallback to CSS transitions if startViewTransition fails
+        }
+      }
+
+      // 2. Fallback CSS transition across all UI components
+      if (!prefersReducedMotion) {
+        root.classList.add('theme-transitioning');
+        setClasses(isDark);
+        if (themeTransitionTimerRef.current) {
+          window.clearTimeout(themeTransitionTimerRef.current);
+        }
+        themeTransitionTimerRef.current = window.setTimeout(() => {
+          root.classList.remove('theme-transitioning');
+        }, 400);
+      } else {
+        setClasses(isDark);
+      }
+    };
+
     if (theme === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      applyTheme(mediaQuery.matches);
+      applyThemeWithTransition(mediaQuery.matches);
 
       const handler = (e: MediaQueryListEvent) => {
-        applyTheme(e.matches);
+        applyThemeWithTransition(e.matches);
       };
       mediaQuery.addEventListener('change', handler);
       return () => mediaQuery.removeEventListener('change', handler);
     } else {
-      applyTheme(theme === 'dark');
+      applyThemeWithTransition(theme === 'dark');
     }
   }, [settings.theme]);
 

@@ -1,6 +1,31 @@
 {
-  "version": "1.2.1",
-  "buildTime": 1729472400000,
-  "releaseDate": "2026-10-21",
-  "releaseNotes": "Fix date picker clickability and layout clearance, auto-fill '/' with numbers-only input, consistent CSV date datatype alignment, removed Install App info, and celebratory wishes popup notification with sound."
+  "version": "1.3.1",
+  "buildTime": 1729683600000,
+  "releaseDate": "2026-10-23",
+  "highlights": [
+    {
+      "title": "Minimalist Celebration Wishes",
+      "description": "Clean, distraction-free wish pop-ups focusing strictly on celebration greetings and warm wishes.",
+      "icon": "celebration",
+      "color": "amber"
+    },
+    {
+      "title": "Unified Sick Leave & History",
+      "description": "Standardized Sick Leave labeling across app, direct Leave History quick action, and streamlined LOP details.",
+      "icon": "medical_services",
+      "color": "emerald"
+    },
+    {
+      "title": "Background Push Notifications",
+      "description": "Celebration wishes and holiday greetings delivered to your mobile notification shade even when closed.",
+      "icon": "notifications_active",
+      "color": "blue"
+    },
+    {
+      "title": "Native Mobile App Feel",
+      "description": "Suppressed browser pull-to-refresh overscroll for a seamless, app-like experience on mobile.",
+      "icon": "smartphone",
+      "color": "purple"
+    }
+  ]
 }

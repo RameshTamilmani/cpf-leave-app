@@ -33,15 +33,7 @@ export const WishPopupModal: React.FC = () => {
     ? 'from-red-500 via-rose-500 to-red-600'
     : 'from-primary via-secondary to-tertiary';
 
-  const badgeText = isAnniversary
-    ? 'Work Anniversary Milestone'
-    : isWeekend
-    ? 'Weekend Celebration Wish'
-    : isIndianHoliday
-    ? 'Festive Indian Greeting'
-    : isPublicHoliday
-    ? 'Singapore Public Holiday'
-    : 'Special Celebration';
+
 
   return (
     <div
@@ -55,8 +47,8 @@ export const WishPopupModal: React.FC = () => {
         className="w-full max-w-sm sm:max-w-md bg-surface-card rounded-3xl shadow-2xl border border-surface-container overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Festive Header Banner with Gradient & Decorative Sparkles */}
-        <div className={`relative px-6 pt-7 pb-6 bg-gradient-to-br ${gradientHeader} text-white flex flex-col items-center text-center overflow-hidden`}>
+        {/* Festive Header Banner with Gradient & Large Emoji */}
+        <div className={`relative px-6 pt-9 pb-8 bg-gradient-to-br ${gradientHeader} text-white flex flex-col items-center text-center overflow-hidden`}>
           {/* Background festive glow elements */}
           <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/20 blur-xl pointer-events-none" />
           <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/15 blur-lg pointer-events-none" />
@@ -70,47 +62,27 @@ export const WishPopupModal: React.FC = () => {
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
 
-          {/* Badge */}
-          <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-semibold tracking-wider uppercase mb-3 text-white border border-white/30 shadow-xs">
-            {badgeText}
-          </span>
-
           {/* Large Emoji / Icon Badge with bounce */}
-          <div className="w-20 h-20 rounded-2xl bg-white/25 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/40 mb-3 animate-bounce">
+          <div className="w-20 h-20 rounded-2xl bg-white/25 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/40 mb-4 animate-bounce">
             <span className="text-4xl select-none" role="img" aria-label="Celebration">
               {activeWishPopup.emoji || (isAnniversary ? '🎉' : isWeekend ? '🌴' : isIndianHoliday ? '🪔' : '✨')}
             </span>
           </div>
 
-          <h2 id="wish-title" className="text-xl sm:text-2xl font-bold leading-tight drop-shadow-xs px-2">
+          <h2 id="wish-title" className="text-2xl font-bold leading-tight drop-shadow-xs px-2">
             {activeWishPopup.title}
           </h2>
-
-          {activeWishPopup.subtitle && (
-            <p className="text-xs sm:text-sm text-white/90 font-medium mt-1 drop-shadow-xs">
-              {activeWishPopup.subtitle}
-            </p>
-          )}
         </div>
 
-        {/* Wish Content Body */}
-        <div className="p-6 flex flex-col gap-5 bg-surface-card">
-          <div className="p-4 rounded-2xl bg-surface-container-low border border-surface-container text-center">
-            <p className="text-body-md text-on-surface leading-relaxed text-sm sm:text-base font-normal">
-              {activeWishPopup.message}
-            </p>
-          </div>
-
-          {/* Primary Action Button */}
-          <div className="flex items-center gap-2 pt-1">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="w-full py-3 rounded-full bg-primary text-on-primary font-label-md text-label-md font-bold hover:opacity-95 active:scale-[0.98] transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
-            >
-              <span>Thank You! ✨</span>
-            </button>
-          </div>
+        {/* Action Button Body */}
+        <div className="p-5 flex flex-col bg-surface-card">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="w-full py-3 rounded-full bg-primary text-on-primary font-label-md text-label-md font-bold hover:opacity-95 active:scale-[0.98] transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+          >
+            <span>Thank You! ✨</span>
+          </button>
         </div>
       </div>
     </div>

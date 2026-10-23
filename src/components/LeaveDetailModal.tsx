@@ -88,7 +88,7 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
     containerClass = 'bg-leave-sick-container text-leave-sick-on-container';
     subtitle = `${Number.isInteger(slUsed) ? slUsed : slUsed.toFixed(1)} / ${settings.slEntitlement} Days Applied (${slAvailable} Available)`;
     emptyTitle = 'No Sick Leave records';
-    emptyDescription = 'You have not logged any Outpatient Sick Leave entries yet.';
+    emptyDescription = 'You have not logged any Sick Leave entries yet.';
     filteredRecords = records
       .filter((r) => r.type === 'SL')
       .sort((a, b) => b.startDate.localeCompare(a.startDate));
@@ -227,7 +227,7 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
                 <p className="font-title-sm text-title-sm font-semibold text-on-surface">{emptyTitle}</p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">{emptyDescription}</p>
               </div>
-              {onApplyLeave && category !== 'SPECIAL' && (
+              {onApplyLeave && category !== 'SPECIAL' && category !== 'LOP' && (
                 <button
                   type="button"
                   onClick={() => {

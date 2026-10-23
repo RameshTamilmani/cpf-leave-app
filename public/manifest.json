@@ -9,9 +9,8 @@
   "scope": "/",
   "display": "standalone",
   "display_override": [
-    "standalone",
-    "minimal-ui",
-    "browser"
+    "window-controls-overlay",
+    "standalone"
   ],
   "orientation": "portrait-primary",
   "background_color": "#FFFFFF",

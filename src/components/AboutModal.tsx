@@ -24,7 +24,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             </div>
               <div className="flex items-center gap-2">
                 <h3 className="font-title-md text-title-md font-bold text-on-surface">About CutiSG</h3>
-                <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">v1.2.0</span>
+                <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">v1.3.1</span>
               </div>
               <p className="text-[12px] text-on-surface-variant">Singapore Leave Planner &amp; Public Holiday Tracker</p>
           </div>
@@ -52,7 +52,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
               Statutory Leave Standards
             </h4>
             <p className="text-on-surface-variant">
-              Under default Singapore employment provisions, employees receive 12 statutory days of paid Annual Leave and 12 days of paid Outpatient Sick Leave per leave year cycle.
+              Under default Singapore employment provisions, employees receive 12 statutory days of paid Annual Leave and 12 days of paid Sick Leave per leave year cycle.
             </p>
           </div>
 

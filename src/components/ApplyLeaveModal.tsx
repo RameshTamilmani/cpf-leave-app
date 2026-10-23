@@ -683,7 +683,7 @@ export const ApplyLeaveModal: React.FC = () => {
                   Days to Deduct
                 </span>
                 <span className="font-body-sm text-body-sm text-on-surface-variant">
-                  {type === 'AL' ? 'From Annual Leave quota' : type === 'SL' ? 'From Outpatient Sick quota' : 'From Comp-Off quota'}
+                  {type === 'AL' ? 'From Annual Leave quota' : type === 'SL' ? 'From Sick Leave quota' : 'From Comp-Off quota'}
                 </span>
               </div>
               <div className="flex items-center gap-2 bg-surface-container-lowest px-2 py-1 rounded-full border border-surface-container shadow-2xs">

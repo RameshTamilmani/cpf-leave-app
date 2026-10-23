@@ -305,58 +305,16 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. Leave Entitlements (Default statutory 12 days Annual Leave, 12 days Sick Leave - non-modifiable) */}
+      {/* 2. Leave Year Cycle */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
           <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
-            Leave Entitlements
+            Leave Year Cycle
           </h2>
-          <span className="font-label-sm text-label-sm text-on-surface-variant">Default Statutory</span>
         </div>
 
-        <div className="rounded-xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-space-md">
-          {/* Annual Leave Item (Consistent beach_access icon) */}
+        <div className="rounded-xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container">
           <div className="flex items-center justify-between gap-space-sm">
-            <div className="flex items-center gap-space-sm min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-leave-annual-container text-leave-annual-on-container flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  beach_access
-                </span>
-              </div>
-              <div className="min-w-0">
-                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Annual Leave</p>
-              </div>
-            </div>
-            <div className="flex items-center px-3 py-1 rounded-full bg-surface-container-low border border-surface-container shrink-0">
-              <span className="font-title-md text-title-md text-on-surface font-bold">12</span>
-              <span className="font-label-sm text-label-sm text-on-surface-variant ml-1 font-medium">Days</span>
-            </div>
-          </div>
-
-          <div className="h-[1px] bg-surface-container" />
-
-          {/* Sick Leave Item (Consistent medical_services icon) */}
-          <div className="flex items-center justify-between gap-space-sm">
-            <div className="flex items-center gap-space-sm min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-leave-sick-container text-leave-sick-on-container flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  medical_services
-                </span>
-              </div>
-              <div className="min-w-0">
-                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Sick Leave</p>
-              </div>
-            </div>
-            <div className="flex items-center px-3 py-1 rounded-full bg-surface-container-low border border-surface-container shrink-0">
-              <span className="font-title-md text-title-md text-on-surface font-bold">12</span>
-              <span className="font-label-sm text-label-sm text-on-surface-variant ml-1 font-medium">Days</span>
-            </div>
-          </div>
-
-          <div className="h-[1px] bg-surface-container" />
-
-          {/* Leave Year Cycle */}
-          <div className="flex items-center justify-between">
             <div className="flex items-center gap-space-sm min-w-0">
               <div className="w-10 h-10 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-[22px]">event_repeat</span>
@@ -377,7 +335,7 @@ export const SettingsScreen: React.FC = () => {
             </div>
             <button
               onClick={() => setIsEditCycleModalOpen(true)}
-              className="px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+              className="px-3.5 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed hover:bg-primary-fixed-dim font-label-md text-label-md font-semibold flex items-center gap-1 transition-colors cursor-pointer shrink-0 shadow-2xs"
             >
               <span>Change</span>
               <span className="material-symbols-outlined text-[16px]">expand_more</span>
@@ -446,107 +404,45 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. Notifications & Wishes Preferences - Separate Toggles */}
+      {/* 4. Notifications & Wishes */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
           <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
             Notifications &amp; Wishes
           </h2>
-          <span className="font-label-sm text-label-sm text-primary font-semibold">Customizable</span>
         </div>
-        <div className="rounded-xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-3">
-          {/* Toggle 1: Weekend Reminder & Wishes */}
-          <div className="flex items-center justify-between gap-space-sm p-3.5 rounded-xl bg-surface-container-low border border-surface-container">
-            <div className="flex items-center gap-space-sm min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[22px]">weekend</span>
-              </div>
-              <div className="min-w-0">
-                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Weekend Reminder &amp; Wishes</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant text-xs mt-0.5">
-                  Automated wish sent on previous day evening (Friday 3:00 PM IST) before weekend
-                </p>
-              </div>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
-              <input
-                type="checkbox"
-                checked={settings.notificationsEnabled !== false && settings.weekendWishesEnabled !== false}
-                onChange={(e) => {
-                  const isChecked = e.target.checked;
-                  updateSettings({
-                    weekendWishesEnabled: isChecked,
-                    ...(isChecked ? { notificationsEnabled: true } : {})
-                  });
-                  showToast(isChecked ? 'Weekend reminder & wishes turned on' : 'Weekend wishes turned off');
-                }}
-                className="sr-only peer"
-              />
-              <div className="w-12 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-xs" />
-            </label>
-          </div>
-
-          {/* Toggle 2: Special Wishes & Celebrations */}
-          <div className="flex items-center justify-between gap-space-sm p-3.5 rounded-xl bg-surface-container-low border border-surface-container">
+        <div className="rounded-xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container">
+          <div className="flex items-center justify-between gap-space-sm p-1">
             <div className="flex items-center gap-space-sm min-w-0">
               <div className="w-10 h-10 rounded-lg bg-primary-container text-on-primary-fixed flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[22px]">celebration</span>
+                <span className="material-symbols-outlined text-[22px]">notifications_active</span>
               </div>
               <div className="min-w-0">
-                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Special Wishes &amp; Celebrations</p>
+                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Notifications &amp; Wishes</p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant text-xs mt-0.5">
-                  Work anniversaries and Indian festivals &amp; special holidays on the day at 8:00 AM IST
+                  Receive holiday greetings, weekend wishes, and leave reminders.
                 </p>
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
               <input
                 type="checkbox"
-                checked={settings.notificationsEnabled !== false && settings.wishesEnabled !== false && settings.anniversaryWishesEnabled !== false}
-                onChange={(e) => {
-                  const isChecked = e.target.checked;
-                  updateSettings({
-                    wishesEnabled: isChecked,
-                    anniversaryWishesEnabled: isChecked,
-                    holidayWishesEnabled: isChecked,
-                    ...(isChecked ? { notificationsEnabled: true } : {})
-                  });
-                  showToast(isChecked ? 'Special wishes & holiday greetings turned on' : 'Special wishes & greetings turned off');
-                }}
-                className="sr-only peer"
-              />
-              <div className="w-12 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-xs" />
-            </label>
-          </div>
-
-          {/* Toggle 3: Unified Wish Notifications & Sound Toggle */}
-          <div className="flex items-center justify-between gap-space-sm p-3.5 rounded-xl bg-surface-container-low border border-surface-container">
-            <div className="flex items-center gap-space-sm min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[22px]">celebration</span>
-              </div>
-              <div className="min-w-0">
-                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Wish Notifications &amp; Sound</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant text-xs mt-0.5">
-                  Display celebratory wishes and play chime sound for holidays, weekends, and milestones
-                </p>
-              </div>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
-              <input
-                type="checkbox"
-                checked={settings.notificationsEnabled !== false && settings.wishPopupEnabled !== false && settings.wishSoundEnabled !== false}
+                checked={settings.notificationsEnabled !== false}
                 onChange={async (e) => {
                   const isChecked = e.target.checked;
                   if (isChecked) {
                     await requestNotificationPermission();
                   }
                   updateSettings({
+                    notificationsEnabled: isChecked,
+                    wishesEnabled: isChecked,
+                    weekendWishesEnabled: isChecked,
+                    anniversaryWishesEnabled: isChecked,
+                    holidayWishesEnabled: isChecked,
                     wishPopupEnabled: isChecked,
                     wishSoundEnabled: isChecked,
-                    ...(isChecked ? { notificationsEnabled: true, wishesEnabled: true } : {})
                   });
-                  showToast(isChecked ? 'Wish notifications & chime sound enabled' : 'Wish notifications & chime sound disabled');
+                  showToast(isChecked ? 'Notifications & wishes enabled' : 'Notifications & wishes disabled');
                 }}
                 className="sr-only peer"
               />
