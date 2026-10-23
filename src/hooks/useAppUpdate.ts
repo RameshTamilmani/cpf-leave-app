@@ -16,8 +16,8 @@ export interface VersionInfo {
 }
 
 // Current bundled client build version
-export const CURRENT_APP_VERSION = '1.3.0';
-export const CURRENT_BUILD_TIME = 1729680000000;
+export const CURRENT_APP_VERSION = '1.3.2';
+export const CURRENT_BUILD_TIME = 1729688000000;
 
 const SNOOZE_STORAGE_KEY = 'cutisg_update_snooze_until';
 const APPLIED_VERSION_STORAGE_KEY = 'cutisg_applied_version';

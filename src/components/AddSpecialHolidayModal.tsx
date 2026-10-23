@@ -2,25 +2,11 @@ import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { DatePickerField } from './DatePickerField';
 
-const EMOJI_OPTIONS = ['🗳️', '🇸🇬', '🌟', '🏛️', '🎈', '🕊️', '🧧', '✨', '🏆', '🎉', '🪔'];
-
-const QUICK_SUGGESTIONS = [
-  { label: 'General Election Polling Day', cat: 'gazetted_adhoc' as const, emoji: '🗳️' },
-  { label: 'Presidential Polling Day', cat: 'gazetted_adhoc' as const, emoji: '🗳️' },
-  { label: 'SG60 Jubilee Special Holiday', cat: 'national' as const, emoji: '🇸🇬' },
-  { label: 'Company Founder’s Off-Day', cat: 'company' as const, emoji: '🎉' },
-  { label: 'Deepavali Eve Off-Day', cat: 'company' as const, emoji: '🪔' }
-];
-
 export const AddSpecialHolidayModal: React.FC = () => {
   const { isAddSpecialHolidayOpen, setIsAddSpecialHolidayOpen, addSpecialHoliday, todayDateStr, settings } = useLeave();
 
   const [name, setName] = useState('');
   const [date, setDate] = useState(todayDateStr || '2026-11-20');
-  const [category, setCategory] = useState<'gazetted_adhoc' | 'company' | 'national'>('gazetted_adhoc');
-  const [emoji, setEmoji] = useState('🗳️');
-  const [notes, setNotes] = useState('');
-  const [forceCompOff, setForceCompOff] = useState(false);
 
   if (!isAddSpecialHolidayOpen) return null;
 
@@ -43,7 +29,7 @@ export const AddSpecialHolidayModal: React.FC = () => {
     const isSat = dayIdx === 6;
     const isSun = dayIdx === 0;
     const isLongWeekend = dayIdx === 5 || dayIdx === 1 || dayIdx === 0;
-    const qualifiesForCompOff = isSat || forceCompOff;
+    const qualifiesForCompOff = isSat && settings.saturdayCompOffEnabled;
 
     addSpecialHoliday({
       name: name.trim(),
@@ -51,22 +37,20 @@ export const AddSpecialHolidayModal: React.FC = () => {
       dayOfWeek: daysOfWeek[dayIdx] || dayName,
       isLongWeekend,
       isCompOffEligible: qualifiesForCompOff,
-      longWeekendText: isSaturday || forceCompOff
+      longWeekendText: qualifiesForCompOff
         ? 'Saturday PH • +1 Comp-Off'
         : isLongWeekend
         ? 'Long Weekend 🎉'
         : undefined,
-      description: notes.trim() || `Special gazetted holiday added pursuant to official proclamation or company policy.`,
-      emoji,
+      description: 'Special gazetted public holiday added to personal planner.',
+      emoji: '🗳️',
       momSection: qualifiesForCompOff
         ? 'MOM Section 88 (Saturday Rest / Comp-Off Granted)'
         : 'MOM Gazetted Special Off-Day',
-      category
+      category: 'gazetted_adhoc'
     });
 
     setName('');
-    setNotes('');
-    setForceCompOff(false);
     setIsAddSpecialHolidayOpen(false);
   };
 
@@ -105,75 +89,9 @@ export const AddSpecialHolidayModal: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* Category Choice */}
-          <div>
-            <label className="font-label-md text-label-md text-on-surface-variant font-semibold block mb-1.5">
-              HOLIDAY CLASSIFICATION
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setCategory('gazetted_adhoc')}
-                className={`p-2 rounded-xl text-center font-label-sm text-label-sm border transition-colors cursor-pointer ${
-                  category === 'gazetted_adhoc'
-                    ? 'bg-holiday-public-container text-holiday-public border-holiday-public font-bold'
-                    : 'bg-surface-container-low text-on-surface-variant border-surface-container'
-                }`}
-              >
-                MOM Ad-Hoc Gazetted
-              </button>
-              <button
-                type="button"
-                onClick={() => setCategory('national')}
-                className={`p-2 rounded-xl text-center font-label-sm text-label-sm border transition-colors cursor-pointer ${
-                  category === 'national'
-                    ? 'bg-primary-fixed text-on-primary-fixed border-primary font-bold'
-                    : 'bg-surface-container-low text-on-surface-variant border-surface-container'
-                }`}
-              >
-                National Special
-              </button>
-              <button
-                type="button"
-                onClick={() => setCategory('company')}
-                className={`p-2 rounded-xl text-center font-label-sm text-label-sm border transition-colors cursor-pointer ${
-                  category === 'company'
-                    ? 'bg-leave-annual-container text-leave-annual border-leave-annual font-bold'
-                    : 'bg-surface-container-low text-on-surface-variant border-surface-container'
-                }`}
-              >
-                Company Off-Day
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Suggestions for Rare Cases */}
-          <div>
-            <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-              RARE OCCASION PRESETS
-            </label>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {QUICK_SUGGESTIONS.map((sug) => (
-                <button
-                  key={sug.label}
-                  type="button"
-                  onClick={() => {
-                    setName(sug.label);
-                    setCategory(sug.cat);
-                    setEmoji(sug.emoji);
-                  }}
-                  className="px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-[11px] font-medium flex items-center gap-1 transition-colors cursor-pointer border border-surface-container-highest"
-                >
-                  <span>{sug.emoji}</span>
-                  <span>{sug.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Holiday Name */}
           <div>
-            <label className="font-label-md text-label-md text-on-surface-variant font-semibold block mb-1">
+            <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
               HOLIDAY NAME
             </label>
             <input
@@ -181,105 +99,50 @@ export const AddSpecialHolidayModal: React.FC = () => {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., General Election Polling Day, SG60 Jubilee"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary text-body-md"
+              placeholder="e.g., Singapore Polling Day"
+              className="w-full px-3 py-2 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary text-body-sm"
             />
           </div>
 
-          {/* Date Picker & Emoji */}
-          <div className="grid grid-cols-3 gap-2.5">
-            <div className="col-span-2">
-              <DatePickerField
-                label={`DATE ${dayName ? `(${dayName})` : ''}`}
-                value={date}
-                onChange={setDate}
-                required
-                ariaLabel="Choose Special Holiday Date"
-              />
-            </div>
-
-            <div>
-              <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-                EMOJI
-              </label>
-              <div className="flex items-center gap-1 overflow-x-auto py-1">
-                {EMOJI_OPTIONS.slice(0, 4).map((em) => (
-                  <button
-                    key={em}
-                    type="button"
-                    onClick={() => setEmoji(em)}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg border cursor-pointer ${
-                      emoji === em ? 'border-primary bg-primary-fixed/40' : 'border-transparent hover:bg-surface-container'
-                    }`}
-                  >
-                    {em}
-                  </button>
-                ))}
-              </div>
-            </div>
+          {/* Date Picker */}
+          <div>
+            <DatePickerField
+              label={`DATE ${dayName ? `(${dayName})` : ''}`}
+              value={date}
+              onChange={setDate}
+              required
+              ariaLabel="Choose Special Holiday Date"
+            />
           </div>
 
           {/* Statutory Auto-Calculations Notice */}
           {isSaturday && settings.saturdayCompOffEnabled && (
-            <div className="p-3 rounded-xl bg-alert-warning-container text-alert-warning text-body-sm flex items-start gap-2.5 border border-alert-warning/20">
-              <span className="material-symbols-outlined text-[20px] text-alert-warning shrink-0 mt-0.5">stars</span>
+            <div className="p-2.5 rounded-xl bg-alert-warning-container text-alert-warning text-body-sm flex items-start gap-2 border border-alert-warning/20">
+              <span className="material-symbols-outlined text-[18px] text-alert-warning shrink-0 mt-0.5">stars</span>
               <div>
-                <span className="font-title-sm text-title-sm font-bold block">
+                <span className="font-title-sm text-xs font-bold block">
                   Saturday Holiday: +1 Comp-Off Auto-Accrued!
                 </span>
-                <p className="mt-0.5 text-on-surface-variant leading-snug">
-                  This special holiday falls on a Saturday. Pursuant to MOM Employment Act Section 88, it will automatically credit +1 Comp-Off Day to your active Leave Year Cycle.
+                <p className="mt-0.5 text-on-surface-variant text-[11.5px] leading-snug">
+                  This holiday falls on a Saturday. Pursuant to MOM Section 88, it will automatically credit +1 Comp-Off Day to your Leave Year Cycle.
                 </p>
               </div>
             </div>
           )}
 
           {isSunday && (
-            <div className="p-3 rounded-xl bg-surface-container-low text-on-surface-variant text-body-sm flex items-start gap-2.5 border border-surface-container">
-              <span className="material-symbols-outlined text-[20px] text-primary shrink-0 mt-0.5">info</span>
+            <div className="p-2.5 rounded-xl bg-surface-container-low text-on-surface-variant text-body-sm flex items-start gap-2 border border-surface-container">
+              <span className="material-symbols-outlined text-[18px] text-primary shrink-0 mt-0.5">info</span>
               <div>
-                <span className="font-title-sm text-title-sm font-semibold text-on-surface block">
+                <span className="font-title-sm text-xs font-semibold text-on-surface block">
                   Sunday Holiday: Monday Observed
                 </span>
-                <p className="mt-0.5 leading-snug">
+                <p className="mt-0.5 text-[11.5px] leading-snug">
                   Falls on a Sunday; the following Monday is designated as a paid statutory day in lieu.
                 </p>
               </div>
             </div>
           )}
-
-          {!isSaturday && (
-            <label className="flex items-center gap-2.5 p-3 rounded-xl bg-surface-container-low border border-surface-container cursor-pointer">
-              <input
-                type="checkbox"
-                checked={forceCompOff}
-                onChange={(e) => setForceCompOff(e.target.checked)}
-                className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
-              />
-              <div className="flex flex-col">
-                <span className="font-label-md text-label-md font-semibold text-on-surface">
-                  Credit +1 Comp-Off Day for this special holiday
-                </span>
-                <span className="text-[12px] text-on-surface-variant">
-                  Auto-accrues an off-in-lieu comp-off day in your Leave Year Cycle balance
-                </span>
-              </div>
-            </label>
-          )}
-
-          {/* Notes / Reason */}
-          <div>
-            <label className="font-label-md text-label-md text-on-surface-variant font-semibold block mb-1">
-              GAZETTE NOTES / REASON (OPTIONAL)
-            </label>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g., Gazetted by Singapore Prime Minister's Office"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary text-body-md"
-            />
-          </div>
 
           {/* Actions */}
           <div className="flex items-center gap-2 pt-1">

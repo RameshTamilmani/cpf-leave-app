@@ -1,30 +1,30 @@
 {
-  "version": "1.3.1",
-  "buildTime": 1729683600000,
+  "version": "1.3.2",
+  "buildTime": 1729688000000,
   "releaseDate": "2026-10-23",
   "highlights": [
     {
-      "title": "Minimalist Celebration Wishes",
-      "description": "Clean, distraction-free wish pop-ups focusing strictly on celebration greetings and warm wishes.",
-      "icon": "celebration",
+      "title": "Clean Home Screen Greetings",
+      "description": "Warm celebration and anniversary greetings directly on your home screen; removed popup modals and notification icon.",
+      "icon": "waving_hand",
       "color": "amber"
     },
     {
-      "title": "Unified Sick Leave & History",
-      "description": "Standardized Sick Leave labeling across app, direct Leave History quick action, and streamlined LOP details.",
-      "icon": "medical_services",
+      "title": "Streamlined Special Holiday Form",
+      "description": "Simplified to only Holiday Name and Date picker with automatic MOM Saturday comp-off accrual.",
+      "icon": "event_available",
       "color": "emerald"
     },
     {
-      "title": "Background Push Notifications",
-      "description": "Celebration wishes and holiday greetings delivered to your mobile notification shade even when closed.",
-      "icon": "notifications_active",
+      "title": "Refined Compact Sizing",
+      "description": "Restored compact, elegant card padding, typography, and icon dimensions across mobile viewports.",
+      "icon": "aspect_ratio",
       "color": "blue"
     },
     {
-      "title": "Native Mobile App Feel",
-      "description": "Suppressed browser pull-to-refresh overscroll for a seamless, app-like experience on mobile.",
-      "icon": "smartphone",
+      "title": "Unified Sick Leave & History",
+      "description": "Simplified Leave History shortcut, standardized Sick Leave, and streamlined LOP details window.",
+      "icon": "history",
       "color": "purple"
     }
   ]

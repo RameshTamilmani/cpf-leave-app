@@ -26,9 +26,7 @@ export const HomeScreen: React.FC = () => {
     setIsCompOffModalOpen,
     setIsAddSpecialHolidayOpen,
     setSelectedCalendarDate,
-    setCurrentTab,
-    setIsNotificationsOpen,
-    openWishWithChime
+    setCurrentTab
   } = useLeave();
 
   const [activeDetailCategory, setActiveDetailCategory] = useState<DetailCategory | null>(null);
@@ -51,51 +49,51 @@ export const HomeScreen: React.FC = () => {
   const celebrationWish = notifications.find((n) => n.isCelebration);
 
   return (
-    <div className="flex flex-col w-full px-margin pb-6 gap-space-md max-w-xl mx-auto">
+    <div className="flex flex-col w-full px-margin pb-6 gap-3 max-w-xl mx-auto">
       {/* 1. Executive Employee Profile Card */}
-      <section className="w-full bg-gradient-to-br from-surface-card via-surface-container-low to-primary-container/20 rounded-3xl p-4 sm:p-5 shadow-sm border border-primary/20 flex flex-col gap-3.5 transition-all">
+      <section className="w-full bg-gradient-to-br from-surface-card via-surface-container-low to-primary-container/15 rounded-2xl p-3 sm:p-3.5 shadow-xs border border-primary/20 flex flex-col gap-2.5 transition-all">
         {/* Top Identity Row */}
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3.5 min-w-0">
-            {/* Avatar with Multi-layer Ring */}
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Avatar */}
             <div className="relative shrink-0">
               {settings.avatarUrl ? (
                 <img
                   src={settings.avatarUrl}
                   alt={settings.userName || 'Profile'}
-                  className="w-16 h-16 rounded-full object-cover ring-2 ring-primary ring-offset-2 ring-offset-surface-card shadow-md"
+                  className="w-12 h-12 rounded-full object-cover ring-2 ring-primary ring-offset-1 ring-offset-surface-card shadow-sm"
                 />
               ) : settings.userName ? (
-                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-primary to-primary-fixed text-on-primary font-bold text-2xl flex items-center justify-center ring-2 ring-primary ring-offset-2 ring-offset-surface-card shadow-md">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-primary to-primary-fixed text-on-primary font-bold text-lg flex items-center justify-center ring-2 ring-primary ring-offset-1 ring-offset-surface-card shadow-sm">
                   {settings.userName.slice(0, 1).toUpperCase()}
                 </div>
               ) : (
-                <div className="w-16 h-16 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center ring-2 ring-surface-container ring-offset-2 ring-offset-surface-card shadow-sm">
-                  <span className="material-symbols-outlined text-[32px]">person</span>
+                <div className="w-12 h-12 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center ring-1 ring-surface-container shadow-xs">
+                  <span className="material-symbols-outlined text-[24px]">person</span>
                 </div>
               )}
               <div
-                className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-primary border-2 border-surface-card flex items-center justify-center shadow-xs"
+                className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary border-2 border-surface-card flex items-center justify-center shadow-xs"
                 title="Employee Profile"
               >
-                <span className="material-symbols-outlined text-[12px] text-on-primary">verified</span>
+                <span className="material-symbols-outlined text-[10px] text-on-primary">verified</span>
               </div>
             </div>
 
-            {/* Name & Bright Employee ID Badge */}
+            {/* Name & Employee ID Badge */}
             <div className="flex flex-col min-w-0">
-              <h1 className="font-headline-sm text-title-lg font-bold text-on-surface tracking-tight truncate leading-snug">
+              <h1 className="text-base font-bold text-on-surface tracking-tight truncate leading-tight">
                 {settings.userName || 'Employee Name'}
               </h1>
 
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 {settings.employeeId ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-300 text-slate-950 text-xs font-mono font-black border-2 border-amber-300 shadow-md ring-2 ring-amber-400/40 tracking-wider">
-                    <span className="material-symbols-outlined text-[15px] text-slate-950 font-bold">badge</span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-400/20 text-amber-900 dark:text-amber-200 text-[11px] font-mono font-bold border border-amber-400/40">
+                    <span className="material-symbols-outlined text-[13px]">badge</span>
                     <span>EMP {settings.employeeId}</span>
                   </span>
                 ) : (
-                  <span className="text-xs text-on-surface-variant italic">ID not assigned</span>
+                  <span className="text-[11px] text-on-surface-variant italic">ID not assigned</span>
                 )}
               </div>
             </div>
@@ -105,25 +103,25 @@ export const HomeScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => setCurrentTab('settings')}
-            className="w-9 h-9 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-primary flex items-center justify-center transition-all cursor-pointer shadow-2xs border border-surface-container shrink-0"
-            title="Edit Profile, Photo &amp; Joining Date"
+            className="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-primary flex items-center justify-center transition-all cursor-pointer shadow-2xs border border-surface-container shrink-0"
+            title="Edit Profile"
           >
-            <span className="material-symbols-outlined text-[18px]">edit</span>
+            <span className="material-symbols-outlined text-[16px]">edit</span>
           </button>
         </div>
 
-        {/* Middle: Years of Work Experience Badge (or Prompt to Set Joining Date) */}
+        {/* Experience row */}
         {effectiveDoj ? (
-          <div className="p-3 rounded-2xl bg-surface-card/90 border border-primary/20 shadow-2xs flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-primary-container text-on-primary-fixed flex items-center justify-center shrink-0 shadow-2xs">
-                <span className="material-symbols-outlined text-[20px] text-primary">workspace_premium</span>
+          <div className="p-2 px-2.5 rounded-xl bg-surface-card/90 border border-primary/15 shadow-2xs flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-primary-container text-on-primary-fixed flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[16px] text-primary">workspace_premium</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="font-title-sm text-title-sm font-bold text-on-surface">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-on-surface">
                   {experienceText || '1st Year'}
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed">
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded-full bg-primary-fixed text-on-primary-fixed">
                   Experience
                 </span>
               </div>
@@ -132,278 +130,249 @@ export const HomeScreen: React.FC = () => {
             <button
               type="button"
               onClick={() => setCurrentTab('settings')}
-              className="flex items-center gap-1 text-[11.5px] font-medium text-on-surface-variant bg-surface-container/60 hover:bg-surface-container px-2.5 py-1 rounded-lg border border-surface-container/60 shrink-0 cursor-pointer transition-colors"
-              title="Update Date of Joining in Profile Settings"
+              className="flex items-center gap-1 text-[11px] font-medium text-on-surface-variant bg-surface-container/60 hover:bg-surface-container px-2 py-0.5 rounded-md border border-surface-container/60 shrink-0 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[14px] text-primary">calendar_month</span>
+              <span className="material-symbols-outlined text-[12px] text-primary">calendar_month</span>
               <span>Joined {formatDateDDMMYYYY(effectiveDoj)}</span>
             </button>
           </div>
         ) : (
-          <div className="p-3 rounded-2xl bg-surface-card/90 border border-primary/20 shadow-2xs flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-surface-container text-primary flex items-center justify-center shrink-0 shadow-2xs">
-                <span className="material-symbols-outlined text-[20px]">calendar_today</span>
+          <div className="p-2 px-2.5 rounded-xl bg-surface-card/90 border border-primary/15 shadow-2xs flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-surface-container text-primary flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[16px]">calendar_today</span>
               </div>
-              <div className="min-w-0">
-                <span className="font-title-sm text-xs font-semibold text-on-surface block leading-tight">
-                  Date of Joining Not Set
-                </span>
-                <span className="text-[11px] text-on-surface-variant block truncate">
-                  Set joining date to track work experience &amp; milestones
-                </span>
-              </div>
+              <span className="text-[11.5px] text-on-surface-variant truncate">
+                Set joining date to track work experience
+              </span>
             </div>
 
             <button
               type="button"
               onClick={() => setCurrentTab('settings')}
-              className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary-fixed/40 hover:bg-primary-fixed/60 px-3 py-1.5 rounded-xl border border-primary/20 shrink-0 cursor-pointer transition-colors"
+              className="text-[11px] font-semibold text-primary bg-primary-fixed/40 hover:bg-primary-fixed/60 px-2 py-0.5 rounded-md border border-primary/20 shrink-0 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[15px]">add</span>
-              <span>Set Joining Date</span>
+              + Set Date
             </button>
           </div>
         )}
 
-        {/* Bottom Celebration Ribbon (Anniversary / Weekend / Special Holiday Wishes) */}
+        {/* Home Screen Greeting Ribbon - Static, warm greeting (no popup modal) */}
         {celebrationWish && (
-          <div
-            onClick={() => openWishWithChime(celebrationWish)}
-            className="p-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-primary-container/40 to-emerald-500/15 border border-amber-500/25 flex items-center justify-between gap-2 cursor-pointer hover:opacity-95 transition-all shadow-2xs"
-            title="Click to view celebration wish popup with sound"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="text-xl shrink-0">{celebrationWish.emoji || '🎉'}</span>
-              <div className="min-w-0">
-                <span className="font-title-sm text-[12.5px] font-bold text-on-surface block leading-tight truncate">
-                  {celebrationWish.title}
-                </span>
-                <span className="text-[11px] text-on-surface-variant block truncate">
-                  {celebrationWish.subtitle}
-                </span>
-              </div>
+          <div className="p-2 px-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 via-primary-container/20 to-emerald-500/10 border border-amber-500/20 flex items-center gap-2 shadow-2xs">
+            <span className="text-base shrink-0">{celebrationWish.emoji || '🎉'}</span>
+            <div className="min-w-0 flex-1">
+              <span className="text-[12px] font-bold text-on-surface block leading-tight truncate">
+                {celebrationWish.title}
+              </span>
+              <span className="text-[10.5px] text-on-surface-variant block truncate">
+                {celebrationWish.subtitle}
+              </span>
             </div>
-            <span className="font-label-sm text-[10px] font-bold text-primary shrink-0 flex items-center gap-0.5">
-              <span>View</span>
-              <span className="material-symbols-outlined text-[14px]">celebration</span>
-            </span>
           </div>
         )}
       </section>
 
       {/* 2. Leave Balance Cards (Clickable to view applied leaves list) */}
-      <section className="flex flex-col gap-space-sm">
+      <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between px-1">
-          <h2 className="font-title-md text-title-md text-on-surface font-semibold">Leave Balances</h2>
-          <span className="text-[11px] text-on-surface-variant">Tap card to view applied records</span>
+          <h2 className="text-sm font-semibold text-on-surface">Leave Balances</h2>
+          <span className="text-[10.5px] text-on-surface-variant">Tap card to view details</span>
         </div>
-        <div className="flex flex-col gap-space-sm">
-          {/* Annual Leave Card - Click to show applied annual leaves */}
+        <div className="flex flex-col gap-2">
+          {/* Annual Leave Card */}
           <article
             onClick={() => setActiveDetailCategory('AL')}
-            className="w-full bg-leave-annual-container rounded-xl p-4 shadow-xs flex items-center justify-between text-leave-annual-on-container cursor-pointer hover:opacity-95 active:scale-[0.99] transition-all"
+            className="w-full bg-leave-annual-container rounded-xl p-2.5 sm:p-3 shadow-2xs flex items-center justify-between text-leave-annual-on-container cursor-pointer hover:opacity-95 active:scale-[0.99] transition-all"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-surface-container-lowest/80 flex items-center justify-center text-leave-annual shrink-0">
-                <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-surface-container-lowest/80 flex items-center justify-center text-leave-annual shrink-0">
+                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                   beach_access
                 </span>
               </div>
-              <div>
-                <h3 className="font-title-md text-title-md font-semibold text-leave-annual-on-container leading-tight">
-                  Annual Leave
-                </h3>
-              </div>
+              <h3 className="text-sm font-semibold text-leave-annual-on-container leading-tight">
+                Annual Leave
+              </h3>
             </div>
             <div className="flex items-baseline gap-1 text-right">
-              <span className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-leave-annual-on-container leading-none">
+              <span className="text-xl font-bold text-leave-annual-on-container leading-none">
                 {Number.isInteger(alAvailable) ? alAvailable : alAvailable.toFixed(1)}
               </span>
-              <span className="font-title-sm text-title-sm font-semibold text-leave-annual-on-container opacity-90">
+              <span className="text-xs font-semibold text-leave-annual-on-container opacity-80">
                 /{settings.alEntitlement}
               </span>
             </div>
           </article>
 
-          {/* Sick Leave Card - Click to show applied sick leaves */}
+          {/* Sick Leave Card */}
           <article
             onClick={() => setActiveDetailCategory('SL')}
-            className="w-full bg-leave-sick-container rounded-xl p-4 shadow-xs flex items-center justify-between text-leave-sick-on-container cursor-pointer hover:opacity-95 active:scale-[0.99] transition-all"
+            className="w-full bg-leave-sick-container rounded-xl p-2.5 sm:p-3 shadow-2xs flex items-center justify-between text-leave-sick-on-container cursor-pointer hover:opacity-95 active:scale-[0.99] transition-all"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-surface-container-lowest/80 flex items-center justify-center text-leave-sick shrink-0">
-                <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-surface-container-lowest/80 flex items-center justify-center text-leave-sick shrink-0">
+                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                   medical_services
                 </span>
               </div>
-              <div>
-                <h3 className="font-title-md text-title-md font-semibold text-leave-sick-on-container leading-tight">
-                  Sick Leave
-                </h3>
-              </div>
+              <h3 className="text-sm font-semibold text-leave-sick-on-container leading-tight">
+                Sick Leave
+              </h3>
             </div>
             <div className="flex items-baseline gap-1 text-right">
-              <span className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-leave-sick-on-container leading-none">
+              <span className="text-xl font-bold text-leave-sick-on-container leading-none">
                 {Number.isInteger(slAvailable) ? slAvailable : slAvailable.toFixed(1)}
               </span>
-              <span className="font-title-sm text-title-sm font-semibold text-leave-sick-on-container opacity-90">
+              <span className="text-xs font-semibold text-leave-sick-on-container opacity-80">
                 /{settings.slEntitlement}
               </span>
             </div>
           </article>
 
-          {/* Comp-off Leave Card - Click to show applied comp-off leaves */}
+          {/* Comp-off Leave Card */}
           <article
             onClick={() => setActiveDetailCategory('CO')}
-            className="w-full bg-leave-compoff-container rounded-xl p-4 shadow-xs flex items-center justify-between text-leave-compoff-on-container cursor-pointer hover:opacity-95 active:scale-[0.99] transition-all"
+            className="w-full bg-leave-compoff-container rounded-xl p-2.5 sm:p-3 shadow-2xs flex items-center justify-between text-leave-compoff-on-container cursor-pointer hover:opacity-95 active:scale-[0.99] transition-all"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-surface-container-lowest/80 flex items-center justify-center text-leave-compoff shrink-0">
-                <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-surface-container-lowest/80 flex items-center justify-center text-leave-compoff shrink-0">
+                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                   update
                 </span>
               </div>
-              <div>
-                <h3 className="font-title-md text-title-md font-semibold text-leave-compoff-on-container leading-tight">
-                  Comp-off Leave
-                </h3>
-              </div>
+              <h3 className="text-sm font-semibold text-leave-compoff-on-container leading-tight">
+                Comp-off Leave
+              </h3>
             </div>
-            <div className="flex items-baseline gap-1.5 text-right">
-              <span className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-leave-compoff-on-container leading-none">
+            <div className="flex items-baseline gap-1 text-right">
+              <span className="text-xl font-bold text-leave-compoff-on-container leading-none">
                 {Number.isInteger(coAvailable) ? coAvailable : coAvailable.toFixed(1)}
               </span>
-              <span className="font-title-sm text-title-sm font-semibold text-leave-compoff-on-container opacity-90">Days</span>
+              <span className="text-xs font-semibold text-leave-compoff-on-container opacity-80">Days</span>
             </div>
           </article>
 
-          {/* Loss of Pay (LOP) Card - Dedicated Rose/Crimson Theme */}
+          {/* Loss of Pay (LOP) Card */}
           <article
             onClick={() => setActiveDetailCategory('LOP')}
-            className="w-full bg-rose-50/90 rounded-xl p-4 shadow-xs flex items-center justify-between text-rose-950 border border-rose-200/90 cursor-pointer hover:border-rose-300 active:scale-[0.99] transition-all"
+            className="w-full bg-rose-50/90 dark:bg-rose-950/30 rounded-xl p-2.5 sm:p-3 shadow-2xs flex items-center justify-between text-rose-950 dark:text-rose-200 border border-rose-200/90 dark:border-rose-800/40 cursor-pointer hover:border-rose-300 active:scale-[0.99] transition-all"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0 shadow-2xs border border-rose-200">
-                <span className="material-symbols-outlined text-[24px]">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-300 shrink-0 shadow-2xs border border-rose-200 dark:border-rose-800/40">
+                <span className="material-symbols-outlined text-[18px]">
                   money_off
                 </span>
               </div>
-              <div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <h3 className="font-title-md text-title-md font-bold text-rose-950 leading-tight">
-                    Loss of Pay (LOP)
-                  </h3>
-                  {totalLOP > 0 && (
-                    <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-label-sm text-[11px] font-bold shadow-2xs">
-                      Unpaid
-                    </span>
-                  )}
-                </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h3 className="text-sm font-semibold leading-tight">
+                  Loss of Pay (LOP)
+                </h3>
+                {totalLOP > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[10px] font-bold">
+                    Unpaid
+                  </span>
+                )}
               </div>
             </div>
-            <div className="flex items-baseline gap-1.5 text-right">
-              <span className={`font-headline-lg-mobile text-headline-lg-mobile font-bold leading-none ${totalLOP > 0 ? 'text-rose-600' : 'text-rose-900/60'}`}>
+            <div className="flex items-baseline gap-1 text-right">
+              <span className={`text-xl font-bold leading-none ${totalLOP > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-rose-900/60 dark:text-rose-300/60'}`}>
                 {Number.isInteger(totalLOP) ? totalLOP : totalLOP.toFixed(1)}
               </span>
-              <span className="font-title-sm text-title-sm font-semibold text-rose-800/70 opacity-90">Days</span>
+              <span className="text-xs font-semibold opacity-80">Days</span>
             </div>
           </article>
 
-          {/* Special Holidays Card - Dedicated Royal Purple Theme */}
+          {/* Special Holidays Card */}
           <article
             onClick={() => setActiveDetailCategory('SPECIAL')}
-            className="w-full bg-purple-50/90 rounded-xl p-4 shadow-xs flex items-center justify-between text-purple-950 border border-purple-200/90 cursor-pointer hover:border-purple-300 active:scale-[0.99] transition-all"
+            className="w-full bg-purple-50/90 dark:bg-purple-950/30 rounded-xl p-2.5 sm:p-3 shadow-2xs flex items-center justify-between text-purple-950 dark:text-purple-200 border border-purple-200/90 dark:border-purple-800/40 cursor-pointer hover:border-purple-300 active:scale-[0.99] transition-all"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700 shrink-0 shadow-2xs border border-purple-200">
-                <span className="material-symbols-outlined text-[24px]">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center text-purple-700 dark:text-purple-300 shrink-0 shadow-2xs border border-purple-200 dark:border-purple-800/40">
+                <span className="material-symbols-outlined text-[18px]">
                   celebration
                 </span>
               </div>
-              <div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <h3 className="font-title-md text-title-md font-bold text-purple-950 leading-tight">
-                    Special Holidays
-                  </h3>
-                  {specialHolidays.length > 0 && (
-                    <span className="px-2 py-0.5 rounded-full bg-purple-600 text-white font-label-sm text-[11px] font-bold shadow-2xs">
-                      Configured
-                    </span>
-                  )}
-                </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h3 className="text-sm font-semibold leading-tight">
+                  Special Holidays
+                </h3>
+                {specialHolidays.length > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-purple-600 text-white text-[10px] font-bold">
+                    Configured
+                  </span>
+                )}
               </div>
             </div>
-            <div className="flex items-baseline gap-1.5 text-right">
-              <span className="font-headline-lg-mobile text-headline-lg-mobile font-bold leading-none text-purple-700">
+            <div className="flex items-baseline gap-1 text-right">
+              <span className="text-xl font-bold leading-none text-purple-700 dark:text-purple-300">
                 {specialHolidays.length}
               </span>
-              <span className="font-title-sm text-title-sm font-semibold text-purple-800/70 opacity-90">Days</span>
+              <span className="text-xs font-semibold opacity-80">Days</span>
             </div>
           </article>
         </div>
       </section>
 
       {/* 3. Quick Action Buttons - Leave History and Comp-off Ledger */}
-      <section className="flex flex-col gap-space-xs mt-1">
+      <section className="flex flex-col gap-2 mt-0.5">
         <div className="flex items-center justify-between px-1">
-          <h2 className="font-title-md text-title-md text-on-surface font-semibold">Quick Actions</h2>
+          <h2 className="text-sm font-semibold text-on-surface">Quick Actions</h2>
         </div>
-        <div className="grid grid-cols-2 gap-space-sm">
+        <div className="grid grid-cols-2 gap-2.5">
           {/* Move to History Tab Button */}
           <button
             onClick={() => setCurrentTab('history')}
-            className="w-full flex items-center gap-3 p-4 rounded-2xl bg-surface-container-lowest border border-surface-container hover:bg-surface-container transition-all cursor-pointer text-left shadow-xs active:scale-[0.99]"
+            className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-surface-container-lowest border border-surface-container hover:bg-surface-container transition-all cursor-pointer text-left shadow-2xs active:scale-[0.99]"
           >
-            <div className="w-11 h-11 rounded-xl bg-primary-container text-on-primary-fixed flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-[24px]">history</span>
+            <div className="w-8 h-8 rounded-lg bg-primary-container text-on-primary-fixed flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[18px]">history</span>
             </div>
-            <div>
-              <p className="font-title-sm text-title-sm text-on-surface font-semibold">Leave History</p>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">View all past &amp; planned leaves</p>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-on-surface truncate">Leave History</p>
+              <p className="text-[10px] text-on-surface-variant truncate">View all leaves</p>
             </div>
           </button>
 
           {/* Comp-off Ledger Button */}
           <button
             onClick={() => setIsCompOffModalOpen(true)}
-            className="w-full flex items-center gap-3 p-4 rounded-2xl bg-surface-container-lowest border border-surface-container hover:bg-surface-container transition-all cursor-pointer text-left shadow-xs active:scale-[0.99]"
+            className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-surface-container-lowest border border-surface-container hover:bg-surface-container transition-all cursor-pointer text-left shadow-2xs active:scale-[0.99]"
           >
-            <div className="w-11 h-11 rounded-xl bg-leave-compoff-container text-leave-compoff-on-container flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-[24px]">more_time</span>
+            <div className="w-8 h-8 rounded-lg bg-leave-compoff-container text-leave-compoff-on-container flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[18px]">more_time</span>
             </div>
-            <div>
-              <p className="font-title-sm text-title-sm text-on-surface font-semibold">Comp-off Ledger</p>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">View Saturday holiday credits</p>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-on-surface truncate">Comp-off Ledger</p>
+              <p className="text-[10px] text-on-surface-variant truncate">Saturday credits</p>
             </div>
           </button>
         </div>
       </section>
 
       {/* 5. Upcoming Public Holidays */}
-      <section className="flex flex-col gap-space-sm">
+      <section className="flex flex-col gap-2 mt-0.5">
         <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2">
-            <h2 className="font-title-md text-title-md text-on-surface font-semibold">
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-sm font-semibold text-on-surface">
               Upcoming Public Holidays
             </h2>
-            <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-holiday-public-container text-holiday-public font-bold">
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-holiday-public-container text-holiday-public font-bold">
               {upcomingHolidays.length}
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsHolidaysModalOpen(true)}
-              className="font-label-sm text-label-sm text-primary font-semibold hover:underline cursor-pointer"
-            >
-              View All ({upcomingHolidays.length})
-            </button>
-          </div>
+          <button
+            onClick={() => setIsHolidaysModalOpen(true)}
+            className="text-[11px] text-primary font-semibold hover:underline cursor-pointer"
+          >
+            View All ({upcomingHolidays.length})
+          </button>
         </div>
 
         {displayedUpcomingHolidays.length > 0 ? (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             {displayedUpcomingHolidays.map((holiday) => {
               const d = new Date(holiday.date + 'T00:00:00');
               const isSat = d.getDay() === 6;
@@ -413,7 +382,7 @@ export const HomeScreen: React.FC = () => {
               const diffTime = targetDateObj.getTime() - todayObj.getTime();
               const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-              let countdownLabel = `${diffDays} days away`;
+              let countdownLabel = `${diffDays}d away`;
               if (diffDays === 0) countdownLabel = 'Today';
               else if (diffDays === 1) countdownLabel = 'Tomorrow';
 
@@ -424,37 +393,37 @@ export const HomeScreen: React.FC = () => {
                     setSelectedCalendarDate(holiday.date);
                     setIsHolidaysModalOpen(true);
                   }}
-                  className="bg-surface-container-lowest rounded-xl p-3 shadow-xs flex items-center justify-between transition-transform active:scale-[0.99] border border-surface-container hover:bg-surface-container-low cursor-pointer"
+                  className="bg-surface-container-lowest rounded-xl p-2 sm:p-2.5 shadow-2xs flex items-center justify-between transition-transform active:scale-[0.99] border border-surface-container hover:bg-surface-container-low cursor-pointer"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="px-2.5 py-1.5 rounded-lg bg-holiday-public-container text-holiday-public-on-container flex flex-col items-center justify-center shrink-0">
-                      <span className="font-label-sm text-[11px] font-bold font-mono leading-tight">
+                  <div className="flex items-center gap-2.5">
+                    <div className="px-2 py-1 rounded-md bg-holiday-public-container text-holiday-public-on-container flex flex-col items-center justify-center shrink-0">
+                      <span className="text-[10.5px] font-bold font-mono leading-tight">
                         {formatDateDDMMYYYY(holiday.date)}
                       </span>
                     </div>
                     <div className="flex flex-col">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-title-sm text-title-sm font-semibold text-on-surface">
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <span className="text-xs sm:text-sm font-semibold text-on-surface">
                           {holiday.name}
                         </span>
                         <span className="text-xs">{holiday.emoji || '🇸🇬'}</span>
                       </div>
-                      <span className="font-body-sm text-[12px] text-on-surface-variant">
+                      <span className="text-[11px] text-on-surface-variant">
                         {holiday.dayOfWeek} {holiday.observedDate ? `• Observed ${formatDateDDMMYYYY(holiday.observedDate)}` : ''}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span className="font-label-sm text-[11px] font-medium px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant">
+                  <div className="flex flex-col items-end gap-0.5 shrink-0">
+                    <span className="text-[10px] font-medium px-1.5 py-0.2 rounded-full bg-surface-container text-on-surface-variant">
                       {countdownLabel}
                     </span>
                     {isSat ? (
-                      <span className="font-label-sm text-[11px] text-leave-compoff font-bold">
+                      <span className="text-[10px] text-leave-compoff font-bold">
                         +1 Comp-Off
                       </span>
                     ) : holiday.isLongWeekend ? (
-                      <span className="font-label-sm text-[11px] text-primary font-medium">
+                      <span className="text-[10px] text-primary font-medium">
                         Long Weekend
                       </span>
                     ) : null}

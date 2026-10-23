@@ -5,10 +5,7 @@ import { usePWAInstall } from '../hooks/usePWAInstall';
 export const Header: React.FC = () => {
   const {
     settings,
-    setIsNotificationsOpen,
-    setCurrentTab,
-    hasNewNotification,
-    markNotificationsAsViewed
+    setCurrentTab
   } = useLeave();
 
   const { isInstalled, isIOS, isAndroid, openGuide, install } = usePWAInstall();
@@ -55,22 +52,6 @@ export const Header: React.FC = () => {
             </button>
           )}
 
-          <button
-            onClick={() => {
-              setIsNotificationsOpen(true);
-              markNotificationsAsViewed();
-            }}
-            aria-label="Notifications"
-            className="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors relative cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[24px]">notifications</span>
-            {hasNewNotification && (
-              <>
-                <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-holiday-public rounded-full animate-ping opacity-75" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-holiday-public rounded-full" />
-              </>
-            )}
-          </button>
 
           <button
             onClick={() => setCurrentTab('settings')}
