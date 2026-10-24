@@ -49,6 +49,23 @@ Wishes now appear only in the Home banner. The settings toggle and automatic wis
 Run npm run test:calendar for month filtering and observed-holiday cases. After building, npm run test:ui checks the profile department limit, balance alignment, calendar month history, single comp-off warning, and light/dark layouts in Chrome at 320px, 390px, and 768px widths. Screenshots are saved under ui-screenshots/ (ignored by Git).
 
 
+## Version 1.1.0: Latest Release PWA Installation & Build Reliability
+
+- **Guaranteed Latest Release on Installation**:
+  - PWA installation flow (`usePWAInstall`) now auto-approves any downloaded service worker updates when the app is installed or accepted, ensuring that newly installed standalone home-screen apps launch the freshest release instead of falling back to stale caches.
+  - Asynchronous service worker update detection (`waitForWorkerDownload` and `useAppUpdate`) actively listens for `updatefound` and `statechange` without race conditions.
+  - Startup check automatically triggers an update check when the app is opened online.
+- **Vercel Deployment & Build Resilience**:
+  - Eliminated conflicting `bun.lock` file from repository root and updated `.gitignore` to prevent lockfile collisions on Vercel CLI.
+  - Verified `package-lock.json` lockfileVersion compatibility with `npm ci` and `npm install`.
+- **Special Holiday MOM Weekend Restrictions**:
+  - Special Holidays modal enforces strict MOM non-working day rules: dates falling on Saturdays or Sundays are disallowed with clear validation feedback.
+- **Update Status Modals**:
+  - Distinct `UpdateAvailableModal` (when an update is ready to install) and `UpToDateModal` (when the currently installed version is latest).
+- **Unified Leave Typography & Clean Calendar**:
+  - Standardized font size and baseline vertical alignment across all leave categories.
+  - Cleaned calendar overview without colored leaf badges.
+
 ## Version 1.0.0: Consolidated Release & PWA UX Overhaul
 
 - **Reset Version Baseline**: Version sequence reset to clean `1.0.0`.
@@ -67,3 +84,4 @@ Run npm run test:calendar for month filtering and observed-holiday cases. After 
   - App Updates card moved directly above the About CutiSG button.
   - "Check for updates" displays either the `UpdateAvailableModal` (when an update is found) or a dedicated `UpToDateModal` dialog ("You're Up to Date").
   - Background MOM sync explanations and data.gov.sg link moved into About CutiSG modal.
+

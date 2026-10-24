@@ -35,7 +35,7 @@ export function useAppUpdate() {
     try {
       if (manual) { try { localStorage.removeItem(SNOOZE_KEY); } catch {} }
 
-      // 1. Direct version.json check fallback
+      // 1. Fetch server release metadata directly
       let serverRelease: VersionInfo | null = null;
       try {
         const response = await fetch(`/version.json?_t=${Date.now()}`, { cache: 'no-store' });
@@ -44,9 +44,17 @@ export function useAppUpdate() {
         }
       } catch {}
 
+      const isServerNewer = Boolean(
+        serverRelease && (
+          (serverRelease.buildId && serverRelease.buildId !== CURRENT_RELEASE.buildId) ||
+          (serverRelease.version && serverRelease.version !== CURRENT_RELEASE.version) ||
+          (serverRelease.buildTime && serverRelease.buildTime > CURRENT_RELEASE.buildTime)
+        )
+      );
+
       const reg = await registerAppWorker();
       if (!reg) {
-        if (serverRelease && serverRelease.buildId && serverRelease.buildId !== CURRENT_RELEASE.buildId && serverRelease.buildTime > CURRENT_RELEASE.buildTime) {
+        if (isServerNewer && serverRelease) {
           setUpdateInfo(serverRelease);
           setVisible(true);
           return { hasUpdate: true, info: serverRelease };
@@ -55,27 +63,35 @@ export function useAppUpdate() {
       }
 
       if (navigator.onLine) {
-        try { await reg.update(); } catch {
-          const downloaded = await inspect(reg, manual);
-          if (downloaded.hasUpdate) return downloaded;
-          if (serverRelease && serverRelease.buildId && serverRelease.buildId !== CURRENT_RELEASE.buildId) {
-            setUpdateInfo(serverRelease);
-            setVisible(true);
-            return { hasUpdate: true, info: serverRelease };
-          }
-          return { hasUpdate: false };
-        }
-        await waitForWorkerDownload(reg);
+        try {
+          await reg.update();
+        } catch {}
+        await waitForWorkerDownload(reg, 6000);
       } else {
         const downloaded = await inspect(reg, manual);
         return downloaded.hasUpdate ? downloaded : { hasUpdate: false, error: 'Connect to the internet to check for updates.' };
       }
-      return await inspect(reg, manual);
+
+      const downloaded = await inspect(reg, manual);
+      if (downloaded.hasUpdate) {
+        return downloaded;
+      }
+
+      // If server has newer release, show it even if background worker is still finalizing
+      if (isServerNewer && serverRelease) {
+        if (reg.waiting) setTarget(reg.waiting);
+        setUpdateInfo(serverRelease);
+        setVisible(true);
+        return { hasUpdate: true, info: serverRelease };
+      }
+
+      return { hasUpdate: false };
     } catch (error) {
       console.warn('Update check unavailable:', error);
       return { hasUpdate: false, error: error instanceof Error ? error.message : 'Update check failed. Please try again.' };
     } finally { setIsChecking(false); }
   }, [inspect]);
+
   useEffect(() => {
     let disposed = false;
     const cleanups: (() => void)[] = [];
@@ -92,6 +108,11 @@ export function useAppUpdate() {
       reg.addEventListener('updatefound', watch);
       cleanups.push(() => reg.removeEventListener('updatefound', watch));
       watch(); check();
+
+      // Automatically check for updates on app startup if online
+      if (typeof navigator !== 'undefined' && navigator.onLine) {
+        void checkForUpdate(false);
+      }
     }).catch(() => {});
     const check = () => { if (document.visibilityState === 'visible') void checkForUpdate(); };
     const timer = window.setInterval(check, 30 * 60 * 1000);
@@ -104,21 +125,36 @@ export function useAppUpdate() {
       cleanups.forEach(cleanup => cleanup());
     };
   }, [checkForUpdate, inspect]);
+
   const applyUpdate = useCallback(async () => {
-    if (!target) throw new Error('Update is not downloaded yet. Please try again.');
     const reg = await registerAppWorker();
-    if (!reg) throw new Error('Offline updates are unavailable in this browser.');
-    await workerMessage(target, 'APPROVE_UPDATE');
-    // Wait for this exact worker to activate before navigating to its approved shell.
-    if (target.state !== 'activated') await new Promise<void>((resolve, reject) => {
-      const timer = window.setTimeout(() => { cleanup(); reject(new Error('Update activation timed out. Please retry.')); }, 10000);
-      const changed = () => {
-        if (target.state === 'activated') { cleanup(); resolve(); }
-        else if (target.state === 'redundant') { cleanup(); reject(new Error('A newer update is available. Reopen the app and retry.')); }
-      };
-      const cleanup = () => { clearTimeout(timer); target.removeEventListener('statechange', changed); };
-      target.addEventListener('statechange', changed); changed();
-    });
+    const activeTarget = target || reg?.waiting || (reg?.installing?.state === 'installed' ? reg.installing : null);
+
+    if (activeTarget) {
+      try {
+        await workerMessage(activeTarget, 'APPROVE_UPDATE');
+        if (activeTarget.state !== 'activated') {
+          await new Promise<void>((resolve) => {
+            const timer = window.setTimeout(() => { cleanup(); resolve(); }, 4000);
+            const changed = () => {
+              if (activeTarget.state === 'activated' || activeTarget.state === 'redundant') {
+                cleanup();
+                resolve();
+              }
+            };
+            const cleanup = () => {
+              clearTimeout(timer);
+              activeTarget.removeEventListener('statechange', changed);
+            };
+            activeTarget.addEventListener('statechange', changed);
+            changed();
+          });
+        }
+      } catch (err) {
+        console.warn('Worker approval fallback:', err);
+      }
+    }
+
     try { localStorage.removeItem(SNOOZE_KEY); } catch {}
     window.location.reload();
   }, [target]);

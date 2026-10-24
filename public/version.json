@@ -1,31 +1,32 @@
 {
-  "version": "1.0.0",
-  "buildTime": 1729690000000,
+  "version": "1.1.0",
+  "buildTime": 1792833600000,
   "releaseDate": "2026-10-24",
   "highlights": [
     {
-      "title": "Welcome to CutiSG v1.0.0",
-      "description": "Singapore MOM compliant leave planner, gazetted public holiday calendar, and comp-off ledger.",
-      "icon": "verified",
+      "title": "Instant Latest Release Installation",
+      "description": "PWA installation automatically syncs and launches the latest build without being delayed by stale service worker caches.",
+      "icon": "install_mobile",
       "color": "emerald"
     },
     {
-      "title": "Clean Home Screen & Profiles",
-      "description": "Refined executive employee card with experience-based styling, unique department badge, and clean greetings.",
-      "icon": "badge",
+      "title": "Special Holiday Weekend Protection",
+      "description": "Strict MOM compliance prevents applying special holidays on non-working Saturdays and Sundays.",
+      "icon": "block",
+      "color": "red"
+    },
+    {
+      "title": "Clear Update Status Dialogs",
+      "description": "Check for updates now clearly displays dedicated Update Available and You're Up to Date dialogs.",
+      "icon": "system_update",
       "color": "blue"
     },
     {
-      "title": "Monthly Calendar & History",
-      "description": "Non-scrolling calendar legend and monthly holiday and leave history breakdown excluding weekends.",
+      "title": "Unified Typography & Clean Calendar",
+      "description": "Equalized typography across all leave cards and distraction-free monthly calendar breakdown without colored leaf badges.",
       "icon": "calendar_month",
       "color": "amber"
-    },
-    {
-      "title": "Seamless Device-Smart Install",
-      "description": "Direct 1-tap installation on Chrome for Android and tailored Add to Home Screen guidance for iPhone.",
-      "icon": "install_mobile",
-      "color": "purple"
     }
   ]
 }
+

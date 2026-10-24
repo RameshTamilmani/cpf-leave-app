@@ -19,17 +19,86 @@ export function workerMessage<T>(worker: ServiceWorker, type: string): Promise<T
   });
 }
 
-export function waitForWorkerDownload(registration: ServiceWorkerRegistration) {
-  const worker = registration.installing;
-  if (!worker) return Promise.resolve();
-  return new Promise<void>((resolve, reject) => {
-    const cleanup = () => { clearTimeout(timer); worker.removeEventListener('statechange', changed); };
-    const changed = () => {
-      if (worker.state === 'installed' || worker.state === 'activated') { cleanup(); resolve(); }
-      else if (worker.state === 'redundant') { cleanup(); reject(new Error('Update download failed. Please reconnect and try again.')); }
+export function waitForWorkerDownload(registration: ServiceWorkerRegistration, timeoutMs = 8000): Promise<void> {
+  if (registration.waiting) {
+    return Promise.resolve();
+  }
+
+  const waitWorkerState = (worker: ServiceWorker, remainingMs: number): Promise<void> => {
+    if (worker.state === 'installed' || worker.state === 'activated') {
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve, reject) => {
+      let resolved = false;
+      const timer = window.setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          cleanup();
+          resolve();
+        }
+      }, remainingMs);
+
+      const cleanup = () => {
+        clearTimeout(timer);
+        worker.removeEventListener('statechange', changed);
+      };
+
+      const changed = () => {
+        if (worker.state === 'installed' || worker.state === 'activated') {
+          if (!resolved) {
+            resolved = true;
+            cleanup();
+            resolve();
+          }
+        } else if (worker.state === 'redundant') {
+          if (!resolved) {
+            resolved = true;
+            cleanup();
+            reject(new Error('Update download failed. Please reconnect and try again.'));
+          }
+        }
+      };
+
+      worker.addEventListener('statechange', changed);
+      changed();
+    });
+  };
+
+  if (registration.installing) {
+    return waitWorkerState(registration.installing, timeoutMs);
+  }
+
+  // If installing worker hasn't attached yet, wait for 'updatefound'
+  return new Promise<void>((resolve) => {
+    const startTime = Date.now();
+    let resolved = false;
+
+    const timer = window.setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        cleanup();
+        resolve();
+      }
+    }, timeoutMs);
+
+    const cleanup = () => {
+      clearTimeout(timer);
+      registration.removeEventListener('updatefound', onUpdateFound);
     };
-    const timer = window.setTimeout(() => { cleanup(); reject(new Error('The update is still downloading. Please try again shortly.')); }, 30000);
-    worker.addEventListener('statechange', changed);
-    changed();
+
+    const onUpdateFound = () => {
+      cleanup();
+      resolved = true;
+      const newWorker = registration.installing;
+      if (newWorker) {
+        const remaining = Math.max(1000, timeoutMs - (Date.now() - startTime));
+        void waitWorkerState(newWorker, remaining).then(resolve).catch(() => resolve());
+      } else {
+        resolve();
+      }
+    };
+
+    registration.addEventListener('updatefound', onUpdateFound);
   });
 }
+

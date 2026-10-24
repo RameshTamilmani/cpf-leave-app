@@ -90,6 +90,19 @@ export function usePWAInstall() {
       }
     };
 
+    const autoApproveWaitingWorker = async () => {
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+        try {
+          const reg = await navigator.serviceWorker.getRegistration();
+          const target = reg?.waiting || (reg?.installing?.state === 'installed' ? reg.installing : null);
+          if (target) {
+            const channel = new MessageChannel();
+            target.postMessage({ type: 'APPROVE_UPDATE' }, [channel.port2]);
+          }
+        } catch {}
+      }
+    };
+
     // 4. Detect when installation successfully finishes
     const handleAppInstalled = () => {
       setIsInstalled(true);
@@ -99,6 +112,7 @@ export function usePWAInstall() {
       try {
         localStorage.setItem(PWA_INSTALLED_KEY, 'true');
       } catch {}
+      void autoApproveWaitingWorker();
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -133,6 +147,17 @@ export function usePWAInstall() {
           try {
             localStorage.setItem(PWA_INSTALLED_KEY, 'true');
           } catch {}
+
+          if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+            try {
+              const reg = await navigator.serviceWorker.getRegistration();
+              const target = reg?.waiting || (reg?.installing?.state === 'installed' ? reg.installing : null);
+              if (target) {
+                const channel = new MessageChannel();
+                target.postMessage({ type: 'APPROVE_UPDATE' }, [channel.port2]);
+              }
+            } catch {}
+          }
           return true;
         }
         return false;

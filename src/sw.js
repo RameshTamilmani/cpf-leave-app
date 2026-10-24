@@ -7,13 +7,25 @@ const STATE_URL = '/__cutisg_approved_release';
 const ASSETS = self.__WB_MANIFEST;
 
 async function approvedRelease() {
-  const response = await (await caches.open(STATE_CACHE)).match(STATE_URL);
-  return response ? response.json() : null;
+  try {
+    const response = await (await caches.open(STATE_CACHE)).match(STATE_URL);
+    if (!response) return null;
+    const data = await response.json();
+    if (data?.cacheName) {
+      const allKeys = await caches.keys();
+      if (!allKeys.includes(data.cacheName)) return null;
+    }
+    return data;
+  } catch {
+    return null;
+  }
 }
+
 async function saveApproval() {
   await (await caches.open(STATE_CACHE)).put(STATE_URL,
     new Response(JSON.stringify({ cacheName: CACHE_NAME, release: RELEASE })));
 }
+
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
@@ -73,6 +85,10 @@ self.addEventListener('message', event => {
       event.ports[0]?.postMessage({ approved: true });
     })());
   }
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+
 
 });
 
