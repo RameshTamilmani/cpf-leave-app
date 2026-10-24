@@ -3,7 +3,7 @@ import { useLeave } from '../context/LeaveContext';
 import { DatePickerField } from './DatePickerField';
 
 export const AddSpecialHolidayModal: React.FC = () => {
-  const { isAddSpecialHolidayOpen, setIsAddSpecialHolidayOpen, addSpecialHoliday, todayDateStr, settings } = useLeave();
+  const { isAddSpecialHolidayOpen, setIsAddSpecialHolidayOpen, addSpecialHoliday, todayDateStr, settings, allHolidays } = useLeave();
 
   const [name, setName] = useState('');
   const [date, setDate] = useState(todayDateStr || '2026-11-20');
@@ -17,7 +17,10 @@ export const AddSpecialHolidayModal: React.FC = () => {
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const dayName = dayOfWeekIndex >= 0 ? daysOfWeek[dayOfWeekIndex] : '';
 
+  const existingHoliday = allHolidays.find(h => h.date === date || h.observedDate === date);
   const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (existingHoliday) return;
     const finalDate = date;
     if (!name.trim() || !finalDate) {
       alert('Please provide holiday name and date.');
@@ -31,7 +34,7 @@ export const AddSpecialHolidayModal: React.FC = () => {
     const isLongWeekend = dayIdx === 5 || dayIdx === 1 || dayIdx === 0;
     const qualifiesForCompOff = isSat && settings.saturdayCompOffEnabled;
 
-    addSpecialHoliday({
+    const added = addSpecialHoliday({
       name: name.trim(),
       date: finalDate,
       dayOfWeek: daysOfWeek[dayIdx] || dayName,
@@ -50,6 +53,7 @@ export const AddSpecialHolidayModal: React.FC = () => {
       category: 'gazetted_adhoc'
     });
 
+    if (!added) return;
     setName('');
     setIsAddSpecialHolidayOpen(false);
   };
@@ -115,6 +119,7 @@ export const AddSpecialHolidayModal: React.FC = () => {
             />
           </div>
 
+          {existingHoliday && <p role="alert" className="rounded-lg p-3 bg-surface-container text-on-surface text-sm">{existingHoliday.name} is already recorded on this date. No additional holiday is needed.</p>}
           {/* Statutory Auto-Calculations Notice */}
           {isSaturday && settings.saturdayCompOffEnabled && (
             <div className="p-2.5 rounded-xl bg-alert-warning-container text-alert-warning text-body-sm flex items-start gap-2 border border-alert-warning/20">
@@ -155,7 +160,8 @@ export const AddSpecialHolidayModal: React.FC = () => {
             </button>
             <button
               type="submit"
-              className="flex-1 py-2.5 rounded-full bg-holiday-public text-white font-label-md text-label-md font-semibold hover:opacity-95 active:scale-95 transition-all shadow-xs cursor-pointer"
+              disabled={!!existingHoliday}
+              className="flex-1 py-2.5 rounded-full bg-holiday-public text-white font-label-md text-label-md font-semibold hover:opacity-95 active:scale-95 transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add Special Holiday
             </button>

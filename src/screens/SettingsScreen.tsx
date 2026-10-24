@@ -3,9 +3,11 @@ import { useLeave } from '../context/LeaveContext';
 import { AboutModal } from '../components/AboutModal';
 import { ImageCropModal } from '../components/ImageCropModal';
 import { calculateExperience, isValidISODate, formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
+import { profileError } from '../utils/profile';
 import { DatePickerField } from '../components/DatePickerField';
 
-export const SettingsScreen: React.FC = () => {
+interface SettingsScreenProps { onCheckForUpdate: () => Promise<void>; isCheckingUpdate: boolean; currentVersion: string; }
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate, isCheckingUpdate, currentVersion }) => {
   const {
     settings,
     records,
@@ -19,11 +21,16 @@ export const SettingsScreen: React.FC = () => {
     autoCompOffEarned,
     cycleStartDateStr,
     cycleEndDateStr,
-    specialHolidays,
+    customSpecialHolidays,
+    officialSpecialHolidays,
+    conflictingSpecialHolidayIds,
+    holidaySync,
     deleteSpecialHoliday,
     todayDateStr,
     showToast,
   } = useLeave();
+
+  const listedSpecialHolidays = [...officialSpecialHolidays, ...customSpecialHolidays];
 
   // Local draft state for Employee Profile
   const [draftName, setDraftName] = useState(settings.userName || '');
@@ -59,11 +66,14 @@ export const SettingsScreen: React.FC = () => {
     draftAvatar !== (settings.avatarUrl || '') ||
     draftDoj !== (settings.dateOfJoining || '');
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = (event: React.FormEvent) => {
+    event.preventDefault();
+    const error = profileError({ userName: draftName, employeeId: draftEmpId, department: draftDepartment, dateOfJoining: draftDoj }, todayDateStr);
+    if (error) { showToast(error); return; }
     updateSettings({
       userName: draftName.trim(),
       employeeId: draftEmpId.trim(),
-      department: draftDepartment.trim().slice(0, 15),
+      department: draftDepartment.trim().slice(0, 25),
       avatarUrl: draftAvatar,
       dateOfJoining: draftDoj.trim()
     });
@@ -124,7 +134,7 @@ export const SettingsScreen: React.FC = () => {
           </span>
         </div>
 
-        <div className="rounded-2xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-space-md">
+        <form onSubmit={handleSaveProfile} className="rounded-2xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-space-md">
           {/* Avatar & Photo Upload (Up to 8MB with Crop & Adjustments) */}
           <div className="flex items-start gap-4">
             <div className="relative shrink-0 mt-1">
@@ -213,6 +223,8 @@ export const SettingsScreen: React.FC = () => {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   maxLength={12}
+                  required
+                  aria-label="Employee ID"
                   value={draftEmpId}
                   onKeyDown={(e) => {
                     // Allow navigation and edit controls
@@ -245,6 +257,8 @@ export const SettingsScreen: React.FC = () => {
                 <input
                   type="text"
                   maxLength={40}
+                  required
+                  aria-label="Full name"
                   value={draftName}
                   onKeyDown={(e) => {
                     // Block numeric keys (0-9)
@@ -268,16 +282,16 @@ export const SettingsScreen: React.FC = () => {
               </label>
               <div className="relative flex items-center">
                 <span aria-hidden="true" className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">business</span>
-                <input id="department" type="text" maxLength={15} value={draftDepartment}
-                  onChange={(event) => setDraftDepartment(event.target.value.slice(0, 15))}
-                  placeholder="Enter department" aria-describedby="department-limit"
+                <input id="department" type="text" required maxLength={25} value={draftDepartment}
+                  onChange={(event) => setDraftDepartment(event.target.value.slice(0, 25))}
+                  placeholder="Enter department"
                   className="w-full pl-9 pr-3.5 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-medium text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
               </div>
-              <p id="department-limit" className="mt-1 text-[11px] text-on-surface-variant text-right tabular-nums">{draftDepartment.length}/15</p>
             </div>
 
             <div>
               <DatePickerField
+                required
                 label="DATE OF JOINING"
                 value={draftDoj}
                 onChange={setDraftDoj}
@@ -296,9 +310,8 @@ export const SettingsScreen: React.FC = () => {
           {/* Save Profile Button - Enabled after modifying name, emp ID, or profile pic */}
           <div className="pt-1">
             <button
-              type="button"
+              type="submit"
               disabled={!isProfileModified}
-              onClick={handleSaveProfile}
               className={`w-full py-2.5 px-4 rounded-xl font-label-md text-label-md font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                 isProfileModified
                   ? 'bg-primary text-on-primary hover:opacity-95 active:scale-98 shadow-xs ring-2 ring-primary/30'
@@ -319,7 +332,7 @@ export const SettingsScreen: React.FC = () => {
               </span>
             </button>
           </div>
-        </div>
+        </form>
       </section>
 
       {/* 2. Leave Year Cycle */}
@@ -377,12 +390,17 @@ export const SettingsScreen: React.FC = () => {
         </div>
         <div className="rounded-xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-space-sm">
           <p className="font-body-sm text-body-sm text-on-surface-variant leading-snug">
-            Add rare non-scheduled public holidays, such as Singapore Polling Day declarations or special company off-days.
+            Singapore public holidays sync automatically from the official MOM dataset. Add a company off-day, or a declared holiday not yet published in that dataset.
           </p>
 
-          {specialHolidays.length > 0 ? (
+          <div className="flex items-center justify-between gap-3 text-xs text-on-surface-variant">
+            <span>{holidaySync.isRefreshing ? 'Refreshing official holidays…' : holidaySync.error || (holidaySync.checkedAt ? 'Official holidays saved for offline use.' : 'Using built-in holidays until the first successful sync.')}</span>
+            <button type="button" onClick={() => void holidaySync.refresh(true)} disabled={holidaySync.isRefreshing} className="shrink-0 text-primary font-semibold disabled:opacity-50 cursor-pointer">Refresh holidays</button>
+          </div>
+          <a href="https://data.gov.sg/datasets/d_8ef23381f9417e4d4254ee8b4dcdb176/view" target="_blank" rel="noreferrer" className="inline-block text-xs text-primary underline">MOM holiday source</a>
+          {listedSpecialHolidays.length > 0 ? (
             <div className="flex flex-col gap-2 pt-1">
-              {specialHolidays.map((sh) => (
+              {listedSpecialHolidays.map((sh) => (
                 <div
                   key={sh.id}
                   className="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low border border-surface-container"
@@ -395,29 +413,38 @@ export const SettingsScreen: React.FC = () => {
                           {sh.name}
                         </span>
                         <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-primary-fixed text-on-primary-fixed">
-                          {sh.category === 'gazetted_adhoc' ? 'Ad-Hoc' : sh.category === 'national' ? 'National' : 'Company'}
+                          {sh.source === 'official' ? 'MOM · Auto' : 'Manual'}
                         </span>
                       </div>
                       <span className="font-label-sm text-label-sm text-on-surface-variant">
                         {sh.dayOfWeek}, {formatDateDDMMYYYY(sh.date)}
                       </span>
+                      {conflictingSpecialHolidayIds.includes(sh.id) && <p className="text-xs text-on-surface-variant mt-1">Already a public holiday. Not counted twice; you can remove this manual entry.</p>}
                     </div>
                   </div>
-                  <button
+                  {sh.source !== 'official' && <button
                     onClick={() => deleteSpecialHoliday(sh.id)}
                     className="w-8 h-8 rounded-full flex items-center justify-center text-error hover:bg-error-container transition-colors cursor-pointer"
                     title="Remove this special holiday"
                   >
                     <span className="material-symbols-outlined text-[18px]">delete</span>
-                  </button>
+                  </button>}
                 </div>
               ))}
             </div>
           ) : (
             <div className="p-3 rounded-lg bg-surface-container-low text-center flex flex-col items-center gap-1">
-              <span className="text-on-surface-variant font-label-md text-label-md">No custom special holidays added</span>
+              <span className="text-on-surface-variant font-label-md text-label-md">No special holidays in the current leave cycle.</span>
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="space-y-space-xs" aria-label="App updates">
+        <h2 className="px-1 text-sm font-semibold text-on-surface-variant uppercase tracking-wider">App updates</h2>
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-surface-container-lowest p-space-md border border-surface-container">
+          <div><p className="text-sm font-semibold text-on-surface">Version {currentVersion}</p><p className="text-xs text-on-surface-variant mt-1">Check again at any time after choosing Later.</p></div>
+          <button type="button" disabled={isCheckingUpdate} onClick={() => void onCheckForUpdate()} className="shrink-0 rounded-full px-3 py-2 bg-primary text-on-primary text-xs font-semibold disabled:opacity-50 cursor-pointer">{isCheckingUpdate ? 'Checking…' : 'Check for updates'}</button>
         </div>
       </section>
 

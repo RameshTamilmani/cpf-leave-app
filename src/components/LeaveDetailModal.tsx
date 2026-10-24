@@ -155,7 +155,7 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
     title = 'Special Holidays';
     icon = 'celebration';
     containerClass = 'bg-purple-100 text-purple-900 border border-purple-200';
-    subtitle = `${specialHolidays.length} Special Holiday${specialHolidays.length !== 1 ? 's' : ''} Configured`;
+    subtitle = `${specialHolidays.length} Special Holiday${specialHolidays.length !== 1 ? 's' : ''} in this leave cycle`;
     emptyTitle = 'No Special Holidays added';
     emptyDescription = 'Custom company holidays, ad-hoc off days, or company events can be configured.';
     isSpecialList = true;

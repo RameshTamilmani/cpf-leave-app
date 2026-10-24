@@ -1,34 +1,51 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { ImageCropModal } from './ImageCropModal';
+import { profileError, tenureColors, tenureTier } from '../utils/profile';
 import { DatePickerField } from './DatePickerField';
 
 export const OnboardingModal: React.FC = () => {
-  const { settings, updateSettings, showToast } = useLeave();
-  const [isOpen, setIsOpen] = useState(false);
+  const { settings, updateSettings, showToast, todayDateStr } = useLeave();
   const [name, setName] = useState('');
   const [employeeId, setEmployeeId] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [dateOfJoining, setDateOfJoining] = useState('');
+  const [department, setDepartment] = useState('');
+  const modalRef = useRef<HTMLDivElement>(null);
+  const required = !!profileError(settings, todayDateStr);
+  const colors = tenureColors[tenureTier(dateOfJoining, todayDateStr)];
   const [errorMsg, setErrorMsg] = useState('');
   const [cropModalSrc, setCropModalSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Check if user has already been prompted or profile is set
-    const hasPrompted = localStorage.getItem('cutisg_profile_setup_prompted');
-    const hasProfile = Boolean(settings.userName && settings.employeeId);
+    if (!required) return;
+    setName(settings.userName || '');
+    setEmployeeId(settings.employeeId || '');
+    setDepartment(settings.department || '');
+    setAvatarUrl(settings.avatarUrl || '');
+    setDateOfJoining(settings.dateOfJoining || '');
+  }, [required, settings.userName, settings.employeeId, settings.department, settings.avatarUrl, settings.dateOfJoining]);
 
-    if (!hasPrompted && !hasProfile) {
-      setIsOpen(true);
-      setName(settings.userName || '');
-      setEmployeeId(settings.employeeId || '');
-      setAvatarUrl(settings.avatarUrl || '');
-      setDateOfJoining(settings.dateOfJoining || '');
-    }
-  }, [settings.userName, settings.employeeId, settings.avatarUrl, settings.dateOfJoining]);
+  useEffect(() => {
+    if (!required) return;
+    const previous = document.activeElement as HTMLElement | null;
+    modalRef.current?.focus();
+    const trap = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); return; }
+      if (event.key !== 'Tab') return;
+      const fields = Array.from(modalRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), [tabindex="0"]') || [])
+        .filter(node => node.offsetParent !== null && !node.closest('[inert]'));
+      const first = fields[0], last = fields[fields.length - 1];
+      if (!first) { event.preventDefault(); return; }
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === modalRef.current)) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || document.activeElement === modalRef.current)) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', trap);
+    return () => { document.removeEventListener('keydown', trap); if (previous?.isConnected) previous.focus(); };
+  }, [required]);
 
-  if (!isOpen) return null;
+  if (!required) return null;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -55,49 +72,38 @@ export const OnboardingModal: React.FC = () => {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setErrorMsg('Please enter your full name.');
-      return;
-    }
-    if (!employeeId.trim()) {
-      setErrorMsg('Please enter your Employee ID.');
-      return;
-    }
+    const error = profileError({ userName: name, employeeId, department, dateOfJoining }, todayDateStr);
+    if (error) { setErrorMsg(error); return; }
 
     updateSettings({
       userName: name.trim(),
       employeeId: employeeId.trim(),
+      department: department.trim(),
       avatarUrl,
       dateOfJoining: dateOfJoining.trim()
     });
 
-    localStorage.setItem('cutisg_profile_setup_prompted', 'true');
-    setIsOpen(false);
+    try { localStorage.setItem('cutisg_profile_setup_prompted', 'true'); } catch {}
     showToast('Profile saved successfully! Welcome to CutiSG');
   };
 
-  const handleSkip = () => {
-    localStorage.setItem('cutisg_profile_setup_prompted', 'true');
-    setIsOpen(false);
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="w-full max-w-md bg-surface-card rounded-3xl shadow-2xl p-6 border border-surface-container flex flex-col gap-4">
+    <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="profile-setup-title" tabIndex={-1} className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+      <div className="w-full max-w-md bg-surface-card rounded-3xl shadow-2xl p-4 sm:p-6 border border-surface-container flex flex-col gap-4 max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain">
         {/* Header */}
         <div className="flex flex-col items-center text-center gap-1.5">
           <div className="w-14 h-14 rounded-2xl bg-primary-container text-on-primary-fixed flex items-center justify-center shadow-xs mb-1">
             <span className="material-symbols-outlined text-[32px]">badge</span>
           </div>
-          <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface">
+          <h2 id="profile-setup-title" className="font-headline-sm text-headline-sm font-bold text-on-surface">
             Welcome to CutiSG
           </h2>
           <p className="font-body-sm text-body-sm text-on-surface-variant max-w-xs leading-snug">
-            Please enter your employee details to personalize your Singapore statutory leave planner.
+            Complete all employee details to continue. Your profile photo is optional.
           </p>
         </div>
 
-        <form onSubmit={handleSave} className="flex flex-col gap-4 mt-1">
+        <form inert={cropModalSrc ? true : undefined} onSubmit={handleSave} className="flex flex-col gap-4 mt-1">
           {/* Avatar Upload */}
           <div className="flex flex-col items-center gap-2">
             <div className="relative">
@@ -105,10 +111,10 @@ export const OnboardingModal: React.FC = () => {
                 <img
                   src={avatarUrl}
                   alt="Profile Preview"
-                  className="w-20 h-20 rounded-full object-cover border-2 border-primary shadow-sm"
+                  className={`w-16 h-16 rounded-full object-cover ring-2 shadow-sm ${colors.ring}`}
                 />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center border-2 border-surface-container">
+                <div className={`w-16 h-16 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center ring-2 ${colors.ring}`}>
                   <span className="material-symbols-outlined text-[36px]">person</span>
                 </div>
               )}
@@ -174,6 +180,7 @@ export const OnboardingModal: React.FC = () => {
                   type="text"
                   required
                   maxLength={40}
+                  aria-label="Full name"
                   value={name}
                   onKeyDown={(e) => {
                     if (/^[0-9]$/.test(e.key)) {
@@ -205,6 +212,7 @@ export const OnboardingModal: React.FC = () => {
                   pattern="[0-9]*"
                   maxLength={12}
                   required
+                  aria-label="Employee ID"
                   value={employeeId}
                   onKeyDown={(e) => {
                     if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key) || e.ctrlKey || e.metaKey) {
@@ -225,17 +233,25 @@ export const OnboardingModal: React.FC = () => {
               </div>
             </div>
 
+            <div>
+              <label htmlFor="onboarding-department" className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">DEPARTMENT *</label>
+              <input id="onboarding-department" type="text" required maxLength={25} value={department}
+                onChange={event => { setDepartment(event.target.value.slice(0, 25)); setErrorMsg(''); }}
+                placeholder="Enter department" className="w-full px-3.5 h-11 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
+
             <DatePickerField
-              label="DATE OF JOINING"
+              required
+              label="DATE OF JOINING *"
               value={dateOfJoining}
               onChange={setDateOfJoining}
-              max={new Date().toISOString().slice(0, 10)}
+              max={todayDateStr}
               ariaLabel="Choose Date of Joining"
             />
           </div>
 
           {errorMsg && (
-            <div className="p-2.5 rounded-lg bg-error-container text-on-error-container text-xs flex items-center gap-1.5">
+            <div role="alert" className="p-2.5 rounded-lg bg-error-container text-on-error-container text-xs flex items-center gap-1.5">
               <span className="material-symbols-outlined text-[16px]">error</span>
               <span>{errorMsg}</span>
             </div>
@@ -249,13 +265,7 @@ export const OnboardingModal: React.FC = () => {
               <span>Save &amp; Continue</span>
               <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
             </button>
-            <button
-              type="button"
-              onClick={handleSkip}
-              className="w-full py-2 text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm font-semibold cursor-pointer transition-colors"
-            >
-              Set up later in Settings
-            </button>
+
           </div>
         </form>
       </div>

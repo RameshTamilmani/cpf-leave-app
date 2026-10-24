@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
-import { formatDateDDMMYYYY, calculateExperience } from '../data/singaporeHolidays2026';
+import { formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
 import { LeaveDetailModal, DetailCategory } from '../components/LeaveDetailModal';
+import { EmployeeProfileCard } from '../components/EmployeeProfileCard';
 import { generateNotifications } from '../utils/notifications';
 
 export const HomeScreen: React.FC = () => {
@@ -38,10 +39,6 @@ export const HomeScreen: React.FC = () => {
   // Next 4 strictly upcoming holidays (from current date onward)
   const displayedUpcomingHolidays = upcomingHolidays.slice(0, 4);
 
-  // Calculate experience from date of joining if set
-  const effectiveDoj = settings.dateOfJoining?.trim() || '';
-  const experienceText = effectiveDoj ? calculateExperience(effectiveDoj, todayDateStr) : null;
-
   // Generate contextual notifications to surface celebrations & wishes
   const notifications = generateNotifications(
     settings,
@@ -54,117 +51,7 @@ export const HomeScreen: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full px-margin pb-6 gap-3 max-w-xl mx-auto">
-      {/* 1. Executive Employee Profile Card */}
-      <section className="w-full bg-gradient-to-br from-surface-card via-surface-container-low to-primary-container/15 rounded-2xl p-3 sm:p-3.5 shadow-xs border border-primary/20 flex flex-col gap-2.5 transition-all">
-        {/* Top Identity Row */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            {/* Avatar */}
-            <div className="relative shrink-0">
-              {settings.avatarUrl ? (
-                <img
-                  src={settings.avatarUrl}
-                  alt={settings.userName || 'Profile'}
-                  className="w-12 h-12 rounded-full object-cover ring-2 ring-amber-400 ring-offset-1 ring-offset-surface-card shadow-sm"
-                />
-              ) : settings.userName ? (
-                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-primary to-primary-fixed text-on-primary font-bold text-lg flex items-center justify-center ring-2 ring-amber-400 ring-offset-1 ring-offset-surface-card shadow-sm">
-                  {settings.userName.slice(0, 1).toUpperCase()}
-                </div>
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center ring-2 ring-amber-400 shadow-xs">
-                  <span className="material-symbols-outlined text-[24px]">person</span>
-                </div>
-              )}
-              <div
-                className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-surface-card border-2 border-surface-card flex items-center justify-center shadow-xs"
-                title="Employee Profile"
-              >
-                <span className="material-symbols-outlined text-[10px] text-amber-500 dark:text-amber-300">verified</span>
-              </div>
-            </div>
-
-            {/* Name, Employee ID & Department */}
-            <div className="flex flex-col min-w-0">
-              <h1 className="text-base font-bold text-on-surface tracking-tight truncate leading-tight">
-                {settings.userName || 'Employee Name'}
-              </h1>
-
-              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                {settings.employeeId ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-300 text-amber-950 text-xs font-mono font-bold border border-amber-500 shadow-xs">
-                    <span className="material-symbols-outlined text-[13px]">badge</span>
-                    <span>EMP {settings.employeeId}</span>
-                  </span>
-                ) : (
-                  <span className="text-[11px] text-on-surface-variant italic">ID not assigned</span>
-                )}
-              </div>
-              {settings.department && (
-                <p className="mt-1 text-xs font-medium text-on-surface-variant break-words" aria-label="Department">
-                  {settings.department}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Quick Edit Profile Shortcut */}
-          <button
-            type="button"
-            onClick={() => setCurrentTab('settings')}
-            className="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-primary flex items-center justify-center transition-all cursor-pointer shadow-2xs border border-surface-container shrink-0"
-            title="Edit Profile"
-          >
-            <span className="material-symbols-outlined text-[16px]">edit</span>
-          </button>
-        </div>
-
-        {/* Experience row */}
-        {effectiveDoj ? (
-          <div className="p-2 px-2.5 rounded-xl bg-surface-card/90 border border-primary/15 shadow-2xs flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-primary-container text-on-primary-fixed flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[16px] text-primary">workspace_premium</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-on-surface">
-                  {experienceText || '1st Year'}
-                </span>
-                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded-full bg-primary-fixed text-on-primary-fixed">
-                  Experience
-                </span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setCurrentTab('settings')}
-              className="flex items-center gap-1 text-[11px] font-medium text-on-surface-variant bg-surface-container/60 hover:bg-surface-container px-2 py-0.5 rounded-md border border-surface-container/60 shrink-0 cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[12px] text-primary">calendar_month</span>
-              <span>Joined {formatDateDDMMYYYY(effectiveDoj)}</span>
-            </button>
-          </div>
-        ) : (
-          <div className="p-2 px-2.5 rounded-xl bg-surface-card/90 border border-primary/15 shadow-2xs flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-surface-container text-primary flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[16px]">calendar_today</span>
-              </div>
-              <span className="text-[11.5px] text-on-surface-variant truncate">
-                Set joining date to track work experience
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setCurrentTab('settings')}
-              className="text-[11px] font-semibold text-primary bg-primary-fixed/40 hover:bg-primary-fixed/60 px-2 py-0.5 rounded-md border border-primary/20 shrink-0 cursor-pointer"
-            >
-              + Set Date
-            </button>
-          </div>
-        )}
+      <EmployeeProfileCard settings={settings} today={todayDateStr} onEdit={() => setCurrentTab('settings')} />
 
         {/* Home Screen Greeting Ribbon - Static, warm greeting (no popup modal) */}
         {celebrationWish && (
@@ -180,7 +67,6 @@ export const HomeScreen: React.FC = () => {
             </div>
           </div>
         )}
-      </section>
 
       {/* 2. Leave Balance Cards (Clickable to view applied leaves list) */}
       <section className="flex flex-col gap-2">
@@ -294,6 +180,7 @@ export const HomeScreen: React.FC = () => {
           {/* Special Holidays Card */}
           <article
             onClick={() => setActiveDetailCategory('SPECIAL')}
+            title="Special holidays in the current leave cycle"
             className="w-full bg-purple-50/90 dark:bg-purple-950/30 rounded-xl p-2.5 sm:p-3 min-h-14 shadow-2xs flex items-center justify-between gap-3 text-purple-950 dark:text-purple-200 border border-purple-200/90 dark:border-purple-800/40 cursor-pointer hover:border-purple-300 active:scale-[0.99] transition-all"
           >
             <div className="flex items-center gap-2.5">
@@ -308,7 +195,7 @@ export const HomeScreen: React.FC = () => {
                 </h3>
                 {specialHolidays.length > 0 && (
                   <span className="px-1.5 py-0.2 rounded-full bg-purple-600 text-white text-[10px] font-bold">
-                    Configured
+                    Current cycle
                   </span>
                 )}
               </div>

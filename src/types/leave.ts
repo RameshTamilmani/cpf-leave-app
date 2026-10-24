@@ -26,6 +26,8 @@ export interface PublicHoliday {
   emoji?: string;
   momSection?: string;
   isSpecial?: boolean;
+  source?: 'official' | 'manual';
+  sourceUrl?: string;
   id?: string;
   category?: 'gazetted_adhoc' | 'company' | 'national';
   isCompOffEligible?: boolean;
@@ -42,7 +44,7 @@ export interface SpecialHoliday extends PublicHoliday {
 export interface UserSettings {
   userName?: string;
   employeeId?: string;
-  department?: string; // Maximum 15 characters
+  department?: string; // Maximum 25 characters
   avatarUrl?: string;
   dateOfJoining?: string; // YYYY-MM-DD
   alEntitlement: number;

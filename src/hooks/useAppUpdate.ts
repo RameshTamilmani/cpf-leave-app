@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { registerAppWorker, workerMessage } from '../pwa';
+import { registerAppWorker, workerMessage, waitForWorkerDownload } from '../pwa';
 
 export interface ReleaseHighlight { title: string; description: string; icon?: string; color?: string; }
 export interface VersionInfo {
@@ -21,7 +21,7 @@ export function useAppUpdate() {
   const inspect = useCallback(async (reg: ServiceWorkerRegistration, manual = false) => {
     // A new worker can already be active after every app window was closed.
     // Its approved-release pointer still serves the old app until acceptance.
-    const worker = reg.waiting || reg.active;
+    const worker = reg.waiting || (reg.installing?.state === 'installed' ? reg.installing : null) || reg.active;
     if (!worker) return { hasUpdate: false };
     const info = await workerMessage<VersionInfo>(worker, 'GET_RELEASE');
     const newer = !!info.buildId && info.buildId !== CURRENT_RELEASE.buildId;
@@ -30,16 +30,29 @@ export function useAppUpdate() {
     setVisible(newer && (manual || !snoozed()));
     return { hasUpdate: newer, info: newer ? info : undefined };
   }, []);
-  const checkForUpdate = useCallback(async (manual = false) => {
+  const checkForUpdate = useCallback(async (manual = false): Promise<{ hasUpdate: boolean; info?: VersionInfo; error?: string }> => {
     setIsChecking(true);
     try {
+      // Manual checks bypass the snooze, including updatefound listeners fired
+      // while the new release is being downloaded.
+      if (manual) { try { localStorage.removeItem(SNOOZE_KEY); } catch {} }
       const reg = await registerAppWorker();
-      if (!reg) return { hasUpdate: false };
-      if (navigator.onLine) await reg.update().catch(() => {});
+      if (!reg) return { hasUpdate: false, error: 'Update checks are available in the deployed app.' };
+      if (navigator.onLine) {
+        try { await reg.update(); } catch {
+          const downloaded = await inspect(reg, manual);
+          if (downloaded.hasUpdate) return downloaded;
+          throw new Error('Could not check for updates. Please reconnect and try again.');
+        }
+        await waitForWorkerDownload(reg);
+      } else {
+        const downloaded = await inspect(reg, manual);
+        return downloaded.hasUpdate ? downloaded : { hasUpdate: false, error: 'Connect to the internet to check for updates.' };
+      }
       return await inspect(reg, manual);
     } catch (error) {
       console.warn('Update check unavailable:', error);
-      return { hasUpdate: false };
+      return { hasUpdate: false, error: error instanceof Error ? error.message : 'Update check failed. Please try again.' };
     } finally { setIsChecking(false); }
   }, [inspect]);
   useEffect(() => {

@@ -42,7 +42,7 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
-  if (url.pathname === '/sw.js' || url.pathname === '/version.json') return;
+  if (url.pathname === '/sw.js' || url.pathname === '/version.json' || url.pathname.startsWith('/api/')) return;
   event.respondWith((async () => {
     const approved = await approvedRelease();
     if (approved) {

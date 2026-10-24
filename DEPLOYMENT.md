@@ -47,3 +47,19 @@ Wishes now appear only in the Home banner. The settings toggle and automatic wis
 ## UI validation
 
 Run npm run test:calendar for month filtering and observed-holiday cases. After building, npm run test:ui checks the profile department limit, balance alignment, calendar month history, single comp-off warning, and light/dark layouts in Chrome at 320px, 390px, and 768px widths. Screenshots are saved under ui-screenshots/ (ignored by Git).
+
+
+## Version 1.3.5: official holiday sync
+
+Deploy the full source project, including api/holidays.ts, rather than only uploading dist. Vercel discovers this serverless API alongside the Vite output. No API key is required for the tested public endpoint. Optionally configure DATA_GOV_SG_API_KEY in Vercel for the higher limits recommended by data.gov.sg; it stays on the server. The endpoint caches successful responses for one hour; clients automatically refresh at most every six hours while online. Settings > Refresh holidays performs an immediate client refresh. Failed or incomplete responses preserve saved data.
+
+Source: https://data.gov.sg/datasets/d_8ef23381f9417e4d4254ee8b4dcdb176/view. The current live dataset contains 104 rows through 2027; it lists polling days in 2020, 2023 and 2025, and no polling day on 10 August 2026. That date is National Day observed. New ad-hoc holidays are imported only after the official dataset publishes them. Company-specific off-days still need manual entry. Official special declarations are read-only and counted in the current leave cycle; manual overlaps are kept for review/removal but excluded from effective counts and duplicate calendar entries. Historical polling days do not inflate the current count.
+
+The browser tests use a synthetic polling declaration to test future importing; this fixture is not shipped as real holiday data. Run npm run test:holidays to check merging, duplicate handling, invalid responses, and the server API contract.
+
+
+## Version 1.3.6: profile card and required setup
+
+The four profile identity fields are mandatory; photo upload is optional. The previous setup-later option and stored skip marker no longer bypass completion. Existing complete profiles are retained, and existing incomplete profiles open the required form with their saved values prefilled. Both setup and Settings reject blank details, invalid dates, and future dates. The setup dialog blocks background interaction and dismissal by Escape or backdrop click, and scrolls on small screens.
+
+The compact card preserves the ID badge proportions, adds a one-pixel red border, removes the nested experience box, and colors the photo ring, verification badge, ID badge, and experience by calendar tenure. The first anniversary starts blue; gold begins the day after the second anniversary. Run npm run test:profile and, after building, npm run test:profile-browser for validation and the responsive onboarding/card checks.

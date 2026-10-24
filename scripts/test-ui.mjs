@@ -40,10 +40,13 @@ try {
         { ...record('November half day', 'SL', '2026-11-10', undefined, 0.5), halfDay: 'pm', status: 'planned' },
       ]));
       localStorage.setItem('cutisg_profile_setup_prompted', 'true');
+      localStorage.setItem('cutisg_special_holidays', JSON.stringify([{ id: 'old-election', name: 'General Election Polling Day', date: '2026-08-10', dayOfWeek: 'Monday', isLongWeekend: true, description: '', isSpecial: true, category: 'gazetted_adhoc', createdAt: '' }]));
       localStorage.setItem('cutisg_pwa_banner_snooze', String(Date.now() + 86400000));
       localStorage.setItem('ui-seeded', 'true');
     });
     const page = await context.newPage();
+    // Synthetic declaration tests importing; it is not real holiday information.
+    await page.route('**/api/holidays', route => route.fulfill({ json: { rows: [{ date: '2026-10-29', holiday: 'Polling Day' }] } }));
     page.on('pageerror', error => errors.push(error.message));
     await page.clock.install({ time: new Date('2026-10-24T12:00:00+05:30') });
     await page.goto(origin);
@@ -53,6 +56,7 @@ try {
     assert.equal(await cards.count(), 5);
     for (const card of await cards.all()) assert.doesNotMatch(await card.innerText(), /Days/);
     assert.match(await cards.nth(2).innerText(), /0\.5\s*\/1/);
+    assert.match(await cards.nth(4).innerText(), /1/);
     const rectangles = await cards.evaluateAll(nodes => nodes.map(node => {
       const number = node.lastElementChild;
       const rect = number.getBoundingClientRect();
@@ -65,11 +69,19 @@ try {
     assert.equal(await page.getByText('Notifications & Wishes', { exact: true }).count(), 0);
     assert.equal(await page.getByText('Special Holidays (Rare Cases)', { exact: true }).count(), 0);
     const department = page.getByLabel('DEPARTMENT', { exact: true });
-    await department.fill('Operations-Team-Long');
-    assert.equal((await department.inputValue()).length, 15);
+    await department.fill('Operations-Team-Long-Name-Plus');
+    assert.equal((await department.inputValue()).length, 25);
+    const departmentName = await department.inputValue();
+    assert.equal(await page.locator('#department-limit').count(), 0);
     await page.getByRole('button', { name: /Save Profile Changes/ }).click();
     await page.getByRole('button', { name: 'Dismiss', exact: true }).click();
-    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('cutisg_settings')).department), 'Operations-Team');
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('cutisg_settings')).department), departmentName);
+    await page.getByText(/Already a public holiday. Not counted twice/).waitFor();
+    await page.getByRole('button', { name: /Add Special Holiday/ }).click();
+    await page.getByRole('textbox', { name: /^DATE \(/ }).fill('10/08/2026');
+    await page.getByRole('alert').getByText(/National Day \(Observed\) is already recorded/).waitFor();
+    assert.equal(await page.getByRole('button', { name: 'Add Special Holiday', exact: true }).isDisabled(), true);
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
     assert.equal(await page.getByRole('button', { name: 'Choose Date of Joining', exact: true }).count(), 1);
     await page.screenshot({ path: path.join(screenshots, `settings-${width}-dark.png`), fullPage: true });
 
@@ -87,12 +99,18 @@ try {
     await history.getByText('November half day', { exact: true }).waitFor();
     await history.getByText(/Half day \(PM\)/).waitFor();
     const before = await history.innerText();
+    const weekendColor = await page.getByRole('button', { name: /^07\/11\/2026/ }).evaluate(node => getComputedStyle(node).backgroundColor);
+    const normalColor = await page.getByRole('button', { name: /^04\/11\/2026/ }).evaluate(node => getComputedStyle(node).backgroundColor);
+    assert.notEqual(weekendColor, normalColor);
     await page.getByRole('button', { name: /^07\/11\/2026/ }).click();
     assert.equal(await history.innerText(), before, 'selecting a day must retain the full month history');
     await page.screenshot({ path: path.join(screenshots, `calendar-${width}-dark.png`), fullPage: true });
+    for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'Previous Month', exact: true }).click();
+    assert.equal(await history.locator('[data-date="2026-08-10"]').count(), 1);
+    assert.equal(await history.getByText('General Election Polling Day', { exact: true }).count(), 0);
 
     await page.getByRole('button', { name: /Home/ }).last().click();
-    await page.getByText('Operations-Team', { exact: true }).waitFor();
+    await page.getByText(departmentName, { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Apply Leave', exact: true }).click();
     await page.getByRole('button', { name: /Comp-Off.*Available/ }).click();
     await page.getByLabel('START DATE', { exact: true }).fill('14/10/2026');
@@ -111,7 +129,8 @@ try {
     await page.screenshot({ path: path.join(screenshots, `home-${width}-light.png`), fullPage: true });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `no horizontal overflow at ${width}px`);
     await page.reload();
-    await page.getByText('Operations-Team', { exact: true }).waitFor();
+    await page.getByText(departmentName, { exact: true }).waitFor();
+    assert.match(await page.locator('article').nth(4).innerText(), /1/);
     await context.close();
     console.log(`PASS: ${width}px profile, balances, calendar history, comp-off validation, light/dark layouts.`);
   }
@@ -120,3 +139,4 @@ try {
   await browser?.close();
   await new Promise(resolve => server.close(resolve));
 }
+

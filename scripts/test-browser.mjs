@@ -39,7 +39,7 @@ try {
   const aScript = await script(page);
   await page.evaluate(() => {
     const settings = JSON.parse(localStorage.getItem('cutisg_settings') || '{}');
-    localStorage.setItem('cutisg_settings', JSON.stringify({ ...settings, userName: 'Offline Verification' }));
+    localStorage.setItem('cutisg_settings', JSON.stringify({ ...settings, userName: 'Offline Verification', employeeId: '6509', department: 'HIS', dateOfJoining: '2022-11-18' }));
     localStorage.setItem('cutisg_profile_setup_prompted', 'true');
   });
   await context.setOffline(true);
@@ -53,6 +53,10 @@ try {
   await page.getByText('New Update Available', { exact: true }).waitFor();
   assert.equal(await script(page), aScript);
   await page.getByRole('button', { name: 'Later (6 hrs)', exact: true }).click();
+  await page.getByRole('button', { name: /Settings/ }).last().click();
+  await page.getByRole('button', { name: 'Check for updates', exact: true }).click();
+  await page.getByText('New Update Available', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Later (6 hrs)', exact: true }).click();
   await page.close();
   // Give the browser its normal opportunity to activate the waiting worker.
   await new Promise(resolve => setTimeout(resolve, 1500));
@@ -60,10 +64,9 @@ try {
   await page.goto(origin);
   assert.equal(await script(page), aScript, 'closing every window must not approve the update');
   assert.equal(await page.getByText('New Update Available', { exact: true }).count(), 0);
-  await page.evaluate(() => {
-    localStorage.removeItem('cutisg_update_snooze_until');
-    document.dispatchEvent(new Event('visibilitychange'));
-  });
+  await context.setOffline(true);
+  await page.getByRole('button', { name: /Settings/ }).last().click();
+  await page.getByRole('button', { name: 'Check for updates', exact: true }).click();
   await page.getByText('New Update Available', { exact: true }).waitFor();
   await context.setOffline(true);
   await Promise.all([
@@ -86,7 +89,7 @@ try {
   await page.reload();
   await page.getByText('CutiSG', { exact: true }).first().waitFor();
   assert.deepEqual(errors, []);
-  console.log('PASS: offline reload and fonts, update popup, Later, close/reopen, offline approval, preserved profile, updated offline reload.');
+  console.log('PASS: offline reload and fonts, popup, Later, Settings manual check bypassing snooze online/offline, close/reopen, offline approval, preserved profile.');
   await context.close();
 } finally {
   await browser?.close();

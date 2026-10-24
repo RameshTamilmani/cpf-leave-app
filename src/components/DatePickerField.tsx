@@ -48,6 +48,7 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
 
   // Sync internal display text if value changes externally
   useEffect(() => {
+    inputRef.current?.setCustomValidity('');
     if (value && isValidISODate(value)) {
       setInputValue(formatDateDDMMYYYY(value));
       const d = new Date(value + 'T00:00:00');
@@ -78,6 +79,12 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatDDMMYYYYWithAutoSlash(e.target.value, inputValue);
     setInputValue(formatted);
+    const parsed = formatted.length === 10 ? parseDDMMYYYYToISO(formatted) : null;
+    const valid = !!parsed && isValidISODate(parsed) && (!min || parsed >= min) && (!max || parsed <= max);
+    e.currentTarget.setCustomValidity(!formatted || valid ? '' : max && parsed && parsed > max
+      ? `Date must be on or before ${formatDateDDMMYYYY(max)}.`
+      : min && parsed && parsed < min ? `Date must be on or after ${formatDateDDMMYYYY(min)}.`
+      : 'Enter a valid date in DD/MM/YYYY format.');
 
     if (formatted.length === 10) {
       const parsed = parseDDMMYYYYToISO(formatted);
@@ -113,6 +120,7 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
   };
 
   const handleSelectDate = (isoDate: string) => {
+    inputRef.current?.setCustomValidity('');
     onChange(isoDate);
     setInputValue(formatDateDDMMYYYY(isoDate));
     setIsOpen(false);

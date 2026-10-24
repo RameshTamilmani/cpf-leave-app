@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { LeaveRecord, UserSettings, LeaveType, LeaveStatus, PublicHoliday, SpecialHoliday } from '../types/leave';
 import { ALL_GAZETTED_HOLIDAYS, addDaysToDate, formatDateDDMMYYYY, parseDDMMYYYYToISO } from '../data/singaporeHolidays2026';
 import { AppNotification, generateNotifications } from '../utils/notifications';
+import { useOfficialHolidays } from '../hooks/useOfficialHolidays';
+import { mergeHolidaySources } from '../utils/officialHolidays';
 import { playCelebrationChime } from '../utils/sound';
 
 interface ToastState {
@@ -34,7 +36,11 @@ interface LeaveContextType {
   
   // Special Holidays & Auto Comp-off
   specialHolidays: SpecialHoliday[];
-  addSpecialHoliday: (holiday: Omit<SpecialHoliday, 'id' | 'createdAt' | 'isSpecial'>) => void;
+  customSpecialHolidays: SpecialHoliday[];
+  officialSpecialHolidays: SpecialHoliday[];
+  conflictingSpecialHolidayIds: string[];
+  holidaySync: ReturnType<typeof useOfficialHolidays>;
+  addSpecialHoliday: (holiday: Omit<SpecialHoliday, 'id' | 'createdAt' | 'isSpecial'>) => boolean;
   deleteSpecialHoliday: (id: string) => void;
   allHolidays: PublicHoliday[];
   
@@ -213,7 +219,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (parsed.userName === 'Employee') parsed.userName = '';
         if (parsed.employeeId === 'EMP-1103118') parsed.employeeId = '';
         if (parsed.dateOfJoining === '2023-08-15') parsed.dateOfJoining = '';
-        return { ...defaultSettings, ...parsed, department: typeof parsed.department === 'string' ? parsed.department.slice(0, 15) : '', alEntitlement: 12, slEntitlement: 12 };
+        return { ...defaultSettings, ...parsed, department: typeof parsed.department === 'string' ? parsed.department.slice(0, 25) : '', alEntitlement: 12, slEntitlement: 12 };
       }
       return defaultSettings;
     } catch {
@@ -240,7 +246,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   });
 
-  const [specialHolidays, setSpecialHolidays] = useState<SpecialHoliday[]>(() => {
+  const [customSpecialHolidays, setSpecialHolidays] = useState<SpecialHoliday[]>(() => {
     try {
       const saved = localStorage.getItem('cutisg_special_holidays');
       return saved ? JSON.parse(saved) : [];
@@ -352,11 +358,11 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     try {
-      localStorage.setItem('cutisg_special_holidays', JSON.stringify(specialHolidays));
+      localStorage.setItem('cutisg_special_holidays', JSON.stringify(customSpecialHolidays));
     } catch (e) {
       console.error(e);
     }
-  }, [specialHolidays]);
+  }, [customSpecialHolidays]);
 
   useEffect(() => {
     try {
@@ -390,7 +396,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateSettings = (newSettings: Partial<UserSettings>) => {
     const normalized = { ...newSettings };
-    if (normalized.department !== undefined) normalized.department = normalized.department.trim().slice(0, 15);
+    if (normalized.department !== undefined) normalized.department = normalized.department.trim().slice(0, 25);
     setSettings((prev) => ({ ...prev, ...normalized }));
   };
 
@@ -433,20 +439,28 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast('Updated leave details');
   };
 
+  const holidaySync = useOfficialHolidays();
+  const mergedHolidays = mergeHolidaySources(ALL_GAZETTED_HOLIDAYS, holidaySync.holidays, customSpecialHolidays);
+  const allHolidays = mergedHolidays.all;
+
   // Special Holidays Actions
   const addSpecialHoliday = (holidayData: Omit<SpecialHoliday, 'id' | 'createdAt' | 'isSpecial'>) => {
+    const existing = allHolidays.find(h => h.date === holidayData.date || h.observedDate === holidayData.date);
+    if (existing) { showToast('This date is already a holiday: ' + existing.name); return false; }
     const newSpecial: SpecialHoliday = {
       ...holidayData,
+      source: 'manual',
       id: 'special_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
       isSpecial: true,
       createdAt: new Date().toISOString()
     };
     setSpecialHolidays((prev) => [...prev, newSpecial]);
     showToast(`Added Special Holiday: ${holidayData.name} (${holidayData.date})`);
+    return true;
   };
 
   const deleteSpecialHoliday = (id: string) => {
-    const target = specialHolidays.find((h) => h.id === id);
+    const target = customSpecialHolidays.find((h) => h.id === id);
     setSpecialHolidays((prev) => prev.filter((h) => h.id !== id));
     if (target) {
       showToast(`Removed special holiday: ${target.name}`);
@@ -457,12 +471,6 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setManualCompOffCredits((prev) => prev + 1);
     showToast(reason || '+1 Comp-Off Day credited for compensatory duty');
   };
-
-  // Merged holiday list (Gazetted + Custom Special Holidays)
-  const allHolidays: PublicHoliday[] = [
-    ...ALL_GAZETTED_HOLIDAYS,
-    ...specialHolidays
-  ];
 
   // Upcoming holidays strictly on or after current date (todayDateStr)
   // Holidays strictly before todayDateStr are completely excluded!
@@ -505,6 +513,11 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const cycleStartDateStr = `${activeStartYear}-${String(startMonth).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`;
   const cycleEndDateStr = `${activeEndYear}-${String(endMonth).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
+
+  // Home counts and details refer to the active leave cycle, not historical polling days.
+  const specialHolidays = mergedHolidays.specials.filter(h => h.date >= cycleStartDateStr && h.date <= cycleEndDateStr);
+  const officialSpecialHolidays = specialHolidays.filter(h => h.source === 'official');
+  const conflictingSpecialHolidayIds = mergedHolidays.conflicts.map(h => h.id);
 
   // Excluded holiday dates and expired holiday dates
   const excludedHolidayDates = settings.excludedHolidayDates || [];
@@ -892,6 +905,10 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         slLOP,
         totalLOP,
         specialHolidays,
+        customSpecialHolidays,
+        officialSpecialHolidays,
+        conflictingSpecialHolidayIds,
+        holidaySync,
         addSpecialHoliday,
         deleteSpecialHoliday,
         allHolidays,

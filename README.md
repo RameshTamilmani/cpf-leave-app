@@ -107,5 +107,17 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for Vercel settings, migration from the old w
 
 ## Profile and calendar
 
-Employee profiles include an optional department (maximum 15 characters), shown on Home. AL, SL, and comp-off cards show remaining/total balances. The calendar lists the displayed month’s holidays and leave history, excluding weekend leave dates while retaining weekend public holidays and observed dates.
+Employee profiles include a required department (maximum 25 characters), shown on Home. AL, SL, and comp-off cards show remaining/total balances. The calendar lists the displayed month’s holidays and leave history, excluding weekend leave dates while retaining weekend public holidays and observed dates.
+
+
+## Official holidays and updates
+
+The Vercel API at /api/holidays reads the official MOM consolidated dataset on data.gov.sg. The app refreshes while online (at most every six hours automatically), saves successful results locally, and retains built-in holidays if the source is unavailable. An additional Refresh holidays action is available in Settings. This follows dataset publication, not every government announcement in real time. Special Holiday counts refer to the active leave cycle and include official special declarations plus non-conflicting manual entries. Existing manual entries on already-known public-holiday dates remain removable in Settings but do not add a second calendar entry or count.
+
+Settings > App updates > Check for updates bypasses the Later snooze. Updates are offered only when their offline assets are ready. Offline checks can reopen an already downloaded update; checking for a new download needs internet.
+
+
+## Employee profile setup and tenure accents
+
+Initial setup requires full name, numeric employee ID, department, and a valid non-future joining date. The photo remains optional. Previously skipped or incomplete profiles must finish setup; existing complete profiles are kept. Settings uses the same required-field checks. The profile card has a compact ID badge with a thin red outline, separate Joined and Experience columns, and matching tenure colors on the photo ring, verification mark, ID badge, and Experience text: green below one year, blue from the first anniversary through the second anniversary, and gold after the second anniversary. Leap-day anniversaries use the last valid day of February.
 

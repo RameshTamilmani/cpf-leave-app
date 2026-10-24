@@ -18,14 +18,22 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { UpdateAvailableModal } from './components/UpdateAvailableModal';
 import { InstallAppPrompt } from './components/InstallAppPrompt';
+import { profileError } from './utils/profile';
 import { useAppUpdate } from './hooks/useAppUpdate';
 
 const MainAppContent: React.FC = () => {
-  const { currentTab, isEditCycleModalOpen, setIsEditCycleModalOpen } = useLeave();
-  const { hasUpdate, updateInfo, currentVersion, applyUpdate, dismissUpdate } = useAppUpdate();
+  const { currentTab, isEditCycleModalOpen, setIsEditCycleModalOpen, showToast, settings, todayDateStr } = useLeave();
+  const { hasUpdate, updateInfo, currentVersion, applyUpdate, dismissUpdate, checkForUpdate, isChecking } = useAppUpdate();
+
+  const needsProfile = !!profileError(settings, todayDateStr);
+  const handleCheckForUpdate = async () => {
+    const result = await checkForUpdate(true);
+    if (!result.hasUpdate) showToast(result.error || 'You are using the latest version.');
+  };
 
   return (
-    <div className="bg-surface text-on-surface font-body-md text-body-md min-h-screen flex flex-col antialiased selection:bg-primary-fixed selection:text-on-primary-fixed">
+    <>
+    <div inert={needsProfile ? true : undefined} className="bg-surface text-on-surface font-body-md text-body-md min-h-screen flex flex-col antialiased selection:bg-primary-fixed selection:text-on-primary-fixed">
       {/* Top Application Header with Android status bar & sync details */}
       <Header />
 
@@ -37,7 +45,7 @@ const MainAppContent: React.FC = () => {
         {currentTab === 'home' && <HomeScreen />}
         {currentTab === 'calendar' && <CalendarScreen />}
         {currentTab === 'history' && <HistoryScreen />}
-        {currentTab === 'settings' && <SettingsScreen />}
+        {currentTab === 'settings' && <SettingsScreen onCheckForUpdate={handleCheckForUpdate} isCheckingUpdate={isChecking} currentVersion={currentVersion} />}
       </main>
 
       {/* Floating Action Button (+ Apply Leave) */}
@@ -56,7 +64,6 @@ const MainAppContent: React.FC = () => {
         isOpen={isEditCycleModalOpen}
         onClose={() => setIsEditCycleModalOpen(false)}
       />
-      <OnboardingModal />
 
 
 
@@ -65,7 +72,7 @@ const MainAppContent: React.FC = () => {
 
       {/* Cloud & PWA Deployment Update Notification Modal */}
       <UpdateAvailableModal
-        isOpen={hasUpdate}
+        isOpen={hasUpdate && !needsProfile}
         updateInfo={updateInfo}
         currentVersion={currentVersion}
         onUpdate={applyUpdate}
@@ -75,6 +82,8 @@ const MainAppContent: React.FC = () => {
       {/* Universal Floating Toast Banner */}
       <Toast />
     </div>
+    <OnboardingModal />
+    </>
   );
 };
 
