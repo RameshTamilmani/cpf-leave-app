@@ -4,9 +4,9 @@ This project remains an installable web PWA. It does not produce an Android APK/
 
 ## Vercel
 
-Commit the source changes, including `package-lock.json` and `vercel.json` (with `bun.lock` removed to prevent package manager conflicts). Vercel uses `npm install`, `npm run build`, and the `dist` output directory. Do not deploy `src/sw.js` directly: the build injects the complete asset list into `dist/sw.js`.
+Commit the source changes, including `package-lock.json` and `vercel.json` (with `bun.lock` removed to prevent package manager conflicts). Vercel uses `npm ci --include=dev`, `npm run build`, and the `dist` output directory. Do not deploy `src/sw.js` directly: the build injects the complete asset list into `dist/sw.js`.
 
-Use Node.js 22.12 or later. To check locally:
+Use Node.js 22.12+ or Node.js 24. To check locally:
 
 ```sh
 npm ci
@@ -40,7 +40,7 @@ Offline requires one successful online installation. Browser storage eviction or
 2. Enable airplane mode, close and reopen the installed app, and confirm the entry, styling, and icons load.
 3. Reconnect and deploy a second build. Refocus the app to trigger an update check.
 4. Choose Later. Close every app window and tab, then reopen: the previous app version should remain.
-5. After the six-hour snooze expires, choose Update Now. Confirm the new release opens and existing leave data remains.
+5. Open Settings > App Updates > Check for updates to bypass the snooze, then choose Update Now. Confirm the new release opens and existing leave data remains.
 
 Wishes now appear only in the Home banner. The settings toggle and automatic wish notification handlers have been removed. This project does not add an Android package or a push delivery backend.
 
@@ -49,39 +49,27 @@ Wishes now appear only in the Home banner. The settings toggle and automatic wis
 Run npm run test:calendar for month filtering and observed-holiday cases. After building, npm run test:ui checks the profile department limit, balance alignment, calendar month history, single comp-off warning, and light/dark layouts in Chrome at 320px, 390px, and 768px widths. Screenshots are saved under ui-screenshots/ (ignored by Git).
 
 
-## Version 1.1.0: Latest Release PWA Installation & Build Reliability
+## Version 1.1.1: deployment and update corrections
 
-- **Guaranteed Latest Release on Installation**:
-  - PWA installation flow (`usePWAInstall`) now auto-approves any downloaded service worker updates when the app is installed or accepted, ensuring that newly installed standalone home-screen apps launch the freshest release instead of falling back to stale caches.
-  - Asynchronous service worker update detection (`waitForWorkerDownload` and `useAppUpdate`) actively listens for `updatefound` and `statechange` without race conditions.
-  - Startup check automatically triggers an update check when the app is opened online.
-- **Vercel Deployment & Build Resilience**:
-  - Eliminated conflicting `bun.lock` file from repository root and updated `.gitignore` to prevent lockfile collisions on Vercel CLI.
-  - Verified `package-lock.json` lockfileVersion compatibility with `npm ci` and `npm install`.
-- **Special Holiday MOM Weekend Restrictions**:
-  - Special Holidays modal enforces strict MOM non-working day rules: dates falling on Saturdays or Sundays are disallowed with clear validation feedback.
-- **Update Status Modals**:
-  - Distinct `UpdateAvailableModal` (when an update is ready to install) and `UpToDateModal` (when the currently installed version is latest).
-- **Unified Leave Typography & Clean Calendar**:
-  - Standardized font size and baseline vertical alignment across all leave categories.
-  - Cleaned calendar overview without colored leaf badges.
+The failed Vercel log used commit 2baf370: that commit had bun.lock and no package-lock.json, yet requested npm ci. It cannot succeed. The newer local commit removed Bun but its npm lockfile omitted platform-specific dependencies. A clean npm ci reproduced EUSAGE with missing Tailwind oxide, esbuild and lightningcss variants. Existing node_modules had hidden that second problem.
 
-## Version 1.0.0: Consolidated Release & PWA UX Overhaul
+The lockfile was repaired without an existing node_modules tree and includes the optional packages for Windows, Linux and other supported platforms. The final source passed a second clean npm ci --include=dev, TypeScript checking and production build in a separate directory. The package manifest declares npm and a supported Node range. GitHub Actions now checks fresh installs and builds on Ubuntu and Windows with Node 22 and 24; those remote jobs run after pushing.
 
-- **Reset Version Baseline**: Version sequence reset to clean `1.0.0`.
-- **PWA Installation Flow**:
-  - **Chrome on Android**: Native 1-tap direct installation triggered via early `beforeinstallprompt` capture in `<head>`.
-  - **Samsung Internet Browser & Non-Chrome Android**: Auto-detected with a direct "Open in Google Chrome" intent button, "Copy App Link" shortcut, and Samsung in-browser steps (Menu ☰ → Add page to → Home screen / App screen).
-  - **iPhone / iOS Safari**: Tailored 3-step guide detailing the Apple Share button `[⎋]` → Add to Home Screen action.
-- **Home Screen & Typography**:
-  - Unified all leave balances and denominators to identical `text-lg font-bold` typography and vertical baseline alignment.
-  - Profile card: Red border removed from EMP ID badge, department formatted with a theme-adaptive violet badge, dynamic tenure colors applied strictly to ring, verification mark, and EMP ID badge, and Joined/Experience labels standardized to teal (`text-teal-700 dark:text-teal-400`).
-  - Replaced disruptive pop-up celebration modals with a static Home Screen greeting ribbon.
-- **Calendar Tab**:
-  - Removed color and abbreviation legend strips.
-  - Added full monthly holidays and leaves taken breakdown (excluding non-working weekend days).
-- **Settings & Update Handling**:
-  - App Updates card moved directly above the About CutiSG button.
-  - "Check for updates" displays either the `UpdateAvailableModal` (when an update is found) or a dedicated `UpToDateModal` dialog ("You're Up to Date").
-  - Background MOM sync explanations and data.gov.sg link moved into About CutiSG modal.
+Commit and push all changed files, especially package-lock.json, package.json, vercel.json, scripts/test-updates.mjs and .github/workflows/build.yml. Deploy the resulting NEW commit on Vercel. Redeploying 2baf370 repeats its missing-lockfile failure. Confirm the Vercel Root Directory is the directory containing these files and its deployment log shows the new commit. No Vercel account settings or deployment were changed by this fix.
 
+The updater attaches updatefound/statechange listeners before calling update(), and waits for the downloaded release identified by generated server metadata. Server metadata alone no longer enables Update Now. Download/activation failures are surfaced instead of reloading and pretending the update succeeded. The worker validates the downloaded asset cache before accepting approval. Installing a PWA shortcut does not approve an unrelated code update. First-time visits receive the current release; existing installations keep their approved release until Update Now.
+
+Settings manual checks bypass Later. A network error does not open the up-to-date dialog. Downloaded updates remain usable offline, and local leave/profile data is preserved. No cache-clearing or reinstall step is needed.
+
+Validation commands:
+
+```sh
+npm ci --include=dev
+npm run lint
+npm run test:updates
+npm run test:offline
+npm run build
+npm run test:browser
+```
+
+The browser test covers a delayed download, install events without automatic approval, snooze/manual checks online and offline, missing-cache approval rejection without reloading, retry, profile preservation and offline restart. Browser tests need installed Chrome (or TEST_BROWSER_CHANNEL=msedge).

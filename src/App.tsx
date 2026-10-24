@@ -23,13 +23,14 @@ import { profileError } from './utils/profile';
 import { useAppUpdate } from './hooks/useAppUpdate';
 
 const MainAppContent: React.FC = () => {
-  const { currentTab, isEditCycleModalOpen, setIsEditCycleModalOpen, settings, todayDateStr } = useLeave();
+  const { currentTab, isEditCycleModalOpen, setIsEditCycleModalOpen, settings, todayDateStr, showToast } = useLeave();
   const { hasUpdate, updateInfo, currentVersion, applyUpdate, dismissUpdate, checkForUpdate, isChecking } = useAppUpdate();
   const [isUpToDateModalOpen, setIsUpToDateModalOpen] = useState(false);
 
   const needsProfile = !!profileError(settings, todayDateStr);
   const handleCheckForUpdate = async () => {
     const result = await checkForUpdate(true);
+    if (result.error) { showToast(result.error); return; }
     if (!result.hasUpdate) {
       setIsUpToDateModalOpen(true);
     }

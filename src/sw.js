@@ -14,6 +14,7 @@ async function approvedRelease() {
     if (data?.cacheName) {
       const allKeys = await caches.keys();
       if (!allKeys.includes(data.cacheName)) return null;
+      if (!await (await caches.open(data.cacheName)).match('/index.html')) return null;
     }
     return data;
   } catch {
@@ -80,9 +81,19 @@ self.addEventListener('message', event => {
   }
   if (event.data?.type === 'APPROVE_UPDATE') {
     event.waitUntil((async () => {
-      await saveApproval();
-      await self.skipWaiting();
-      event.ports[0]?.postMessage({ approved: true });
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        const cached = await Promise.all(ASSETS.map(asset => cache.match(new URL(asset.url, self.location.origin))));
+        if (cached.some(response => !response)) {
+          event.ports[0]?.postMessage({ approved: false, error: 'Update files are missing. Reconnect and check for updates again.' });
+          return;
+        }
+        await saveApproval();
+        await self.skipWaiting();
+        event.ports[0]?.postMessage({ approved: true });
+      } catch {
+        event.ports[0]?.postMessage({ approved: false, error: 'Could not save update approval. Please try again.' });
+      }
     })());
   }
   if (event.data?.type === 'SKIP_WAITING') {

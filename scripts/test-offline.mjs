@@ -89,3 +89,12 @@ test('failed precache does not replace the working release or touch unrelated ca
   env.setOffline(true); assert.equal(await a.fetch('/', true), 'A:/index.html');
 });
 
+test('missing downloaded files reject approval and preserve the previous working release', async () => {
+  const env = environment(); const a = env.worker('A'); await a.lifecycle('install');
+  const b = env.worker('B'); await b.lifecycle('install');
+  env.stores.get('cutisg-release-B').delete(origin + '/assets/B.js');
+  assert.equal((await b.message('APPROVE_UPDATE')).approved, false);
+  assert.equal(b.skipped, false);
+  env.setOffline(true); assert.equal(await b.fetch('/', true), 'A:/index.html');
+});
+
