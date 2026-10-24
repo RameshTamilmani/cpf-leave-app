@@ -1,6 +1,6 @@
-# CutiSG - Singapore MOM Leave & Public Holiday Management System
+# CutiSG - Singapore MOM Leave & Public Holiday Management System (v1.0.0)
 
-**CutiSG** is a comprehensive, production-grade Singapore leave management Progressive Web Application (PWA) built strictly in accordance with the **Singapore Ministry of Manpower (MOM) Employment Act (Cap. 91)**.
+**CutiSG** is a comprehensive, production-grade Singapore personal leave management Progressive Web Application (PWA) built strictly in accordance with the **Singapore Ministry of Manpower (MOM) Employment Act (Cap. 91)**.
 
 ---
 
@@ -8,68 +8,63 @@
 
 **100% Client-Side & Private Storage**:
 - All employee data, leave records, special holidays, and custom preferences are stored **exclusively in your browser's local storage (`localStorage`)** under the `cutisg_*` namespaces (`cutisg_records`, `cutisg_settings`, `cutisg_special_holidays`, `cutisg_manual_compoff`).
-- **No external cloud database or server transmission**: Your personal records, joining date, and leave history remain entirely on your device.
-- **Offline Capability**: After one successful online installation, the complete production app, fonts, and icons are cached for offline use.
-- **Portability & Backups**: You can export and restore all leave records anytime in standard **CSV format** formatted with `DD/MM/YYYY`.
+- **Zero external cloud transmission**: Your personal records, employee ID, joining date, and leave history remain entirely on your device.
+- **Offline Reliability**: After one successful online load, the complete production app, fonts, and icons are cached by the Service Worker for offline use.
+- **Portability & Backups**: You can export and restore all leave records anytime in standard **CSV format** formatted with Singapore standard `DD/MM/YYYY`.
 
 ---
 
 ## 🇸🇬 Why the Application is Named "CutiSG"
 
-- **"Cuti"** (pronounced *choo-tee*): The Malay word for **leave**, **holiday**, or **vacation**. Malay is the designated **National Language of Singapore** under Article 153A of the Constitution of the Republic of Singapore and is universally used in colloquial and official Singaporean vocabulary (e.g., *"ambil cuti"* = taking leave).
+- **"Cuti"** (pronounced *choo-tee*): The Malay word for **leave**, **holiday**, or **vacation**. Malay is the designated **National Language of Singapore** under Article 153A of the Constitution of the Republic of Singapore and is universally used in colloquial and workplace vocabulary (e.g., *"ambil cuti"* = taking leave).
 - **"SG"**: The international country code abbreviation for **Singapore**.
-- Together, **CutiSG** translates directly to **"Singapore Leave Tracker"** — a localized, culturally resonant, and compliant leave planner designed specifically for employees, HR managers, and professionals working in Singapore.
+- Together, **CutiSG** translates directly to **"Singapore Leave Tracker"** — a localized, culturally resonant, and statutory-compliant leave planner designed specifically for employees and professionals working in Singapore.
 
 ---
 
-## 🌟 Key Highlights & MOM Statutory Features
+## 🌟 Key Highlights & Current Features (v1.0.0)
 
-### 1. Streamlined Leave Application Workflow
-- **Automatic Default Leave Title**: Reason / Leave Title is no longer a mandatory text input. When applying for a leave, CutiSG automatically assigns the standard title based on the selected leave type (`Annual Leave`, `Sick Leave`, or `Comp-off Leave`).
-- **Optional Remarks**: An optional **Remarks** field is provided at the bottom of the form for personal notes, handover details, or comments.
-- **Standardized `DD/MM/YYYY` Dates**: All dates throughout the application, input fields, date pickers, history logs, and CSV exports adhere to the Singapore standard `DD/MM/YYYY` format.
-- **Dual Date Entry**: Every date field supports both direct keyboard entry (`DD/MM/YYYY`) and a one-click native calendar picker overlay that works seamlessly across iOS Safari, Android, and desktop browsers.
+### 1. Executive Employee Profile & Tenure Styling
+- **Mandatory Profile Setup**: Name (up to 40 characters), numeric Employee ID (up to 12 digits), Department (up to 25 characters), and Date of Joining (non-future date). Photo upload is optional and supports square cropping up to 8MB.
+- **Theme-Adaptive Department Badge**: Styled in a distinctive violet/indigo badge that dynamically adapts across light and dark modes.
+- **Tenure Tier Accents**: Dynamic color based on length of service applies strictly to the **photo circle ring**, **verification tick mark**, and **EMP ID badge** (no red outline):
+  - *Tier 1 (Green)*: Under 1 year of service.
+  - *Tier 2 (Blue)*: 1 to 2 years of service.
+  - *Tier 3 (Gold)*: Over 2 years of service.
+- **Unified Joined & Experience Styling**: Both Joined and Experience labels share an elegant teal color (`text-teal-700 dark:text-teal-400`), while their values are rendered in high-legibility bold text (`text-on-surface font-semibold`).
 
-### 2. Clean Home Tab & Balance Cards
-- **Distraction-Free Visual Cards**: Subheadings inside the balance cards (such as "0 / Annual Leave (12 Days Available)", "Sick Leave (9 / 12 Days Available)", or "Company & ad-hoc holidays") have been removed to present clean, prominent typography with clear numerical balances.
-- **Simplified Quick Actions**: Direct shortcuts for **Apply Leave** and **Comp-off Ledger**. Duplicate "View Ledger" buttons and redundant comp-off expiry trackers have been removed from the home tab.
+### 2. Clean Home Screen & Uniform Leave Balances
+- **Uniform Balance Typography**: All 5 leave cards (**Annual Leave**, **Sick Leave**, **Comp-off Leave**, **Loss of Pay (LOP)**, and **Special Holidays**) maintain the exact same `text-lg font-bold` font size and vertical baseline across numerators and denominators (`11/12`, `12/12`, `0/1`, `0`, `0`).
+- **Static Celebration Greetings**: Celebrations and work anniversaries appear as a non-intrusive, warm greeting ribbon directly on the Home Screen without disruptive pop-up windows.
 - **Distinct Category Colors**:
   - Annual Leave: Warm Amber / Gold
-  - Sick Leave: Emerald Green
+  - Sick Leave: Emerald Green (standardized as Sick Leave across all screens)
   - Comp-off Leave: Deep Teal
   - Loss of Pay (LOP): Rose / Crimson
   - Special Holidays: Royal Purple
+- **Direct Shortcuts**: Quick actions include **Leave History** and **Comp-off Ledger**.
 
-### 3. Leave Year Cycle Change & Automatic Reset
-- **Leave Cycle Flexibility**: Supports custom leave cycle dates (e.g., 13 June – 12 June, 1 Jan – 31 Dec calendar year, 1 Apr – 31 Mar financial year, or custom recurring intervals).
-- **Safety Warning & Reset**: Changing the leave year cycle prompts an explicit confirmation warning. Confirming the change automatically clears all previous leave logs and resets leave balances to default starting entitlements (12 Days Annual Leave, 12 Days Sick Leave).
+### 3. Streamlined Monthly Calendar
+- **Uncluttered Grid**: Removed redundant color legend strips and single-day employment rule boxes.
+- **Monthly Holidays & Leave History**: Displays a dedicated breakdown below the calendar for the viewed month, showcasing all public holidays, special declarations, and leaves taken (strictly excluding non-working weekend days).
 
-### 4. Statutory MOM Leave Entitlements & Section 88 Comp-Off
-- **Default 12/12 Entitlements**: Initialized with 12 days Annual Leave and 12 days Outpatient Sick Leave.
-- **Automatic Saturday Comp-Off (Section 88)**: Whenever a gazetted public holiday falls on a non-working Saturday (e.g., Chinese New Year Day 2, National Day, Deepavali), employees on a 5-day work week are automatically credited +1 day comp-off.
-- **Strict 90-Day Validity Rule**: Comp-off leaves must be scheduled on or before the 90-day expiry date from the earned Saturday holiday.
+### 4. Device-Smart PWA Installation
+- **Google Chrome on Android**: Early `beforeinstallprompt` capture triggers 1-tap direct automatic installation with zero intermediary modals.
+- **Samsung Browser & Non-Chrome Android**: Intelligent detection provides a 1-tap **"Open in Google Chrome"** intent button for direct installation, a **"Copy Link"** button, and native Samsung Internet steps (Menu ☰ → Add page to → Home screen).
+- **iPhone / iOS Safari**: Tailored 3-step guide detailing the Apple Share button `[⎋]` → **Add to Home Screen** action.
+- **Overscroll Lock**: Suppressed browser pull-to-refresh gestures to ensure a native mobile app feel.
 
-### 5. Independent Reset Controls
-- **Reset All Leave Data**: Clears only the logged leave entries and comp-off records while strictly preserving employee profile details (Name, Emp ID, Date of Joining, and photo).
-- **Factory Reset**: Restores the entire application, profile settings, custom special holidays, and leave records to initial factory defaults.
+### 5. Reliable App Updates (v1.0.0)
+- **Positioning**: The **App Updates** card is positioned directly above the **About CutiSG** button in Settings.
+- **Clear Status Modals**:
+  - Clicking **"Check for updates"** when already up-to-date opens a dedicated, prominent **"You're Up to Date"** confirmation dialog (`UpToDateModal`) with a green verified badge.
+  - When a new version is detected, `UpdateAvailableModal` displays what's new, offering **Update Now** and a 6-hour **Later** snooze option.
 
-### 6. PWABuilder & PWA Standards Compliance
-- **Complete Web App Manifest (`manifest.json`)**:
-  - `lang`: `"en"`, `dir`: `"ltr"`
-  - `display_override`: `["window-controls-overlay", "standalone", "minimal-ui", "browser"]`
-  - `launch_handler`: Single instance navigation (`navigate-existing`)
-  - `edge_side_panel`: Windows Edge sidebar dockable (`preferred_width: 400`)
-  - `share_target`: Native OS share sheet integration
-  - `file_handlers`: Open and restore `.csv` and `.json` leave backups
-  - `note_taking`: OS quick note action
-  - `screenshots`: High-resolution desktop and mobile showcase previews
-  - `iarc_rating_id`: Global age classification
-- **Standalone Service Worker (`sw.js`)**:
-  - Precached production HTML, JavaScript, CSS, fonts, icons, and bundled holiday data.
-  - Home greeting banners for weekends, holidays, and work anniversaries; no notification toggle or automatic wish pushes.
-  - Push notification listener (`push` and `notificationclick` events).
-  - Production-only Service Worker registration in `src/pwa.ts`.
-- **In-App Install Prompt**: `PWAInstallButton` component with automatic standalone detection and step-by-step iOS Safari installation instructions.
+### 6. Statutory MOM Leave Entitlements & Section 88 Comp-Off
+- **Standard Entitlements**: 12 days Annual Leave and 12 days Sick Leave per leave year cycle.
+- **Automatic Saturday Comp-Off (Section 88)**: Gazetted public holidays falling on a non-working Saturday automatically credit +1 day comp-off to the active cycle with 90-day validity tracking.
+- **Streamlined Special Holidays Dialog**: Minimalist form requiring only Holiday Name and Date Picker. Strictly prohibits applying special holidays for weekends (Saturday or Sunday) as weekends are already statutory non-working rest days.
+- **MOM Dataset Synchronization**: Background dataset sync details and official data.gov.sg source links are organized cleanly inside the **About CutiSG** dialog.
 
 ---
 
@@ -79,7 +74,7 @@
 - **Styling**: Tailwind CSS
 - **Build Tool**: Vite + `vite-plugin-pwa`
 - **Icons**: Google Material Symbols Outlined
-- **Service Worker**: One custom service worker with a build-injected offline asset list
+- **Service Worker**: Custom offline service worker with precached application shell
 - **Storage**: Client-side browser `localStorage`
 
 ---
@@ -99,25 +94,3 @@ npm run lint
 # Build for production
 npm run build
 ```
-
-## Offline updates and deployment
-
-See [DEPLOYMENT.md](DEPLOYMENT.md) for Vercel settings, migration from the old worker, approval-based updates, and verification.
-
-
-## Profile and calendar
-
-Employee profiles include a required department (maximum 25 characters), shown on Home. AL, SL, and comp-off cards show remaining/total balances. The calendar lists the displayed month’s holidays and leave history, excluding weekend leave dates while retaining weekend public holidays and observed dates.
-
-
-## Official holidays and updates
-
-The Vercel API at /api/holidays reads the official MOM consolidated dataset on data.gov.sg. The app refreshes while online (at most every six hours automatically), saves successful results locally, and retains built-in holidays if the source is unavailable. An additional Refresh holidays action is available in Settings. This follows dataset publication, not every government announcement in real time. Special Holiday counts refer to the active leave cycle and include official special declarations plus non-conflicting manual entries. Existing manual entries on already-known public-holiday dates remain removable in Settings but do not add a second calendar entry or count.
-
-Settings > App updates > Check for updates bypasses the Later snooze. Updates are offered only when their offline assets are ready. Offline checks can reopen an already downloaded update; checking for a new download needs internet.
-
-
-## Employee profile setup and tenure accents
-
-Initial setup requires full name, numeric employee ID, department, and a valid non-future joining date. The photo remains optional. Previously skipped or incomplete profiles must finish setup; existing complete profiles are kept. Settings uses the same required-field checks. The profile card has a compact ID badge with a thin red outline, separate Joined and Experience columns, and matching tenure colors on the photo ring, verification mark, ID badge, and Experience text: green below one year, blue from the first anniversary through the second anniversary, and gold after the second anniversary. Leap-day anniversaries use the last valid day of February.
-

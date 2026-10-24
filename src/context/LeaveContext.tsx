@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { LeaveRecord, UserSettings, LeaveType, LeaveStatus, PublicHoliday, SpecialHoliday } from '../types/leave';
-import { ALL_GAZETTED_HOLIDAYS, addDaysToDate, formatDateDDMMYYYY, parseDDMMYYYYToISO } from '../data/singaporeHolidays2026';
+import { ALL_GAZETTED_HOLIDAYS, addDaysToDate, formatDateDDMMYYYY, parseDDMMYYYYToISO, isWeekend } from '../data/singaporeHolidays2026';
 import { AppNotification, generateNotifications } from '../utils/notifications';
 import { useOfficialHolidays } from '../hooks/useOfficialHolidays';
 import { mergeHolidaySources } from '../utils/officialHolidays';
@@ -445,6 +445,12 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Special Holidays Actions
   const addSpecialHoliday = (holidayData: Omit<SpecialHoliday, 'id' | 'createdAt' | 'isSpecial'>) => {
+    const d = new Date(holidayData.date + 'T00:00:00');
+    const day = d.getDay();
+    if (day === 0 || day === 6 || isWeekend(holidayData.date)) {
+      showToast('Special holidays cannot be applied for weekends (Saturday or Sunday).');
+      return false;
+    }
     const existing = allHolidays.find(h => h.date === holidayData.date || h.observedDate === holidayData.date);
     if (existing) { showToast('This date is already a holiday: ' + existing.name); return false; }
     const newSpecial: SpecialHoliday = {

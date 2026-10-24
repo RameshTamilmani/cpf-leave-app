@@ -90,11 +90,11 @@ export const HomeScreen: React.FC = () => {
                 Annual Leave
               </h3>
             </div>
-            <div className="flex items-baseline justify-end gap-0.5 min-w-[4.5rem] shrink-0 text-right tabular-nums">
-              <span className="text-xl font-bold text-leave-annual-on-container leading-7">
+            <div className="flex items-center justify-end gap-0.5 min-w-[4.5rem] shrink-0 text-right tabular-nums">
+              <span className="text-lg font-bold text-leave-annual-on-container leading-none">
                 {Number.isInteger(alAvailable) ? alAvailable : alAvailable.toFixed(1)}
               </span>
-              <span className="text-xs font-semibold text-leave-annual-on-container opacity-80">
+              <span className="text-lg font-bold text-leave-annual-on-container/70 leading-none">
                 /{settings.alEntitlement}
               </span>
             </div>
@@ -115,11 +115,11 @@ export const HomeScreen: React.FC = () => {
                 Sick Leave
               </h3>
             </div>
-            <div className="flex items-baseline justify-end gap-0.5 min-w-[4.5rem] shrink-0 text-right tabular-nums">
-              <span className="text-xl font-bold text-leave-sick-on-container leading-7">
+            <div className="flex items-center justify-end gap-0.5 min-w-[4.5rem] shrink-0 text-right tabular-nums">
+              <span className="text-lg font-bold text-leave-sick-on-container leading-none">
                 {Number.isInteger(slAvailable) ? slAvailable : slAvailable.toFixed(1)}
               </span>
-              <span className="text-xs font-semibold text-leave-sick-on-container opacity-80">
+              <span className="text-lg font-bold text-leave-sick-on-container/70 leading-none">
                 /{settings.slEntitlement}
               </span>
             </div>
@@ -140,11 +140,13 @@ export const HomeScreen: React.FC = () => {
                 Comp-off Leave
               </h3>
             </div>
-            <div title={`${coAvailable} available, ${coUsed} used`} aria-label={`${coAvailable} available, ${coUsed} used`} className="flex items-baseline justify-end gap-0.5 min-w-[4.5rem] shrink-0 text-right tabular-nums">
-              <span className="text-xl font-bold text-leave-compoff-on-container leading-7">
+            <div title={`${coAvailable} available, ${coUsed} used`} aria-label={`${coAvailable} available, ${coUsed} used`} className="flex items-center justify-end gap-0.5 min-w-[4.5rem] shrink-0 text-right tabular-nums">
+              <span className="text-lg font-bold text-leave-compoff-on-container leading-none">
                 {Number.isInteger(coAvailable) ? coAvailable : coAvailable.toFixed(1)}
               </span>
-              <span className="text-xs font-semibold text-leave-compoff-on-container opacity-80">/{Number.isInteger(coTotal) ? coTotal : coTotal.toFixed(1)}</span>
+              <span className="text-lg font-bold text-leave-compoff-on-container/70 leading-none">
+                /{Number.isInteger(coTotal) ? coTotal : coTotal.toFixed(1)}
+              </span>
             </div>
           </article>
 
@@ -170,8 +172,8 @@ export const HomeScreen: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="flex items-baseline justify-end gap-0.5 min-w-[4.5rem] shrink-0 text-right tabular-nums">
-              <span className={`text-xl font-bold leading-7 ${totalLOP > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-rose-900/60 dark:text-rose-300/60'}`}>
+            <div className="flex items-center justify-end gap-0.5 min-w-[4.5rem] shrink-0 text-right tabular-nums">
+              <span className={`text-lg font-bold leading-none ${totalLOP > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-rose-900/60 dark:text-rose-300/60'}`}>
                 {Number.isInteger(totalLOP) ? totalLOP : totalLOP.toFixed(1)}
               </span>
             </div>
@@ -200,8 +202,8 @@ export const HomeScreen: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="flex items-baseline justify-end gap-0.5 min-w-[4.5rem] shrink-0 text-right tabular-nums">
-              <span className="text-xl font-bold leading-7 text-purple-700 dark:text-purple-300">
+            <div className="flex items-center justify-end gap-0.5 min-w-[4.5rem] shrink-0 text-right tabular-nums">
+              <span className="text-lg font-bold leading-none text-purple-700 dark:text-purple-300">
                 {specialHolidays.length}
               </span>
             </div>

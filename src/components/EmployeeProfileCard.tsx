@@ -21,10 +21,15 @@ export const EmployeeProfileCard: React.FC<{ settings: UserSettings; today: stri
         <div className="min-w-0 flex-1">
           <h1 className="text-sm sm:text-base font-bold text-on-surface leading-snug break-words">{settings.userName || 'Employee Name'}</h1>
           <div className="mt-1 flex items-center flex-wrap gap-x-2 gap-y-1">
-            <span data-testid="employee-id-badge" className={`inline-flex items-center gap-1 rounded-md border border-red-500 px-2 py-0.5 text-[11px] font-mono font-bold shadow-xs ${colors.badge}`}>
+            <span data-testid="employee-id-badge" className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-mono font-bold shadow-xs ${colors.badge}`}>
               <span aria-hidden="true" className="material-symbols-outlined text-[13px]">badge</span>EMP {settings.employeeId}
             </span>
-            <span aria-label="Department" className="text-xs text-on-surface-variant break-words min-w-0">{settings.department}</span>
+            {settings.department ? (
+              <span aria-label="Department" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/15 text-violet-800 dark:bg-violet-400/20 dark:text-violet-300 border border-violet-500/30 dark:border-violet-400/30 shadow-2xs">
+                <span aria-hidden="true" className="material-symbols-outlined text-[12px]">domain</span>
+                <span className="truncate max-w-[130px]">{settings.department}</span>
+              </span>
+            ) : null}
           </div>
         </div>
         <button type="button" onClick={onEdit} aria-label="Edit profile" className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-surface-container text-on-surface-variant hover:text-primary cursor-pointer">
@@ -33,12 +38,18 @@ export const EmployeeProfileCard: React.FC<{ settings: UserSettings; today: stri
       </div>
       <div className="mt-3.5 pt-3 border-t border-surface-container grid grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-3">
         <div>
-          <p className="text-xs text-primary flex items-center gap-1.5"><span aria-hidden="true" className="material-symbols-outlined text-[15px]">calendar_month</span>Joined</p>
+          <p className="text-xs font-medium text-teal-700 dark:text-teal-400 flex items-center gap-1.5">
+            <span aria-hidden="true" className="material-symbols-outlined text-[15px] text-teal-600 dark:text-teal-400">calendar_month</span>
+            <span>Joined</span>
+          </p>
           <time dateTime={settings.dateOfJoining} className="block mt-1 text-xs sm:text-sm font-semibold text-on-surface">{joined}</time>
         </div>
         <div className="text-right">
-          <p className={`text-xs flex items-center justify-end gap-1.5 ${colors.accent}`}><span aria-hidden="true" className="material-symbols-outlined text-[15px]">workspace_premium</span>Experience</p>
-          <p data-testid="profile-experience" className={`mt-1 text-xs sm:text-sm font-semibold ${colors.accent}`}>{experienceLabel(settings.dateOfJoining, today)}</p>
+          <p className="text-xs font-medium text-teal-700 dark:text-teal-400 flex items-center justify-end gap-1.5">
+            <span aria-hidden="true" className="material-symbols-outlined text-[15px] text-teal-600 dark:text-teal-400">workspace_premium</span>
+            <span>Experience</span>
+          </p>
+          <p data-testid="profile-experience" className="mt-1 text-xs sm:text-sm font-semibold text-on-surface">{experienceLabel(settings.dateOfJoining, today)}</p>
         </div>
       </div>
     </section>

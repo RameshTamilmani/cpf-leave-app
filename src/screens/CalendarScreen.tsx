@@ -5,12 +5,19 @@ import { getMonthEntries } from '../utils/calendarEntries';
 
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const leaveLabels = { AL: 'Annual Leave', SL: 'Sick Leave', CO: 'Comp-off Leave', CL: 'Comp-off Leave' };
-const leaveColors = {
+const leaveLabels: Record<string, string> = {
+  AL: 'Annual Leave',
+  SL: 'Sick Leave',
+  CO: 'Comp-off Leave',
+  CL: 'Comp-off Leave',
+  LOP: 'Loss of Pay (LOP)'
+};
+const leaveColors: Record<string, string> = {
   AL: 'bg-leave-annual-container text-leave-annual-on-container',
   SL: 'bg-leave-sick-container text-leave-sick-on-container',
   CO: 'bg-leave-compoff-container text-leave-compoff-on-container',
   CL: 'bg-leave-compoff-container text-leave-compoff-on-container',
+  LOP: 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
 };
 
 export const CalendarScreen: React.FC = () => {
@@ -34,7 +41,7 @@ export const CalendarScreen: React.FC = () => {
         <button type="button" aria-label="Previous Month" onClick={() => navigate(-1)} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container cursor-pointer">
           <span aria-hidden="true" className="material-symbols-outlined text-[22px]">chevron_left</span>
         </button>
-        <h1 className="flex-1 min-w-0 text-base sm:text-xl font-bold text-on-surface tracking-tight">{monthTitle}</h1>
+        <h1 className="flex-1 min-w-0 text-base sm:text-xl font-bold text-on-surface tracking-tight text-center">{monthTitle}</h1>
         <button type="button" onClick={today} className="px-3 h-9 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-semibold hover:bg-primary-fixed-dim cursor-pointer">Today</button>
         <button type="button" aria-label="Next Month" onClick={() => navigate(1)} className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container cursor-pointer">
           <span aria-hidden="true" className="material-symbols-outlined text-[22px]">chevron_right</span>

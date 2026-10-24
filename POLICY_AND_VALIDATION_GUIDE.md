@@ -11,9 +11,9 @@ This document specifies the business rules, statutory legal requirements, and da
 - **Singapore Employment Act Context**: Section 88A / Part IV specifies statutory annual leave beginning at 7 days for the first year of service, progressing by 1 day per additional year of service up to 14 days. Companies commonly standardize base entitlements at 12 or 14 days.
 - **Card Restriction**: The Annual Leave card on the dashboard is strictly informational. Clicking it does not open edit or creation dialogs. All leave submissions must proceed through the **Apply Leave** button.
 
-### 1.2 Outpatient Sick Leave (SL / OSL)
+### 1.2 Sick Leave (SL)
 - **Default Allocation**: **12 / 12 Days** (12 days total entitlement, 12 days available on initialization).
-- **Employment Act Context**: Employees covered under the Employment Act who have served an employer for at least 6 months are entitled to paid outpatient sick leave. Standardized in CutiSG to 12 days statutory default.
+- **Employment Act Context**: Employees covered under the Employment Act who have served an employer for at least 6 months are entitled to paid sick leave. Standardized in CutiSG to 12 days statutory default.
 - **Certificate References**: Reference inputs for clinic certificates or DigiMC numbers are removed to streamline leave application without requiring redundant medical clinic metadata.
 
 ### 1.3 Comp-Off Leave (CO)
@@ -47,9 +47,10 @@ The deduction field strictly matches the selected date range:
 ### 2.2 Duplicate & Overlap Validation
 - If a user attempts to book a leave for dates overlapping an existing approved or planned leave record, the system detects the collision and blocks submission:
   - Error: *"Duplicate leave detected: You already have a booked leave '[Title]' ([Type]) for [Date Range]. Duplicate leaves are not allowed for the same date."*
-### 2.3 Public Holiday Blocking vs Special Holiday Allowance
+### 2.3 Public Holiday Blocking & Special Holiday Weekend Prohibition
 - **Gazetted Public Holidays (Blocked)**: Employees are strictly prevented from applying for leave on official Singapore MOM gazetted public holidays. Gazetted public holidays are statutory paid non-working days under Section 88 of the Employment Act; thus, applying leave or deducting personal annual leave is blocked with an explanatory validation error.
-- **Special Holidays under Comp-off (Allowed)**: Special holidays declared and added under Comp-off (e.g. ad-hoc company days or national observances) remain eligible for leave application. Employees can take full or half-day leave on these dates as required by their personal schedule.
+- **Special Holidays Weekend Prohibition (Strictly Blocked)**: In the Special Holiday option, applying for or declaring special holidays on weekends (Saturday / Sunday) is strictly blocked. Under Singapore 5-day workweek standards, weekends are already official non-working rest days. Special holidays can only be scheduled for regular working weekdays (Monday through Friday).
+- **Special Weekday Observances**: Ad-hoc weekday gazetted declarations or company observances added via Special Holidays remain eligible for leave tracking and planning. Weekends selected in the Special Holiday modal are blocked with an immediate visual alert and disabled submission.
 
 ---
 

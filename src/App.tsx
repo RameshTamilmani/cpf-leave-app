@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { LeaveProvider, useLeave } from './context/LeaveContext';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
@@ -17,18 +17,22 @@ import { HistoryScreen } from './screens/HistoryScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { UpdateAvailableModal } from './components/UpdateAvailableModal';
+import { UpToDateModal } from './components/UpToDateModal';
 import { InstallAppPrompt } from './components/InstallAppPrompt';
 import { profileError } from './utils/profile';
 import { useAppUpdate } from './hooks/useAppUpdate';
 
 const MainAppContent: React.FC = () => {
-  const { currentTab, isEditCycleModalOpen, setIsEditCycleModalOpen, showToast, settings, todayDateStr } = useLeave();
+  const { currentTab, isEditCycleModalOpen, setIsEditCycleModalOpen, settings, todayDateStr } = useLeave();
   const { hasUpdate, updateInfo, currentVersion, applyUpdate, dismissUpdate, checkForUpdate, isChecking } = useAppUpdate();
+  const [isUpToDateModalOpen, setIsUpToDateModalOpen] = useState(false);
 
   const needsProfile = !!profileError(settings, todayDateStr);
   const handleCheckForUpdate = async () => {
     const result = await checkForUpdate(true);
-    if (!result.hasUpdate) showToast(result.error || 'You are using the latest version.');
+    if (!result.hasUpdate) {
+      setIsUpToDateModalOpen(true);
+    }
   };
 
   return (
@@ -77,6 +81,13 @@ const MainAppContent: React.FC = () => {
         currentVersion={currentVersion}
         onUpdate={applyUpdate}
         onDismiss={dismissUpdate}
+      />
+
+      {/* Up-to-Date Confirmation Modal */}
+      <UpToDateModal
+        isOpen={isUpToDateModalOpen}
+        onClose={() => setIsUpToDateModalOpen(false)}
+        version={currentVersion}
       />
 
       {/* Universal Floating Toast Banner */}

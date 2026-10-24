@@ -409,13 +409,27 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
               ? `${lopItems.length} LOP log${lopItems.length !== 1 ? 's' : ''} found`
               : `${filteredRecords.length} record${filteredRecords.length !== 1 ? 's' : ''} found`}
           </span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2 rounded-full bg-surface-container font-label-md text-label-md font-semibold text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer"
-          >
-            Close
-          </button>
+          <div className="flex items-center gap-2">
+            {isSpecialList && onAddSpecialHoliday && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onAddSpecialHoliday();
+                }}
+                className="px-3.5 py-1.5 rounded-full bg-primary text-on-primary font-label-md text-xs font-semibold hover:opacity-95 active:scale-95 transition-all cursor-pointer shadow-2xs"
+              >
+                + Add Special Holiday
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 rounded-full bg-surface-container font-label-md text-label-md font-semibold text-on-surface hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>

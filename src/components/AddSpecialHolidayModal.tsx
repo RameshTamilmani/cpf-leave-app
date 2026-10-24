@@ -1,12 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { DatePickerField } from './DatePickerField';
+import { isWeekend } from '../data/singaporeHolidays2026';
 
 export const AddSpecialHolidayModal: React.FC = () => {
   const { isAddSpecialHolidayOpen, setIsAddSpecialHolidayOpen, addSpecialHoliday, todayDateStr, settings, allHolidays } = useLeave();
 
+  const getInitialWeekdayDate = () => {
+    const base = todayDateStr || '2026-11-20';
+    const d = new Date(base + 'T00:00:00');
+    const day = d.getDay();
+    if (day === 6) {
+      d.setDate(d.getDate() + 2); // Saturday -> Monday
+      return d.toISOString().slice(0, 10);
+    }
+    if (day === 0) {
+      d.setDate(d.getDate() + 1); // Sunday -> Monday
+      return d.toISOString().slice(0, 10);
+    }
+    return base;
+  };
+
   const [name, setName] = useState('');
-  const [date, setDate] = useState(todayDateStr || '2026-11-20');
+  const [date, setDate] = useState(getInitialWeekdayDate);
+
+  useEffect(() => {
+    if (isAddSpecialHolidayOpen) {
+      setDate(getInitialWeekdayDate());
+      setName('');
+    }
+  }, [isAddSpecialHolidayOpen]);
 
   if (!isAddSpecialHolidayOpen) return null;
 
@@ -14,6 +37,7 @@ export const AddSpecialHolidayModal: React.FC = () => {
   const dayOfWeekIndex = dateObj ? dateObj.getDay() : -1;
   const isSaturday = dayOfWeekIndex === 6;
   const isSunday = dayOfWeekIndex === 0;
+  const isWeekendDay = isSaturday || isSunday || (date ? isWeekend(date) : false);
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const dayName = dayOfWeekIndex >= 0 ? daysOfWeek[dayOfWeekIndex] : '';
 
@@ -21,6 +45,10 @@ export const AddSpecialHolidayModal: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (existingHoliday) return;
+    if (isWeekendDay) {
+      alert('Special holidays cannot be applied for weekends (Saturday or Sunday). Weekends are already non-working rest days.');
+      return;
+    }
     const finalDate = date;
     if (!name.trim() || !finalDate) {
       alert('Please provide holiday name and date.');
@@ -29,27 +57,18 @@ export const AddSpecialHolidayModal: React.FC = () => {
 
     const finalDateObj = new Date(finalDate + 'T00:00:00');
     const dayIdx = finalDateObj.getDay();
-    const isSat = dayIdx === 6;
-    const isSun = dayIdx === 0;
-    const isLongWeekend = dayIdx === 5 || dayIdx === 1 || dayIdx === 0;
-    const qualifiesForCompOff = isSat && settings.saturdayCompOffEnabled;
+    const isLongWeekend = dayIdx === 5 || dayIdx === 1;
 
     const added = addSpecialHoliday({
       name: name.trim(),
       date: finalDate,
       dayOfWeek: daysOfWeek[dayIdx] || dayName,
       isLongWeekend,
-      isCompOffEligible: qualifiesForCompOff,
-      longWeekendText: qualifiesForCompOff
-        ? 'Saturday PH • +1 Comp-Off'
-        : isLongWeekend
-        ? 'Long Weekend 🎉'
-        : undefined,
+      isCompOffEligible: false,
+      longWeekendText: isLongWeekend ? 'Long Weekend 🎉' : undefined,
       description: 'Special gazetted public holiday added to personal planner.',
       emoji: '🗳️',
-      momSection: qualifiesForCompOff
-        ? 'MOM Section 88 (Saturday Rest / Comp-Off Granted)'
-        : 'MOM Gazetted Special Off-Day',
+      momSection: 'MOM Gazetted Special Off-Day',
       category: 'gazetted_adhoc'
     });
 
@@ -120,30 +139,16 @@ export const AddSpecialHolidayModal: React.FC = () => {
           </div>
 
           {existingHoliday && <p role="alert" className="rounded-lg p-3 bg-surface-container text-on-surface text-sm">{existingHoliday.name} is already recorded on this date. No additional holiday is needed.</p>}
-          {/* Statutory Auto-Calculations Notice */}
-          {isSaturday && settings.saturdayCompOffEnabled && (
-            <div className="p-2.5 rounded-xl bg-alert-warning-container text-alert-warning text-body-sm flex items-start gap-2 border border-alert-warning/20">
-              <span className="material-symbols-outlined text-[18px] text-alert-warning shrink-0 mt-0.5">stars</span>
+          {/* Weekend Blocking Notice */}
+          {isWeekendDay && (
+            <div role="alert" className="p-3 rounded-xl bg-error-container/25 text-error text-body-sm flex items-start gap-2.5 border border-error/30 animate-in fade-in">
+              <span className="material-symbols-outlined text-[20px] text-error shrink-0 mt-0.5">block</span>
               <div>
-                <span className="font-title-sm text-xs font-bold block">
-                  Saturday Holiday: +1 Comp-Off Auto-Accrued!
+                <span className="font-title-sm text-xs font-bold block text-error">
+                  Weekends Not Allowed ({dayName})
                 </span>
                 <p className="mt-0.5 text-on-surface-variant text-[11.5px] leading-snug">
-                  This holiday falls on a Saturday. Pursuant to MOM Section 88, it will automatically credit +1 Comp-Off Day to your Leave Year Cycle.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {isSunday && (
-            <div className="p-2.5 rounded-xl bg-surface-container-low text-on-surface-variant text-body-sm flex items-start gap-2 border border-surface-container">
-              <span className="material-symbols-outlined text-[18px] text-primary shrink-0 mt-0.5">info</span>
-              <div>
-                <span className="font-title-sm text-xs font-semibold text-on-surface block">
-                  Sunday Holiday: Monday Observed
-                </span>
-                <p className="mt-0.5 text-[11.5px] leading-snug">
-                  Falls on a Sunday; the following Monday is designated as a paid statutory day in lieu.
+                  Special holidays cannot be applied for weekends (Saturday or Sunday). Weekends are already official non-working rest days.
                 </p>
               </div>
             </div>
@@ -160,7 +165,7 @@ export const AddSpecialHolidayModal: React.FC = () => {
             </button>
             <button
               type="submit"
-              disabled={!!existingHoliday}
+              disabled={Boolean(existingHoliday || isWeekendDay || !name.trim() || !date)}
               className="flex-1 py-2.5 rounded-full bg-holiday-public text-white font-label-md text-label-md font-semibold hover:opacity-95 active:scale-95 transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add Special Holiday

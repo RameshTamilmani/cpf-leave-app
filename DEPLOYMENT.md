@@ -49,17 +49,21 @@ Wishes now appear only in the Home banner. The settings toggle and automatic wis
 Run npm run test:calendar for month filtering and observed-holiday cases. After building, npm run test:ui checks the profile department limit, balance alignment, calendar month history, single comp-off warning, and light/dark layouts in Chrome at 320px, 390px, and 768px widths. Screenshots are saved under ui-screenshots/ (ignored by Git).
 
 
-## Version 1.3.5: official holiday sync
+## Version 1.0.0: Consolidated Release & PWA UX Overhaul
 
-Deploy the full source project, including api/holidays.ts, rather than only uploading dist. Vercel discovers this serverless API alongside the Vite output. No API key is required for the tested public endpoint. Optionally configure DATA_GOV_SG_API_KEY in Vercel for the higher limits recommended by data.gov.sg; it stays on the server. The endpoint caches successful responses for one hour; clients automatically refresh at most every six hours while online. Settings > Refresh holidays performs an immediate client refresh. Failed or incomplete responses preserve saved data.
-
-Source: https://data.gov.sg/datasets/d_8ef23381f9417e4d4254ee8b4dcdb176/view. The current live dataset contains 104 rows through 2027; it lists polling days in 2020, 2023 and 2025, and no polling day on 10 August 2026. That date is National Day observed. New ad-hoc holidays are imported only after the official dataset publishes them. Company-specific off-days still need manual entry. Official special declarations are read-only and counted in the current leave cycle; manual overlaps are kept for review/removal but excluded from effective counts and duplicate calendar entries. Historical polling days do not inflate the current count.
-
-The browser tests use a synthetic polling declaration to test future importing; this fixture is not shipped as real holiday data. Run npm run test:holidays to check merging, duplicate handling, invalid responses, and the server API contract.
-
-
-## Version 1.3.6: profile card and required setup
-
-The four profile identity fields are mandatory; photo upload is optional. The previous setup-later option and stored skip marker no longer bypass completion. Existing complete profiles are retained, and existing incomplete profiles open the required form with their saved values prefilled. Both setup and Settings reject blank details, invalid dates, and future dates. The setup dialog blocks background interaction and dismissal by Escape or backdrop click, and scrolls on small screens.
-
-The compact card preserves the ID badge proportions, adds a one-pixel red border, removes the nested experience box, and colors the photo ring, verification badge, ID badge, and experience by calendar tenure. The first anniversary starts blue; gold begins the day after the second anniversary. Run npm run test:profile and, after building, npm run test:profile-browser for validation and the responsive onboarding/card checks.
+- **Reset Version Baseline**: Version sequence reset to clean `1.0.0`.
+- **PWA Installation Flow**:
+  - **Chrome on Android**: Native 1-tap direct installation triggered via early `beforeinstallprompt` capture in `<head>`.
+  - **Samsung Internet Browser & Non-Chrome Android**: Auto-detected with a direct "Open in Google Chrome" intent button, "Copy App Link" shortcut, and Samsung in-browser steps (Menu ☰ → Add page to → Home screen / App screen).
+  - **iPhone / iOS Safari**: Tailored 3-step guide detailing the Apple Share button `[⎋]` → Add to Home Screen action.
+- **Home Screen & Typography**:
+  - Unified all leave balances and denominators to identical `text-lg font-bold` typography and vertical baseline alignment.
+  - Profile card: Red border removed from EMP ID badge, department formatted with a theme-adaptive violet badge, dynamic tenure colors applied strictly to ring, verification mark, and EMP ID badge, and Joined/Experience labels standardized to teal (`text-teal-700 dark:text-teal-400`).
+  - Replaced disruptive pop-up celebration modals with a static Home Screen greeting ribbon.
+- **Calendar Tab**:
+  - Removed color and abbreviation legend strips.
+  - Added full monthly holidays and leaves taken breakdown (excluding non-working weekend days).
+- **Settings & Update Handling**:
+  - App Updates card moved directly above the About CutiSG button.
+  - "Check for updates" displays either the `UpdateAvailableModal` (when an update is found) or a dedicated `UpToDateModal` dialog ("You're Up to Date").
+  - Background MOM sync explanations and data.gov.sg link moved into About CutiSG modal.

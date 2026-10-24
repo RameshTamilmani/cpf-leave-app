@@ -24,7 +24,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             </div>
               <div className="flex items-center gap-2">
                 <h3 className="font-title-md text-title-md font-bold text-on-surface">About CutiSG</h3>
-                <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">v1.3.1</span>
+                <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">v1.0.0</span>
               </div>
               <p className="text-[12px] text-on-surface-variant">Singapore Leave Planner &amp; Public Holiday Tracker</p>
           </div>
@@ -67,11 +67,20 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
           <div className="p-3 rounded-xl bg-surface-container-low border border-surface-container">
             <h4 className="font-title-sm text-title-sm font-semibold text-on-surface mb-1">
-              Automatic Holiday Synchronization
+              Official MOM Holiday Dataset &amp; Sync
             </h4>
             <p className="text-on-surface-variant">
-              All Singapore gazetted public holidays are automatically synchronized according to Ministry of Manpower (MOM) standards.
+              Singapore public holidays sync automatically from the official Ministry of Manpower (MOM) open dataset published on data.gov.sg. If the network is offline, CutiSG seamlessly uses built-in verified gazetted dates.
             </p>
+            <a
+              href="https://data.gov.sg/datasets/d_8ef23381f9417e4d4254ee8b4dcdb176/view"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-primary underline"
+            >
+              <span>View MOM official dataset on data.gov.sg</span>
+              <span className="material-symbols-outlined text-[13px]">open_in_new</span>
+            </a>
           </div>
         </div>
 

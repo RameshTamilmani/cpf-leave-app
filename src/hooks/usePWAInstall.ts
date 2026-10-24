@@ -5,14 +5,28 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 }
 
+declare global {
+  interface Window {
+    __deferredPrompt?: BeforeInstallPromptEvent | null;
+  }
+}
+
 const PWA_INSTALLED_KEY = 'cutisg_pwa_installed';
 const PWA_BANNER_SNOOZE_KEY = 'cutisg_pwa_banner_snooze';
 
 export function usePWAInstall() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(() => {
+    if (typeof window !== 'undefined' && window.__deferredPrompt) {
+      return window.__deferredPrompt;
+    }
+    return null;
+  });
+
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
+  const [isSamsungBrowser, setIsSamsungBrowser] = useState(false);
+  const [isChrome, setIsChrome] = useState(false);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
 
@@ -38,18 +52,22 @@ export function usePWAInstall() {
       } catch {}
     }
 
-    // 2. Platform detection
+    // 2. Platform and Browser detection
     if (typeof window !== 'undefined') {
       const ua = window.navigator.userAgent.toLowerCase();
       const isIPhoneOrIPad =
         /iphone|ipad|ipod/.test(ua) ||
         (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
       const isAndroidDevice = /android/.test(ua);
+      const isSamsung = /samsungbrowser/i.test(ua);
+      const isChromium = /chrome|chromium|crios/i.test(ua) && !isSamsung && !/edg|opr/i.test(ua);
 
       setIsIOS(isIPhoneOrIPad);
       setIsAndroid(isAndroidDevice);
+      setIsSamsungBrowser(isSamsung);
+      setIsChrome(isChromium);
 
-      // 3. Check banner snooze
+      // Check banner snooze
       try {
         const snoozeUntil = localStorage.getItem(PWA_BANNER_SNOOZE_KEY);
         if (snoozeUntil && Date.now() < Number(snoozeUntil)) {
@@ -58,16 +76,25 @@ export function usePWAInstall() {
       } catch {}
     }
 
-    // 4. Capture native Chromium/Android beforeinstallprompt event
+    // 3. Capture native Chromium/Android beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      const promptEvent = e as BeforeInstallPromptEvent;
+      window.__deferredPrompt = promptEvent;
+      setDeferredPrompt(promptEvent);
     };
 
-    // 5. Detect when installation successfully finishes
+    const handlePromptReady = () => {
+      if (window.__deferredPrompt) {
+        setDeferredPrompt(window.__deferredPrompt);
+      }
+    };
+
+    // 4. Detect when installation successfully finishes
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setDeferredPrompt(null);
+      window.__deferredPrompt = null;
       setShowGuideModal(false);
       try {
         localStorage.setItem(PWA_INSTALLED_KEY, 'true');
@@ -75,23 +102,33 @@ export function usePWAInstall() {
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('cutisg-prompt-ready', handlePromptReady);
     window.addEventListener('appinstalled', handleAppInstalled);
+
+    // Initial check in case it was stored before this effect ran
+    if (window.__deferredPrompt && !deferredPrompt) {
+      setDeferredPrompt(window.__deferredPrompt);
+    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('cutisg-prompt-ready', handlePromptReady);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, []);
+  }, [deferredPrompt]);
 
   // Request native install prompt if available, or trigger guide modal
   const install = useCallback(async (): Promise<boolean> => {
-    if (deferredPrompt) {
+    const activePrompt = deferredPrompt || (typeof window !== 'undefined' ? window.__deferredPrompt : null);
+
+    if (activePrompt) {
       try {
-        await deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
+        await activePrompt.prompt();
+        const { outcome } = await activePrompt.userChoice;
         if (outcome === 'accepted') {
           setIsInstalled(true);
           setDeferredPrompt(null);
+          if (typeof window !== 'undefined') window.__deferredPrompt = null;
           setShowGuideModal(false);
           try {
             localStorage.setItem(PWA_INSTALLED_KEY, 'true');
@@ -105,7 +142,7 @@ export function usePWAInstall() {
         return false;
       }
     } else {
-      // Show device-specific instruction modal (Android or iOS)
+      // If no native prompt is captured (e.g. iOS Safari, Samsung Browser, or beforeinstallprompt pending), show tailored guide modal
       setShowGuideModal(true);
       return false;
     }
@@ -128,10 +165,12 @@ export function usePWAInstall() {
   }, []);
 
   return {
-    isInstallable: Boolean(deferredPrompt),
+    isInstallable: Boolean(deferredPrompt || (typeof window !== 'undefined' && window.__deferredPrompt)),
     isInstalled,
     isIOS,
     isAndroid,
+    isSamsungBrowser,
+    isChrome,
     isBannerDismissed,
     showGuideModal,
     install,
@@ -140,4 +179,3 @@ export function usePWAInstall() {
     dismissBanner,
   };
 }
-

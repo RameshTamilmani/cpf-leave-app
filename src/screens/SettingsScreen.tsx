@@ -298,12 +298,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
                 max={isValidISODate(todayDateStr) ? todayDateStr : undefined}
                 ariaLabel="Choose Date of Joining"
               />
-              {draftDoj && isValidISODate(draftDoj) && (
-                <div className="flex items-center gap-1.5 text-[12px] text-primary font-medium mt-1.5">
-                  <span className="material-symbols-outlined text-[15px]">work_history</span>
-                  <span>Calculated Experience: {calculateExperience(draftDoj, todayDateStr) || 'Enter valid DD/MM/YYYY'}</span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -389,17 +383,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
           </button>
         </div>
         <div className="rounded-xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container space-y-space-sm">
-          <p className="font-body-sm text-body-sm text-on-surface-variant leading-snug">
-            Singapore public holidays sync automatically from the official MOM dataset. Add a company off-day, or a declared holiday not yet published in that dataset.
-          </p>
-
-          <div className="flex items-center justify-between gap-3 text-xs text-on-surface-variant">
-            <span>{holidaySync.isRefreshing ? 'Refreshing official holidays…' : holidaySync.error || (holidaySync.checkedAt ? 'Official holidays saved for offline use.' : 'Using built-in holidays until the first successful sync.')}</span>
-            <button type="button" onClick={() => void holidaySync.refresh(true)} disabled={holidaySync.isRefreshing} className="shrink-0 text-primary font-semibold disabled:opacity-50 cursor-pointer">Refresh holidays</button>
-          </div>
-          <a href="https://data.gov.sg/datasets/d_8ef23381f9417e4d4254ee8b4dcdb176/view" target="_blank" rel="noreferrer" className="inline-block text-xs text-primary underline">MOM holiday source</a>
           {listedSpecialHolidays.length > 0 ? (
-            <div className="flex flex-col gap-2 pt-1">
+            <div className="flex flex-col gap-2">
               {listedSpecialHolidays.map((sh) => (
                 <div
                   key={sh.id}
@@ -437,14 +422,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
               <span className="text-on-surface-variant font-label-md text-label-md">No special holidays in the current leave cycle.</span>
             </div>
           )}
-        </div>
-      </section>
-
-      <section className="space-y-space-xs" aria-label="App updates">
-        <h2 className="px-1 text-sm font-semibold text-on-surface-variant uppercase tracking-wider">App updates</h2>
-        <div className="flex items-center justify-between gap-3 rounded-xl bg-surface-container-lowest p-space-md border border-surface-container">
-          <div><p className="text-sm font-semibold text-on-surface">Version {currentVersion}</p><p className="text-xs text-on-surface-variant mt-1">Check again at any time after choosing Later.</p></div>
-          <button type="button" disabled={isCheckingUpdate} onClick={() => void onCheckForUpdate()} className="shrink-0 rounded-full px-3 py-2 bg-primary text-on-primary text-xs font-semibold disabled:opacity-50 cursor-pointer">{isCheckingUpdate ? 'Checking…' : 'Check for updates'}</button>
         </div>
       </section>
 
@@ -669,6 +646,34 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
       </section>
 
 
+
+      {/* 6.5 App Updates - Positioned directly above About CutiSG */}
+      <section className="space-y-space-xs" aria-label="App updates">
+        <div className="px-1 flex items-center justify-between">
+          <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
+            App Updates
+          </h2>
+        </div>
+        <div className="flex items-center justify-between gap-3 rounded-2xl bg-surface-container-lowest p-space-md border border-surface-container shadow-xs">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-primary-container text-primary flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[22px]">system_update</span>
+            </div>
+            <div className="min-w-0">
+              <p className="font-title-sm text-title-sm font-semibold text-on-surface">Version {currentVersion}</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant text-xs mt-0.5">Stay up-to-date with new features</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled={isCheckingUpdate}
+            onClick={() => void onCheckForUpdate()}
+            className="shrink-0 rounded-full px-3.5 py-2 bg-primary text-on-primary text-xs font-semibold hover:opacity-95 active:scale-95 transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+          >
+            {isCheckingUpdate ? 'Checking…' : 'Check for updates'}
+          </button>
+        </div>
+      </section>
 
       {/* 7. About CutiSG - Separate Button opening modal */}
       <section className="pt-1">

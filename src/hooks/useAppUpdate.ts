@@ -33,16 +33,37 @@ export function useAppUpdate() {
   const checkForUpdate = useCallback(async (manual = false): Promise<{ hasUpdate: boolean; info?: VersionInfo; error?: string }> => {
     setIsChecking(true);
     try {
-      // Manual checks bypass the snooze, including updatefound listeners fired
-      // while the new release is being downloaded.
       if (manual) { try { localStorage.removeItem(SNOOZE_KEY); } catch {} }
+
+      // 1. Direct version.json check fallback
+      let serverRelease: VersionInfo | null = null;
+      try {
+        const response = await fetch(`/version.json?_t=${Date.now()}`, { cache: 'no-store' });
+        if (response.ok) {
+          serverRelease = await response.json();
+        }
+      } catch {}
+
       const reg = await registerAppWorker();
-      if (!reg) return { hasUpdate: false, error: 'Update checks are available in the deployed app.' };
+      if (!reg) {
+        if (serverRelease && serverRelease.buildId && serverRelease.buildId !== CURRENT_RELEASE.buildId && serverRelease.buildTime > CURRENT_RELEASE.buildTime) {
+          setUpdateInfo(serverRelease);
+          setVisible(true);
+          return { hasUpdate: true, info: serverRelease };
+        }
+        return { hasUpdate: false };
+      }
+
       if (navigator.onLine) {
         try { await reg.update(); } catch {
           const downloaded = await inspect(reg, manual);
           if (downloaded.hasUpdate) return downloaded;
-          throw new Error('Could not check for updates. Please reconnect and try again.');
+          if (serverRelease && serverRelease.buildId && serverRelease.buildId !== CURRENT_RELEASE.buildId) {
+            setUpdateInfo(serverRelease);
+            setVisible(true);
+            return { hasUpdate: true, info: serverRelease };
+          }
+          return { hasUpdate: false };
         }
         await waitForWorkerDownload(reg);
       } else {
