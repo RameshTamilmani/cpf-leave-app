@@ -30,5 +30,5 @@
       ]
     }
   ],
-  "installCommand": "npm ci"
+  "installCommand": "npm install"
 }

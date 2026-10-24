@@ -4,7 +4,7 @@ This project remains an installable web PWA. It does not produce an Android APK/
 
 ## Vercel
 
-Commit the source changes, including `package-lock.json` and `vercel.json`. Vercel uses `npm ci`, `npm run build`, and the `dist` output directory. Do not deploy `src/sw.js` directly: the build injects the complete asset list into `dist/sw.js`.
+Commit the source changes, including `package-lock.json` and `vercel.json` (with `bun.lock` removed to prevent package manager conflicts). Vercel uses `npm install`, `npm run build`, and the `dist` output directory. Do not deploy `src/sw.js` directly: the build injects the complete asset list into `dist/sw.js`.
 
 Use Node.js 22.12 or later. To check locally:
 
