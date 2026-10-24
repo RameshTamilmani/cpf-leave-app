@@ -26,7 +26,7 @@ export const Header: React.FC = () => {
           <img
             alt="CutiSG Logo"
             className="h-8 w-auto object-contain"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4Hl0qrsn587Y7Cprf9V95gPRRXHNBEHoY_354UOCIO9hnegSPiO4s84KI57aT4LMg_voPaVKC6gYKLinolYM4QhWtsz6BVYjYptRSI4aAdGppWCDxjL4U8D5BSWgJce47C47aItGnFh4pkBPBt8qIrisV53ucEhoFknvP3iFRLoO8tBtptl2__xAWIUlRGEoUEsV9mfKbqomTMPUZOHULzS-2Td7zCWkSUEh9xDggefMeSyge1xik"
+            src="/icon.svg"
           />
           <div className="flex items-center gap-space-xs">
             <span className="font-title-md text-title-md text-on-surface leading-tight font-semibold">CutiSG</span>

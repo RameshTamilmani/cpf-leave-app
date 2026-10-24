@@ -9,7 +9,7 @@
 **100% Client-Side & Private Storage**:
 - All employee data, leave records, special holidays, and custom preferences are stored **exclusively in your browser's local storage (`localStorage`)** under the `cutisg_*` namespaces (`cutisg_records`, `cutisg_settings`, `cutisg_special_holidays`, `cutisg_manual_compoff`).
 - **No external cloud database or server transmission**: Your personal records, joining date, and leave history remain entirely on your device.
-- **Full Offline Capability**: CutiSG functions seamlessly without internet connectivity using service worker precaching.
+- **Offline Capability**: After one successful online installation, the complete production app, fonts, and icons are cached for offline use.
 - **Portability & Backups**: You can export and restore all leave records anytime in standard **CSV format** formatted with `DD/MM/YYYY`.
 
 ---
@@ -65,10 +65,10 @@
   - `screenshots`: High-resolution desktop and mobile showcase previews
   - `iarc_rating_id`: Global age classification
 - **Standalone Service Worker (`sw.js`)**:
-  - Precached application shell, fonts, and holiday database for 100% offline access.
+  - Precached production HTML, JavaScript, CSS, fonts, icons, and bundled holiday data.
   - Background Sync (`sync` event) and Periodic Sync (`periodicsync` event).
   - Push notification listener (`push` and `notificationclick` events).
-  - Active Service Worker registration in `index.html`.
+  - Production-only Service Worker registration in `src/pwa.ts`.
 - **In-App Install Prompt**: `PWAInstallButton` component with automatic standalone detection and step-by-step iOS Safari installation instructions.
 
 ---
@@ -79,7 +79,7 @@
 - **Styling**: Tailwind CSS
 - **Build Tool**: Vite + `vite-plugin-pwa`
 - **Icons**: Google Material Symbols Outlined
-- **Service Worker**: Native standalone `sw.js` + Workbox precaching
+- **Service Worker**: One custom service worker with a build-injected offline asset list
 - **Storage**: Client-side browser `localStorage`
 
 ---
@@ -99,3 +99,8 @@ npm run lint
 # Build for production
 npm run build
 ```
+
+## Offline updates and deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for Vercel settings, migration from the old worker, approval-based updates, and verification.
+

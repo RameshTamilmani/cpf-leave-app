@@ -5,27 +5,30 @@ interface UpdateAvailableModalProps {
   isOpen: boolean;
   updateInfo: VersionInfo | null;
   currentVersion: string;
-  onUpdate: () => void;
+  onUpdate: () => Promise<void>;
   onDismiss: () => void;
 }
 
 export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
   isOpen,
   updateInfo,
-  currentVersion,
   onUpdate,
   onDismiss,
 }) => {
   const [isApplying, setIsApplying] = useState(false);
+  const [error, setError] = useState('');
 
-  // If not open or no updateInfo or version matches currentVersion, do not show
-  if (!isOpen || !updateInfo || updateInfo.version === currentVersion) {
+  // Builds can differ even when their human-readable version labels match.
+  if (!isOpen || !updateInfo) {
     return null;
   }
 
-  const handleUpdateClick = () => {
-    setIsApplying(true);
-    onUpdate();
+  const handleUpdateClick = async () => {
+    setIsApplying(true); setError('');
+    try { await onUpdate(); } catch (error) {
+      setError(error instanceof Error ? error.message : 'Update failed. Please try again.');
+      setIsApplying(false);
+    }
   };
 
   const newVersion = updateInfo.version;
@@ -33,32 +36,7 @@ export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
   // Get dynamic highlights from version info, or fallback to current release highlights
   const highlights = updateInfo.highlights && updateInfo.highlights.length > 0
     ? updateInfo.highlights
-    : [
-        {
-          title: 'Minimalist Celebration Wishes',
-          description: 'Clean, distraction-free wish pop-ups focusing strictly on celebration greetings and warm wishes.',
-          icon: 'celebration',
-          color: 'amber'
-        },
-        {
-          title: 'Unified Sick Leave & History',
-          description: 'Standardized Sick Leave labeling across app, direct Leave History quick action, and streamlined LOP details.',
-          icon: 'medical_services',
-          color: 'emerald'
-        },
-        {
-          title: 'Background Push Notifications',
-          description: 'Celebration wishes and holiday greetings delivered to your mobile notification shade even when closed.',
-          icon: 'notifications_active',
-          color: 'blue'
-        },
-        {
-          title: 'Native Mobile App Feel',
-          description: 'Suppressed browser pull-to-refresh overscroll for a seamless, app-like experience on mobile.',
-          icon: 'smartphone',
-          color: 'purple'
-        }
-      ];
+    : [{ title: 'App update', description: updateInfo.releaseNotes || 'Improvements and fixes are ready to install.', icon: 'system_update', color: 'blue' }];
 
   const getColorClasses = (color?: string) => {
     switch (color) {
@@ -89,7 +67,7 @@ export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in"
-      onClick={onDismiss}
+      onClick={isApplying ? undefined : onDismiss}
     >
       <div
         className="w-full max-w-sm rounded-3xl bg-surface-card p-6 shadow-2xl border border-surface-container flex flex-col gap-4 animate-in zoom-in-95"
@@ -109,7 +87,7 @@ export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
               </span>
             </div>
             <p className="font-body-sm text-body-sm text-on-surface-variant text-[12px] mt-0.5">
-              Exciting improvements and new features are ready for you.
+              This update has been downloaded. Apply it now or keep your current version.
             </p>
           </div>
         </div>
@@ -143,11 +121,12 @@ export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
           </ul>
         </div>
 
+        {error && <p role="alert" className="text-sm text-error">{error}</p>}
         {/* Action Buttons */}
         <div className="flex items-center gap-2.5 pt-1">
           <button
             type="button"
-            onClick={onDismiss}
+            onClick={isApplying ? undefined : onDismiss}
             className="flex-1 py-2.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-colors cursor-pointer text-center"
           >
             Later (6 hrs)
@@ -168,3 +147,4 @@ export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
     </div>
   );
 };
+

@@ -1,31 +1,19 @@
 {
-  "version": "1.3.2",
-  "buildTime": 1729688000000,
-  "releaseDate": "2026-10-23",
+  "version": "1.3.3",
+  "releaseDate": "2026-10-24",
+  "releaseNotes": "Offline app caching and approval-based updates.",
   "highlights": [
     {
-      "title": "Clean Home Screen Greetings",
-      "description": "Warm celebration and anniversary greetings directly on your home screen; removed popup modals and notification icon.",
-      "icon": "waving_hand",
-      "color": "amber"
-    },
-    {
-      "title": "Streamlined Special Holiday Form",
-      "description": "Simplified to only Holiday Name and Date picker with automatic MOM Saturday comp-off accrual.",
-      "icon": "event_available",
+      "title": "Offline access",
+      "description": "The full app, fonts and icons are saved for offline use.",
+      "icon": "offline_bolt",
       "color": "emerald"
     },
     {
-      "title": "Refined Compact Sizing",
-      "description": "Restored compact, elegant card padding, typography, and icon dimensions across mobile viewports.",
-      "icon": "aspect_ratio",
+      "title": "You control updates",
+      "description": "Keep your current version until you choose Update Now.",
+      "icon": "system_update",
       "color": "blue"
-    },
-    {
-      "title": "Unified Sick Leave & History",
-      "description": "Simplified Leave History shortcut, standardized Sick Leave, and streamlined LOP details window.",
-      "icon": "history",
-      "color": "purple"
     }
   ]
 }

@@ -24,9 +24,9 @@ export function usePWAInstall() {
       const isStandaloneMedia = window.matchMedia('(display-mode: standalone)').matches;
       const isIOSStandalone = (window.navigator as unknown as { standalone?: boolean }).standalone === true;
       const isAndroidApp = document.referrer.includes('android-app://');
-      const isTwa = window.location.search.includes('utm_source=homescreen');
+      const isOverlay = window.matchMedia('(display-mode: window-controls-overlay)').matches;
 
-      return Boolean(isStandaloneMedia || isIOSStandalone || isAndroidApp || isTwa);
+      return Boolean(isStandaloneMedia || isIOSStandalone || isAndroidApp || isOverlay);
     };
 
     const standalone = checkIsStandalone();
@@ -140,3 +140,4 @@ export function usePWAInstall() {
     dismissBanner,
   };
 }
+

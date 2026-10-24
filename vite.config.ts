@@ -1,15 +1,33 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { readFileSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
+  const release = {
+    ...JSON.parse(readFileSync('public/version.json', 'utf8')),
+    buildTime: Date.now(),
+    buildId: randomUUID(),
+  };
   return {
+    define: { __APP_RELEASE__: JSON.stringify(release) },
     plugins: [
+      {
+        name: 'cutisg-release',
+        generateBundle() {
+          this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify(release) });
+        },
+      },
       react(),
       tailwindcss(),
       VitePWA({
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.js',
+        manifest: false,
         registerType: 'prompt',
         injectRegister: null,
         includeAssets: [
@@ -20,109 +38,10 @@ export default defineConfig(() => {
           'pwa-512x512.png',
           'pwa-maskable-512x512.png'
         ],
-        manifest: {
-          id: '/',
-          name: 'CutiSG - Singapore Leave & Public Holiday Tracker',
-          short_name: 'CutiSG',
-          description: 'Singapore MOM compliant personal leave planner, gazetted public holiday tracker, and comp-off ledger for FY 2026.',
-          lang: 'en',
-          dir: 'ltr',
-          theme_color: '#EE2C38',
-          background_color: '#FFFFFF',
-          display: 'standalone',
-          display_override: [
-            'window-controls-overlay',
-            'standalone'
-          ],
-          orientation: 'portrait-primary',
-          start_url: '/',
-          scope: '/',
-          categories: ['productivity', 'business', 'lifestyle', 'utilities'],
-          prefer_related_applications: false,
-          launch_handler: {
-            client_mode: ['navigate-existing', 'auto']
-          },
-          edge_side_panel: {
-            preferred_width: 400
-          },
-          share_target: {
-            action: '/?action=share',
-            method: 'GET',
-            params: {
-              title: 'title',
-              text: 'text',
-              url: 'url'
-            }
-          },
-          icons: [
-            {
-              src: '/pwa-192x192.png',
-              sizes: '192x192',
-              type: 'image/png',
-              purpose: 'any',
-            },
-            {
-              src: '/pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any',
-            },
-            {
-              src: '/pwa-maskable-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable',
-            },
-          ],
-          screenshots: [
-            {
-              src: '/pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              form_factor: 'wide',
-              label: 'CutiSG Desktop Dashboard'
-            },
-            {
-              src: '/pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              form_factor: 'narrow',
-              label: 'CutiSG Mobile App'
-            }
-          ],
-        },
-        workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'google-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'gstatic-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-          ],
+        injectManifest: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,json}'],
+          globIgnores: ['assets/aistudio/**', 'version.json'],
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         },
         devOptions: {
           enabled: false,

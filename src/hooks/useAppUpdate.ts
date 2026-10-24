@@ -1,240 +1,97 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { registerAppWorker, workerMessage } from '../pwa';
 
-export interface ReleaseHighlight {
-  title: string;
-  description: string;
-  icon?: string;
-  color?: string;
-}
-
+export interface ReleaseHighlight { title: string; description: string; icon?: string; color?: string; }
 export interface VersionInfo {
-  version: string;
-  buildTime: number;
-  releaseDate?: string;
-  releaseNotes?: string;
-  highlights?: ReleaseHighlight[];
+  version: string; buildTime: number; buildId?: string;
+  releaseDate?: string; releaseNotes?: string; highlights?: ReleaseHighlight[];
 }
-
-// Current bundled client build version
-export const CURRENT_APP_VERSION = '1.3.2';
-export const CURRENT_BUILD_TIME = 1729688000000;
-
-const SNOOZE_STORAGE_KEY = 'cutisg_update_snooze_until';
-const APPLIED_VERSION_STORAGE_KEY = 'cutisg_applied_version';
-const UPDATE_IN_PROGRESS_KEY = 'cutisg_update_in_progress';
-
+const CURRENT_RELEASE: VersionInfo = __APP_RELEASE__;
+export const CURRENT_APP_VERSION = CURRENT_RELEASE.version;
+export const CURRENT_BUILD_TIME = CURRENT_RELEASE.buildTime;
+const SNOOZE_KEY = 'cutisg_update_snooze_until';
+function snoozed() {
+  try { return Date.now() < Number(localStorage.getItem(SNOOZE_KEY)); } catch { return false; }
+}
 export function useAppUpdate() {
-  const [hasUpdate, setHasUpdate] = useState<boolean>(false);
-  const [isChecking, setIsChecking] = useState<boolean>(false);
   const [updateInfo, setUpdateInfo] = useState<VersionInfo | null>(null);
-  const [isDismissed, setIsDismissed] = useState<boolean>(false);
-  const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
-  const userInitiatedUpdateRef = useRef<boolean>(false);
-
-  // Check if snooze is currently active (6 hours)
-  const isSnoozed = useCallback(() => {
-    try {
-      const snoozeUntil = localStorage.getItem(SNOOZE_STORAGE_KEY);
-      if (snoozeUntil && Date.now() < Number(snoozeUntil)) {
-        return true;
-      }
-    } catch {}
-    return false;
+  const [isChecking, setIsChecking] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [target, setTarget] = useState<ServiceWorker | null>(null);
+  const inspect = useCallback(async (reg: ServiceWorkerRegistration, manual = false) => {
+    // A new worker can already be active after every app window was closed.
+    // Its approved-release pointer still serves the old app until acceptance.
+    const worker = reg.waiting || reg.active;
+    if (!worker) return { hasUpdate: false };
+    const info = await workerMessage<VersionInfo>(worker, 'GET_RELEASE');
+    const newer = !!info.buildId && info.buildId !== CURRENT_RELEASE.buildId;
+    setTarget(newer ? worker : null);
+    setUpdateInfo(newer ? info : null);
+    setVisible(newer && (manual || !snoozed()));
+    return { hasUpdate: newer, info: newer ? info : undefined };
   }, []);
-
-  // Core update check logic against /version.json and active ServiceWorker
-  const checkForUpdate = useCallback(async (isManual = false): Promise<{ hasUpdate: boolean; info?: VersionInfo }> => {
-    // 1. If snoozed and not a manual check, do not show any pop-up
-    if (!isManual && isSnoozed()) {
-      setHasUpdate(false);
-      return { hasUpdate: false };
-    }
-
+  const checkForUpdate = useCallback(async (manual = false) => {
     setIsChecking(true);
-    let foundUpdate = false;
-    let fetchedInfo: VersionInfo | null = null;
-
     try {
-      // 2. Fetch /version.json with cache-busting timestamp (never cached)
-      const response = await fetch(`/version.json?_t=${Date.now()}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
-      });
-
-      if (response.ok) {
-        const data: VersionInfo = await response.json();
-        fetchedInfo = data;
-
-        // Check if user already updated to this version
-        let alreadyApplied = false;
-        try {
-          const appliedVer = localStorage.getItem(APPLIED_VERSION_STORAGE_KEY);
-          if (appliedVer && appliedVer === data.version) {
-            alreadyApplied = true;
-          }
-        } catch {}
-
-        // STRICT CHECK: An update is ONLY valid if:
-        // - Server version is NOT equal to CURRENT_APP_VERSION
-        // - Server buildTime is strictly greater than CURRENT_BUILD_TIME
-        // - Version has not already been marked as applied
-        const isStrictlyNewer =
-          Boolean(data.version) &&
-          data.version !== CURRENT_APP_VERSION &&
-          data.buildTime > CURRENT_BUILD_TIME &&
-          !alreadyApplied;
-
-        if (isStrictlyNewer) {
-          foundUpdate = true;
-          setUpdateInfo(data);
-        } else {
-          // If already on latest or same version, ensure update is marked false
-          foundUpdate = false;
-          setUpdateInfo(null);
-        }
-      }
-
-      // 3. Inspect Service Worker without falsely assuming every SW install is a new version
-      if ('serviceWorker' in navigator) {
-        try {
-          const reg = await navigator.serviceWorker.getRegistration();
-          if (reg && reg.waiting) {
-            setWaitingWorker(reg.waiting);
-            // Only flag update if /version.json confirmed a strictly newer version
-            if (foundUpdate) {
-              setWaitingWorker(reg.waiting);
-            }
-          }
-        } catch (swErr) {
-          console.warn('[Update] SW check error:', swErr);
-        }
-      }
-    } catch (err) {
-      console.warn('[Update] Version check error:', err);
-    } finally {
-      setIsChecking(false);
-    }
-
-    if (foundUpdate && (!isSnoozed() || isManual)) {
-      setHasUpdate(true);
-      if (isManual) {
-        setIsDismissed(false);
-      }
-      return { hasUpdate: true, info: fetchedInfo || undefined };
-    }
-
-    setHasUpdate(false);
-    return { hasUpdate: false };
-  }, [isSnoozed]);
-
-  // Listen for Service Worker updatefound & statechange events
+      const reg = await registerAppWorker();
+      if (!reg) return { hasUpdate: false };
+      if (navigator.onLine) await reg.update().catch(() => {});
+      return await inspect(reg, manual);
+    } catch (error) {
+      console.warn('Update check unavailable:', error);
+      return { hasUpdate: false };
+    } finally { setIsChecking(false); }
+  }, [inspect]);
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) return;
-
-    let refreshing = false;
-    const handleControllerChange = () => {
-      const inProgress = sessionStorage.getItem(UPDATE_IN_PROGRESS_KEY) === 'true';
-      if (userInitiatedUpdateRef.current || inProgress) {
-        if (!refreshing) {
-          refreshing = true;
-          sessionStorage.removeItem(UPDATE_IN_PROGRESS_KEY);
-          window.location.reload();
-        }
-      }
-    };
-    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
-
-    navigator.serviceWorker.getRegistration().then((reg) => {
-      if (!reg) return;
-
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        if (!newWorker) return;
-
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            setWaitingWorker(newWorker);
-            // Re-verify against /version.json before displaying any modal
-            checkForUpdate(false);
-          }
-        });
-      });
+    let disposed = false;
+    const cleanups: (() => void)[] = [];
+    registerAppWorker().then(reg => {
+      if (!reg || disposed) return;
+      const check = () => { void inspect(reg).catch(() => {}); };
+      const watch = () => {
+        const installing = reg.installing;
+        if (!installing) return;
+        const changed = () => { if (installing.state === 'installed') check(); };
+        installing.addEventListener('statechange', changed);
+        cleanups.push(() => installing.removeEventListener('statechange', changed));
+      };
+      reg.addEventListener('updatefound', watch);
+      cleanups.push(() => reg.removeEventListener('updatefound', watch));
+      watch(); check();
     }).catch(() => {});
-
+    const check = () => { if (document.visibilityState === 'visible') void checkForUpdate(); };
+    const timer = window.setInterval(check, 30 * 60 * 1000);
+    document.addEventListener('visibilitychange', check);
+    window.addEventListener('online', check);
     return () => {
-      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      disposed = true; clearInterval(timer);
+      document.removeEventListener('visibilitychange', check);
+      window.removeEventListener('online', check);
+      cleanups.forEach(cleanup => cleanup());
     };
-  }, [checkForUpdate]);
-
-  // Periodic and on-focus checks
-  useEffect(() => {
-    // Initial check after 3 seconds
-    const timer = setTimeout(() => {
-      checkForUpdate(false);
-    }, 3000);
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        checkForUpdate(false);
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    const interval = setInterval(() => {
-      checkForUpdate(false);
-    }, 30 * 60 * 1000);
-
-    return () => {
-      clearTimeout(timer);
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [checkForUpdate]);
-
-  // Apply update ONLY when user explicitly clicks "Update Now"
-  const applyUpdate = useCallback(() => {
-    userInitiatedUpdateRef.current = true;
-    try {
-      sessionStorage.setItem(UPDATE_IN_PROGRESS_KEY, 'true');
-      const versionToRecord = updateInfo?.version || CURRENT_APP_VERSION;
-      localStorage.setItem(APPLIED_VERSION_STORAGE_KEY, versionToRecord);
-      localStorage.removeItem(SNOOZE_STORAGE_KEY);
-    } catch {}
-
-    if (waitingWorker) {
-      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
-    }
-
-    if (typeof caches !== 'undefined') {
-      caches.keys().then((names) => {
-        Promise.all(names.map((name) => caches.delete(name))).finally(() => {
-          window.location.reload();
-        });
-      }).catch(() => {
-        window.location.reload();
-      });
-    } else {
-      window.location.reload();
-    }
-  }, [waitingWorker, updateInfo]);
-
-  // Snooze update for exactly 6 hours
+  }, [checkForUpdate, inspect]);
+  const applyUpdate = useCallback(async () => {
+    if (!target) throw new Error('Update is not downloaded yet. Please try again.');
+    const reg = await registerAppWorker();
+    if (!reg) throw new Error('Offline updates are unavailable in this browser.');
+    await workerMessage(target, 'APPROVE_UPDATE');
+    // Wait for this exact worker to activate before navigating to its approved shell.
+    if (target.state !== 'activated') await new Promise<void>((resolve, reject) => {
+      const timer = window.setTimeout(() => { cleanup(); reject(new Error('Update activation timed out. Please retry.')); }, 10000);
+      const changed = () => {
+        if (target.state === 'activated') { cleanup(); resolve(); }
+        else if (target.state === 'redundant') { cleanup(); reject(new Error('A newer update is available. Reopen the app and retry.')); }
+      };
+      const cleanup = () => { clearTimeout(timer); target.removeEventListener('statechange', changed); };
+      target.addEventListener('statechange', changed); changed();
+    });
+    try { localStorage.removeItem(SNOOZE_KEY); } catch {}
+    window.location.reload();
+  }, [target]);
   const dismissUpdate = useCallback(() => {
-    try {
-      const sixHoursFromNow = Date.now() + 6 * 60 * 60 * 1000;
-      localStorage.setItem(SNOOZE_STORAGE_KEY, sixHoursFromNow.toString());
-    } catch {}
-    setIsDismissed(true);
-    setHasUpdate(false);
+    try { localStorage.setItem(SNOOZE_KEY, String(Date.now() + 6 * 60 * 60 * 1000)); } catch {}
+    setVisible(false);
   }, []);
-
-  return {
-    hasUpdate: hasUpdate && !isDismissed && !isSnoozed(),
-    isChecking,
-    updateInfo,
-    currentVersion: CURRENT_APP_VERSION,
-    checkForUpdate,
-    applyUpdate,
-    dismissUpdate,
-  };
+  return { hasUpdate: visible, updateInfo, isChecking, currentVersion: CURRENT_APP_VERSION,
+    checkForUpdate, applyUpdate, dismissUpdate };
 }

@@ -1,18 +1,82 @@
-// CutiSG Progressive Web App Service Worker
-// Version: 1.3.2
-const CACHE_NAME = 'cutisg-cache-v1.3.2';
+// One production worker. Each deployment has its own complete offline release.
+const RELEASE = __APP_RELEASE__;
+const RELEASE_PREFIX = 'cutisg-release-';
+const CACHE_NAME = RELEASE_PREFIX + RELEASE.buildId;
+const STATE_CACHE = 'cutisg-update-state-v1';
+const STATE_URL = '/__cutisg_approved_release';
+const ASSETS = self.__WB_MANIFEST;
 
-const PRECACHE_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.svg',
-  '/icon.svg',
-  '/apple-touch-icon.png',
-  '/pwa-192x192.png',
-  '/pwa-512x512.png',
-  '/pwa-maskable-512x512.png'
-];
+async function approvedRelease() {
+  const response = await (await caches.open(STATE_CACHE)).match(STATE_URL);
+  return response ? response.json() : null;
+}
+async function saveApproval() {
+  await (await caches.open(STATE_CACHE)).put(STATE_URL,
+    new Response(JSON.stringify({ cacheName: CACHE_NAME, release: RELEASE })));
+}
+self.addEventListener('install', event => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    try {
+      await Promise.all(ASSETS.map(async asset => {
+        const url = new URL(asset.url, self.location.origin);
+        const requestURL = new URL(url);
+        if (asset.revision) requestURL.searchParams.set('__revision', asset.revision);
+        const response = await fetch(requestURL, { cache: 'reload' });
+        if (!response.ok) throw new Error('Offline asset unavailable: ' + url.pathname);
+        await cache.put(url, response);
+      }));
+      // First installation or migration from the legacy worker. Later releases
+      // stay unapproved, even if the browser activates them after all tabs close.
+      if (!await approvedRelease()) await saveApproval();
+    } catch (error) {
+      await caches.delete(CACHE_NAME);
+      throw error;
+    }
+  })());
+});
+self.addEventListener('activate', event => {
+  event.waitUntil(self.clients.claim());
+});
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname === '/sw.js' || url.pathname === '/version.json') return;
+  event.respondWith((async () => {
+    const approved = await approvedRelease();
+    if (approved) {
+      const cache = await caches.open(approved.cacheName);
+      const key = event.request.mode === 'navigate' ? '/index.html' : url.pathname;
+      const cached = await cache.match(key);
+      if (cached) return cached;
+    }
+    // Existing tabs may still need a hashed asset from an earlier release.
+    if (url.pathname.startsWith('/assets/')) {
+      for (const name of await caches.keys()) {
+        if (!name.startsWith(RELEASE_PREFIX)) continue;
+        const cached = await (await caches.open(name)).match(url.pathname);
+        if (cached) return cached;
+      }
+    }
+    return fetch(event.request);
+  })());
+});
+self.addEventListener('message', event => {
+  if (event.data?.type === 'GET_RELEASE') {
+    event.ports[0]?.postMessage(RELEASE);
+  }
+  if (event.data?.type === 'APPROVE_UPDATE') {
+    event.waitUntil((async () => {
+      await saveApproval();
+      await self.skipWaiting();
+      event.ports[0]?.postMessage({ approved: true });
+    })());
+  }
+  if (event.data?.type === 'CHECK_HOLIDAY_NOTIFICATIONS') {
+    event.waitUntil(triggerHolidayPushNotification());
+  }
+});
 
 // Singapore 2026 Gazetted Public Holidays for Background & Push Notifications
 const GAZETTED_HOLIDAYS_2026 = [
@@ -46,128 +110,6 @@ function getCurrentIST() {
     hours: istDate.getHours()
   };
 }
-
-// Install: Precache shell assets and activate immediately
-self.addEventListener('install', (event) => {
-  self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS).catch((err) => {
-        console.warn('[SW] Precache partial fallback', err);
-      });
-    })
-  );
-});
-
-// Activate: Immediately purge old caches and claim clients
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('[SW] Purging outdated cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
-  );
-});
-
-// Fetch: Always serve live code when online, cache fallback for offline
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-
-  const url = new URL(event.request.url);
-
-  // 1. NEVER intercept Vite dev server modules or source files
-  if (
-    url.pathname.startsWith('/src/') ||
-    url.pathname.startsWith('/@') ||
-    url.pathname.includes('node_modules') ||
-    url.pathname.endsWith('.ts') ||
-    url.pathname.endsWith('.tsx') ||
-    url.pathname.endsWith('.css') ||
-    url.pathname.endsWith('.js') ||
-    url.pathname.endsWith('.jsx') ||
-    url.search.includes('t=')
-  ) {
-    return;
-  }
-
-  // 2. Always fetch /version.json fresh from server (never cached)
-  if (url.pathname.includes('/version.json')) {
-    event.respondWith(
-      fetch(event.request, { cache: 'no-store' }).catch(() => {
-        return new Response(JSON.stringify({ version: '1.3.1', buildTime: Date.now() }), {
-          headers: { 'Content-Type': 'application/json' }
-        });
-      })
-    );
-    return;
-  }
-
-  // 3. Navigation / HTML Requests: Network-First so preview and app updates display immediately
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request, { cache: 'no-cache' })
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const isLocalOrCloudRun =
-              url.hostname.includes('localhost') ||
-              url.hostname.includes('127.0.0.1') ||
-              url.hostname.includes('run.app') ||
-              url.port === '3000';
-            if (!isLocalOrCloudRun) {
-              const responseClone = networkResponse.clone();
-              caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', responseClone));
-            }
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          return caches.match('/index.html').then((cached) => cached || caches.match('/'));
-        })
-    );
-    return;
-  }
-
-  // 4. Static assets (fonts, images, manifest): Cache-First with network fallback
-  if (
-    url.hostname.includes('googleapis.com') ||
-    url.hostname.includes('gstatic.com') ||
-    event.request.destination === 'image' ||
-    event.request.destination === 'font'
-  ) {
-    event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        if (cachedResponse) return cachedResponse;
-        return fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-          }
-          return networkResponse;
-        }).catch(() => caches.match('/icon.svg'));
-      })
-    );
-    return;
-  }
-
-  // 5. Default: Network-First with cache fallback
-  event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-        }
-        return networkResponse;
-      })
-      .catch(() => caches.match(event.request))
-  );
-});
 
 // Background Check for Holiday & Weekend Wishes
 async function triggerHolidayPushNotification() {
@@ -253,20 +195,6 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(self.registration.showNotification(data.title || 'CutiSG', options));
-});
-
-// Client Message Dispatcher
-self.addEventListener('message', (event) => {
-  if (!event.data) return;
-
-  if (event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-    return;
-  }
-
-  if (event.data.type === 'CHECK_HOLIDAY_NOTIFICATIONS') {
-    event.waitUntil(triggerHolidayPushNotification());
-  }
 });
 
 // Notification click navigation
