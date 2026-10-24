@@ -66,7 +66,7 @@
   - `iarc_rating_id`: Global age classification
 - **Standalone Service Worker (`sw.js`)**:
   - Precached production HTML, JavaScript, CSS, fonts, icons, and bundled holiday data.
-  - Background Sync (`sync` event) and Periodic Sync (`periodicsync` event).
+  - Home greeting banners for weekends, holidays, and work anniversaries; no notification toggle or automatic wish pushes.
   - Push notification listener (`push` and `notificationclick` events).
   - Production-only Service Worker registration in `src/pwa.ts`.
 - **In-App Install Prompt**: `PWAInstallButton` component with automatic standalone detection and step-by-step iOS Safari installation instructions.
@@ -103,4 +103,9 @@ npm run build
 ## Offline updates and deployment
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for Vercel settings, migration from the old worker, approval-based updates, and verification.
+
+
+## Profile and calendar
+
+Employee profiles include an optional department (maximum 15 characters), shown on Home. AL, SL, and comp-off cards show remaining/total balances. The calendar lists the displayed month’s holidays and leave history, excluding weekend leave dates while retaining weekend public holidays and observed dates.
 

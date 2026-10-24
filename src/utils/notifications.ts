@@ -87,24 +87,13 @@ export function generateNotifications(
   records: LeaveRecord[],
   _todayDateStr?: string
 ): AppNotification[] {
-  // Respect master toggle in settings
-  if (settings.notificationsEnabled === false) {
-    return [];
-  }
-
+  // Home banners always remain available, including for legacy profiles with toggles disabled.
   const { dateStr: istDateStr, dayOfWeek, hours } = getCurrentISTTime();
   const notifMap = new Map<string, AppNotification>();
 
-  // Separate toggles: Weekend Reminder/Wish and Special Wishes
-  const isWeekendEnabled = settings.weekendWishesEnabled !== false;
-
-  const isSpecialWishesEnabled =
-    settings.wishesEnabled !== false &&
-    settings.anniversaryWishesEnabled !== false &&
-    settings.holidayWishesEnabled !== false;
-
-  const isAnniversaryEnabled = isSpecialWishesEnabled;
-  const isHolidayEnabled = isSpecialWishesEnabled;
+  const isWeekendEnabled = true;
+  const isAnniversaryEnabled = true;
+  const isHolidayEnabled = true;
 
   // 1. Weekend Notifications:
   // "Special wishes notification should come on Previous Day Evening 3.00PM IST for Weekends"

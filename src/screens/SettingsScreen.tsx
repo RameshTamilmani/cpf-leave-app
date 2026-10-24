@@ -4,7 +4,6 @@ import { AboutModal } from '../components/AboutModal';
 import { ImageCropModal } from '../components/ImageCropModal';
 import { calculateExperience, isValidISODate, formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
 import { DatePickerField } from '../components/DatePickerField';
-import { requestNotificationPermission } from '../utils/pushNotifications';
 
 export const SettingsScreen: React.FC = () => {
   const {
@@ -29,6 +28,7 @@ export const SettingsScreen: React.FC = () => {
   // Local draft state for Employee Profile
   const [draftName, setDraftName] = useState(settings.userName || '');
   const [draftEmpId, setDraftEmpId] = useState(settings.employeeId || '');
+  const [draftDepartment, setDraftDepartment] = useState(settings.department || '');
   const [draftAvatar, setDraftAvatar] = useState(settings.avatarUrl || '');
   const [draftDoj, setDraftDoj] = useState(settings.dateOfJoining || '');
   const [isSavedFeedback, setIsSavedFeedback] = useState(false);
@@ -46,14 +46,16 @@ export const SettingsScreen: React.FC = () => {
   useEffect(() => {
     setDraftName(settings.userName || '');
     setDraftEmpId(settings.employeeId || '');
+    setDraftDepartment(settings.department || '');
     setDraftAvatar(settings.avatarUrl || '');
     setDraftDoj(settings.dateOfJoining || '');
-  }, [settings.userName, settings.employeeId, settings.avatarUrl, settings.dateOfJoining]);
+  }, [settings.userName, settings.employeeId, settings.department, settings.avatarUrl, settings.dateOfJoining]);
 
   // Check if profile was modified
   const isProfileModified =
     draftName !== (settings.userName || '') ||
     draftEmpId !== (settings.employeeId || '') ||
+    draftDepartment !== (settings.department || '') ||
     draftAvatar !== (settings.avatarUrl || '') ||
     draftDoj !== (settings.dateOfJoining || '');
 
@@ -61,6 +63,7 @@ export const SettingsScreen: React.FC = () => {
     updateSettings({
       userName: draftName.trim(),
       employeeId: draftEmpId.trim(),
+      department: draftDepartment.trim().slice(0, 15),
       avatarUrl: draftAvatar,
       dateOfJoining: draftDoj.trim()
     });
@@ -259,7 +262,21 @@ export const SettingsScreen: React.FC = () => {
               </div>
             </div>
 
-            <div className="sm:col-span-2">
+            <div>
+              <label htmlFor="department" className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
+                DEPARTMENT
+              </label>
+              <div className="relative flex items-center">
+                <span aria-hidden="true" className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">business</span>
+                <input id="department" type="text" maxLength={15} value={draftDepartment}
+                  onChange={(event) => setDraftDepartment(event.target.value.slice(0, 15))}
+                  placeholder="Enter department" aria-describedby="department-limit"
+                  className="w-full pl-9 pr-3.5 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-medium text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+              <p id="department-limit" className="mt-1 text-[11px] text-on-surface-variant text-right tabular-nums">{draftDepartment.length}/15</p>
+            </div>
+
+            <div>
               <DatePickerField
                 label="DATE OF JOINING"
                 value={draftDoj}
@@ -344,11 +361,11 @@ export const SettingsScreen: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. Special Holidays (Rare Cases) - Kept exactly one button */}
+      {/* 3. Special Holidays - Kept exactly one button */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
           <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
-            Special Holidays (Rare Cases)
+            Special Holidays
           </h2>
           <button
             onClick={() => setIsAddSpecialHolidayOpen(true)}
@@ -401,54 +418,6 @@ export const SettingsScreen: React.FC = () => {
               <span className="text-on-surface-variant font-label-md text-label-md">No custom special holidays added</span>
             </div>
           )}
-        </div>
-      </section>
-
-      {/* 4. Notifications & Wishes */}
-      <section className="space-y-space-xs">
-        <div className="px-1 flex items-center justify-between">
-          <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
-            Notifications &amp; Wishes
-          </h2>
-        </div>
-        <div className="rounded-xl bg-surface-container-lowest p-space-md shadow-xs border border-surface-container">
-          <div className="flex items-center justify-between gap-space-sm p-1">
-            <div className="flex items-center gap-space-sm min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-primary-container text-on-primary-fixed flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[22px]">notifications_active</span>
-              </div>
-              <div className="min-w-0">
-                <p className="font-title-sm text-title-sm text-on-surface font-semibold">Notifications &amp; Wishes</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant text-xs mt-0.5">
-                  Receive holiday greetings, weekend wishes, and leave reminders.
-                </p>
-              </div>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
-              <input
-                type="checkbox"
-                checked={settings.notificationsEnabled !== false}
-                onChange={async (e) => {
-                  const isChecked = e.target.checked;
-                  if (isChecked) {
-                    await requestNotificationPermission();
-                  }
-                  updateSettings({
-                    notificationsEnabled: isChecked,
-                    wishesEnabled: isChecked,
-                    weekendWishesEnabled: isChecked,
-                    anniversaryWishesEnabled: isChecked,
-                    holidayWishesEnabled: isChecked,
-                    wishPopupEnabled: isChecked,
-                    wishSoundEnabled: isChecked,
-                  });
-                  showToast(isChecked ? 'Notifications & wishes enabled' : 'Notifications & wishes disabled');
-                }}
-                className="sr-only peer"
-              />
-              <div className="w-12 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-xs" />
-            </label>
-          </div>
         </div>
       </section>
 

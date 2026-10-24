@@ -9,6 +9,9 @@ export const HomeScreen: React.FC = () => {
     alAvailable,
     slAvailable,
     coAvailable,
+    coUsed,
+    autoCompOffEarned,
+    manualCompOffCredits,
     alLOP,
     slLOP,
     totalLOP,
@@ -30,6 +33,7 @@ export const HomeScreen: React.FC = () => {
   } = useLeave();
 
   const [activeDetailCategory, setActiveDetailCategory] = useState<DetailCategory | null>(null);
+  const coTotal = autoCompOffEarned + manualCompOffCredits;
 
   // Next 4 strictly upcoming holidays (from current date onward)
   const displayedUpcomingHolidays = upcomingHolidays.slice(0, 4);
@@ -61,26 +65,26 @@ export const HomeScreen: React.FC = () => {
                 <img
                   src={settings.avatarUrl}
                   alt={settings.userName || 'Profile'}
-                  className="w-12 h-12 rounded-full object-cover ring-2 ring-primary ring-offset-1 ring-offset-surface-card shadow-sm"
+                  className="w-12 h-12 rounded-full object-cover ring-2 ring-amber-400 ring-offset-1 ring-offset-surface-card shadow-sm"
                 />
               ) : settings.userName ? (
-                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-primary to-primary-fixed text-on-primary font-bold text-lg flex items-center justify-center ring-2 ring-primary ring-offset-1 ring-offset-surface-card shadow-sm">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-primary to-primary-fixed text-on-primary font-bold text-lg flex items-center justify-center ring-2 ring-amber-400 ring-offset-1 ring-offset-surface-card shadow-sm">
                   {settings.userName.slice(0, 1).toUpperCase()}
                 </div>
               ) : (
-                <div className="w-12 h-12 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center ring-1 ring-surface-container shadow-xs">
+                <div className="w-12 h-12 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center ring-2 ring-amber-400 shadow-xs">
                   <span className="material-symbols-outlined text-[24px]">person</span>
                 </div>
               )}
               <div
-                className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary border-2 border-surface-card flex items-center justify-center shadow-xs"
+                className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-surface-card border-2 border-surface-card flex items-center justify-center shadow-xs"
                 title="Employee Profile"
               >
-                <span className="material-symbols-outlined text-[10px] text-on-primary">verified</span>
+                <span className="material-symbols-outlined text-[10px] text-amber-500 dark:text-amber-300">verified</span>
               </div>
             </div>
 
-            {/* Name & Employee ID Badge */}
+            {/* Name, Employee ID & Department */}
             <div className="flex flex-col min-w-0">
               <h1 className="text-base font-bold text-on-surface tracking-tight truncate leading-tight">
                 {settings.userName || 'Employee Name'}
@@ -88,7 +92,7 @@ export const HomeScreen: React.FC = () => {
 
               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                 {settings.employeeId ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-400/20 text-amber-900 dark:text-amber-200 text-[11px] font-mono font-bold border border-amber-400/40">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-300 text-amber-950 text-xs font-mono font-bold border border-amber-500 shadow-xs">
                     <span className="material-symbols-outlined text-[13px]">badge</span>
                     <span>EMP {settings.employeeId}</span>
                   </span>
@@ -96,6 +100,11 @@ export const HomeScreen: React.FC = () => {
                   <span className="text-[11px] text-on-surface-variant italic">ID not assigned</span>
                 )}
               </div>
+              {settings.department && (
+                <p className="mt-1 text-xs font-medium text-on-surface-variant break-words" aria-label="Department">
+                  {settings.department}
+                </p>
+              )}
             </div>
           </div>
 
@@ -183,7 +192,7 @@ export const HomeScreen: React.FC = () => {
           {/* Annual Leave Card */}
           <article
             onClick={() => setActiveDetailCategory('AL')}
-            className="w-full bg-leave-annual-container rounded-xl p-2.5 sm:p-3 shadow-2xs flex items-center justify-between text-leave-annual-on-container cursor-pointer hover:opacity-95 active:scale-[0.99] transition-all"
+            className="w-full bg-leave-annual-container rounded-xl p-2.5 sm:p-3 min-h-14 shadow-2xs flex items-center justify-between gap-3 text-leave-annual-on-container cursor-pointer hover:opacity-95 active:scale-[0.99] transition-all"
           >
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-surface-container-lowest/80 flex items-center justify-center text-leave-annual shrink-0">
@@ -195,8 +204,8 @@ export const HomeScreen: React.FC = () => {
                 Annual Leave
               </h3>
             </div>
-            <div className="flex items-baseline gap-1 text-right">
-              <span className="text-xl font-bold text-leave-annual-on-container leading-none">
+            <div className="flex items-baseline justify-end gap-0.5 min-w-[4.5rem] shrink-0 text-right tabular-nums">
+              <span className="text-xl font-bold text-leave-annual-on-container leading-7">
                 {Number.isInteger(alAvailable) ? alAvailable : alAvailable.toFixed(1)}
               </span>
               <span className="text-xs font-semibold text-leave-annual-on-container opacity-80">
@@ -208,7 +217,7 @@ export const HomeScreen: React.FC = () => {
           {/* Sick Leave Card */}
           <article
             onClick={() => setActiveDetailCategory('SL')}
-            className="w-full bg-leave-sick-container rounded-xl p-2.5 sm:p-3 shadow-2xs flex items-center justify-between text-leave-sick-on-container cursor-pointer hover:opacity-95 active:scale-[0.99] transition-all"
+            className="w-full bg-leave-sick-container rounded-xl p-2.5 sm:p-3 min-h-14 shadow-2xs flex items-center justify-between gap-3 text-leave-sick-on-container cursor-pointer hover:opacity-95 active:scale-[0.99] transition-all"
           >
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-surface-container-lowest/80 flex items-center justify-center text-leave-sick shrink-0">
@@ -220,8 +229,8 @@ export const HomeScreen: React.FC = () => {
                 Sick Leave
               </h3>
             </div>
-            <div className="flex items-baseline gap-1 text-right">
-              <span className="text-xl font-bold text-leave-sick-on-container leading-none">
+            <div className="flex items-baseline justify-end gap-0.5 min-w-[4.5rem] shrink-0 text-right tabular-nums">
+              <span className="text-xl font-bold text-leave-sick-on-container leading-7">
                 {Number.isInteger(slAvailable) ? slAvailable : slAvailable.toFixed(1)}
               </span>
               <span className="text-xs font-semibold text-leave-sick-on-container opacity-80">
@@ -233,7 +242,7 @@ export const HomeScreen: React.FC = () => {
           {/* Comp-off Leave Card */}
           <article
             onClick={() => setActiveDetailCategory('CO')}
-            className="w-full bg-leave-compoff-container rounded-xl p-2.5 sm:p-3 shadow-2xs flex items-center justify-between text-leave-compoff-on-container cursor-pointer hover:opacity-95 active:scale-[0.99] transition-all"
+            className="w-full bg-leave-compoff-container rounded-xl p-2.5 sm:p-3 min-h-14 shadow-2xs flex items-center justify-between gap-3 text-leave-compoff-on-container cursor-pointer hover:opacity-95 active:scale-[0.99] transition-all"
           >
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-surface-container-lowest/80 flex items-center justify-center text-leave-compoff shrink-0">
@@ -245,18 +254,18 @@ export const HomeScreen: React.FC = () => {
                 Comp-off Leave
               </h3>
             </div>
-            <div className="flex items-baseline gap-1 text-right">
-              <span className="text-xl font-bold text-leave-compoff-on-container leading-none">
+            <div title={`${coAvailable} available, ${coUsed} used`} aria-label={`${coAvailable} available, ${coUsed} used`} className="flex items-baseline justify-end gap-0.5 min-w-[4.5rem] shrink-0 text-right tabular-nums">
+              <span className="text-xl font-bold text-leave-compoff-on-container leading-7">
                 {Number.isInteger(coAvailable) ? coAvailable : coAvailable.toFixed(1)}
               </span>
-              <span className="text-xs font-semibold text-leave-compoff-on-container opacity-80">Days</span>
+              <span className="text-xs font-semibold text-leave-compoff-on-container opacity-80">/{Number.isInteger(coTotal) ? coTotal : coTotal.toFixed(1)}</span>
             </div>
           </article>
 
           {/* Loss of Pay (LOP) Card */}
           <article
             onClick={() => setActiveDetailCategory('LOP')}
-            className="w-full bg-rose-50/90 dark:bg-rose-950/30 rounded-xl p-2.5 sm:p-3 shadow-2xs flex items-center justify-between text-rose-950 dark:text-rose-200 border border-rose-200/90 dark:border-rose-800/40 cursor-pointer hover:border-rose-300 active:scale-[0.99] transition-all"
+            className="w-full bg-rose-50/90 dark:bg-rose-950/30 rounded-xl p-2.5 sm:p-3 min-h-14 shadow-2xs flex items-center justify-between gap-3 text-rose-950 dark:text-rose-200 border border-rose-200/90 dark:border-rose-800/40 cursor-pointer hover:border-rose-300 active:scale-[0.99] transition-all"
           >
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-300 shrink-0 shadow-2xs border border-rose-200 dark:border-rose-800/40">
@@ -275,18 +284,17 @@ export const HomeScreen: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="flex items-baseline gap-1 text-right">
-              <span className={`text-xl font-bold leading-none ${totalLOP > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-rose-900/60 dark:text-rose-300/60'}`}>
+            <div className="flex items-baseline justify-end gap-0.5 min-w-[4.5rem] shrink-0 text-right tabular-nums">
+              <span className={`text-xl font-bold leading-7 ${totalLOP > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-rose-900/60 dark:text-rose-300/60'}`}>
                 {Number.isInteger(totalLOP) ? totalLOP : totalLOP.toFixed(1)}
               </span>
-              <span className="text-xs font-semibold opacity-80">Days</span>
             </div>
           </article>
 
           {/* Special Holidays Card */}
           <article
             onClick={() => setActiveDetailCategory('SPECIAL')}
-            className="w-full bg-purple-50/90 dark:bg-purple-950/30 rounded-xl p-2.5 sm:p-3 shadow-2xs flex items-center justify-between text-purple-950 dark:text-purple-200 border border-purple-200/90 dark:border-purple-800/40 cursor-pointer hover:border-purple-300 active:scale-[0.99] transition-all"
+            className="w-full bg-purple-50/90 dark:bg-purple-950/30 rounded-xl p-2.5 sm:p-3 min-h-14 shadow-2xs flex items-center justify-between gap-3 text-purple-950 dark:text-purple-200 border border-purple-200/90 dark:border-purple-800/40 cursor-pointer hover:border-purple-300 active:scale-[0.99] transition-all"
           >
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center text-purple-700 dark:text-purple-300 shrink-0 shadow-2xs border border-purple-200 dark:border-purple-800/40">
@@ -305,11 +313,10 @@ export const HomeScreen: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="flex items-baseline gap-1 text-right">
-              <span className="text-xl font-bold leading-none text-purple-700 dark:text-purple-300">
+            <div className="flex items-baseline justify-end gap-0.5 min-w-[4.5rem] shrink-0 text-right tabular-nums">
+              <span className="text-xl font-bold leading-7 text-purple-700 dark:text-purple-300">
                 {specialHolidays.length}
               </span>
-              <span className="text-xs font-semibold opacity-80">Days</span>
             </div>
           </article>
         </div>

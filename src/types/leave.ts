@@ -42,6 +42,7 @@ export interface SpecialHoliday extends PublicHoliday {
 export interface UserSettings {
   userName?: string;
   employeeId?: string;
+  department?: string; // Maximum 15 characters
   avatarUrl?: string;
   dateOfJoining?: string; // YYYY-MM-DD
   alEntitlement: number;

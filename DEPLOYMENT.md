@@ -42,4 +42,8 @@ Offline requires one successful online installation. Browser storage eviction or
 4. Choose Later. Close every app window and tab, then reopen: the previous app version should remain.
 5. After the six-hour snooze expires, choose Update Now. Confirm the new release opens and existing leave data remains.
 
-The old worker's background notification handlers remain included. This change does not add an Android package, a push delivery backend, or guaranteed operating-system background scheduling.
+Wishes now appear only in the Home banner. The settings toggle and automatic wish notification handlers have been removed. This project does not add an Android package or a push delivery backend.
+
+## UI validation
+
+Run npm run test:calendar for month filtering and observed-holiday cases. After building, npm run test:ui checks the profile department limit, balance alignment, calendar month history, single comp-off warning, and light/dark layouts in Chrome at 320px, 390px, and 768px widths. Screenshots are saved under ui-screenshots/ (ignored by Git).

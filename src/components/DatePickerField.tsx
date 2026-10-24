@@ -149,18 +149,6 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
       )}
 
       <div className="relative flex items-center w-full">
-        {/* Left Clickable Calendar Icon */}
-        <button
-          type="button"
-          onClick={() => setIsOpen((prev) => !prev)}
-          disabled={disabled}
-          className="absolute left-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer z-10"
-          title="Click to toggle calendar"
-          aria-label={ariaLabel || 'Toggle calendar picker'}
-        >
-          <span className="material-symbols-outlined text-[18px]">calendar_today</span>
-        </button>
-
         {/* Formatted Text Input with Auto-Slash */}
         <input
           ref={inputRef}
@@ -172,12 +160,13 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
           required={required}
           disabled={disabled}
           placeholder={placeholder}
+          aria-label={label || ariaLabel || 'Date'}
           value={inputValue}
           onChange={handleTextChange}
           onFocus={() => {
             // Keep open or open if empty
           }}
-          className="w-full pl-10 pr-12 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary z-0"
+          className="w-full pl-3 pr-11 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary z-0"
         />
 
         {/* Right Calendar Toggle Button */}
@@ -200,7 +189,7 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
       {/* Floating Mini Calendar Popover */}
       {isOpen && (
         <div
-          className="absolute left-0 top-[calc(100%+6px)] z-50 w-72 sm:w-80 p-3.5 bg-surface-card rounded-2xl shadow-2xl border border-surface-container animate-in fade-in zoom-in-95"
+          className="absolute left-0 top-[calc(100%+6px)] z-50 w-72 max-w-[calc(100vw-3rem)] sm:w-80 p-3.5 bg-surface-card rounded-2xl shadow-2xl border border-surface-container animate-in fade-in zoom-in-95"
           role="dialog"
           aria-label="Calendar date selector"
         >

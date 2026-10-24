@@ -73,100 +73,10 @@ self.addEventListener('message', event => {
       event.ports[0]?.postMessage({ approved: true });
     })());
   }
-  if (event.data?.type === 'CHECK_HOLIDAY_NOTIFICATIONS') {
-    event.waitUntil(triggerHolidayPushNotification());
-  }
+
 });
 
-// Singapore 2026 Gazetted Public Holidays for Background & Push Notifications
-const GAZETTED_HOLIDAYS_2026 = [
-  { date: '2026-01-01', name: "New Year's Day", emoji: '🎆' },
-  { date: '2026-02-17', name: 'Chinese New Year (Day 1)', emoji: '🧧' },
-  { date: '2026-02-18', name: 'Chinese New Year (Day 2)', emoji: '🧧' },
-  { date: '2026-03-21', name: 'Hari Raya Puasa', emoji: '🌙' },
-  { date: '2026-04-03', name: 'Good Friday', emoji: '✝️' },
-  { date: '2026-05-01', name: 'Labour Day', emoji: '🛠️' },
-  { date: '2026-05-27', name: 'Hari Raya Haji', emoji: '🕌' },
-  { date: '2026-05-31', name: 'Vesak Day', emoji: '🪷' },
-  { date: '2026-06-01', name: 'Vesak Day (Observed)', emoji: '🪷' },
-  { date: '2026-08-09', name: 'National Day', emoji: '🇸🇬' },
-  { date: '2026-08-10', name: 'National Day (Observed)', emoji: '🇸🇬' },
-  { date: '2026-11-08', name: 'Deepavali', emoji: '🪔' },
-  { date: '2026-11-09', name: 'Deepavali (Observed)', emoji: '🪔' },
-  { date: '2026-12-25', name: 'Christmas Day', emoji: '🎄' }
-];
-
-// Helper: Calculate current time in Indian Standard Time (IST, UTC+5:30)
-function getCurrentIST() {
-  const now = new Date();
-  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
-  const istDate = new Date(utcMs + 5.5 * 3600000);
-  const year = istDate.getFullYear();
-  const month = String(istDate.getMonth() + 1).padStart(2, '0');
-  const day = String(istDate.getDate()).padStart(2, '0');
-  return {
-    dateStr: `${year}-${month}-${day}`,
-    dayOfWeek: istDate.getDay(), // 0 = Sun, 5 = Fri, 6 = Sat
-    hours: istDate.getHours()
-  };
-}
-
-// Background Check for Holiday & Weekend Wishes
-async function triggerHolidayPushNotification() {
-  const { dateStr, dayOfWeek, hours } = getCurrentIST();
-
-  // 1. Weekend Wish (Friday 3PM IST through Sunday)
-  const isWeekendActive = (dayOfWeek === 5 && hours >= 15) || dayOfWeek === 6 || dayOfWeek === 0;
-  if (isWeekendActive) {
-    const weekendTag = `cutisg-weekend-${dateStr.slice(0, 7)}-${dayOfWeek === 5 ? dateStr : 'weekend'}`;
-    const existing = await self.registration.getNotifications({ tag: weekendTag });
-    if (!existing || existing.length === 0) {
-      await self.registration.showNotification('Happy Weekend! 🎉', {
-        body: 'Wishing you a restful and joyful weekend from CutiSG!',
-        icon: '/pwa-192x192.png',
-        badge: '/icon.svg',
-        tag: weekendTag,
-        vibrate: [200, 100, 200],
-        data: { url: '/' }
-      });
-      return;
-    }
-  }
-
-  // 2. Singapore Public Holidays (Trigger on Same Day 8:00 AM IST)
-  if (hours >= 8) {
-    const holidayToday = GAZETTED_HOLIDAYS_2026.find((h) => h.date === dateStr);
-    if (holidayToday) {
-      const holidayTag = `cutisg-ph-${holidayToday.date}`;
-      const existing = await self.registration.getNotifications({ tag: holidayTag });
-      if (!existing || existing.length === 0) {
-        await self.registration.showNotification(`Happy ${holidayToday.name}! ${holidayToday.emoji}`, {
-          body: `Wishing you a wonderful ${holidayToday.name} holiday in Singapore!`,
-          icon: '/pwa-192x192.png',
-          badge: '/icon.svg',
-          tag: holidayTag,
-          vibrate: [200, 100, 200],
-          data: { url: '/?tab=calendar' }
-        });
-      }
-    }
-  }
-}
-
-// Background Sync capability
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'check-holiday-alerts' || event.tag === 'sync-leaves') {
-    event.waitUntil(triggerHolidayPushNotification());
-  }
-});
-
-// Periodic Background Sync: Triggered periodically by mobile OS
-self.addEventListener('periodicsync', (event) => {
-  if (event.tag === 'check-holiday-alerts') {
-    event.waitUntil(triggerHolidayPushNotification());
-  }
-});
-
+// Wishes are rendered in the Home banner; legacy sync events no longer send them.
 // Real Web Push Notification handler
 self.addEventListener('push', (event) => {
   let data = {

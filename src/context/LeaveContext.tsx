@@ -3,7 +3,6 @@ import { LeaveRecord, UserSettings, LeaveType, LeaveStatus, PublicHoliday, Speci
 import { ALL_GAZETTED_HOLIDAYS, addDaysToDate, formatDateDDMMYYYY, parseDDMMYYYYToISO } from '../data/singaporeHolidays2026';
 import { AppNotification, generateNotifications } from '../utils/notifications';
 import { playCelebrationChime } from '../utils/sound';
-import { sendCelebrationPushNotification } from '../utils/pushNotifications';
 
 interface ToastState {
   show: boolean;
@@ -214,7 +213,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (parsed.userName === 'Employee') parsed.userName = '';
         if (parsed.employeeId === 'EMP-1103118') parsed.employeeId = '';
         if (parsed.dateOfJoining === '2023-08-15') parsed.dateOfJoining = '';
-        return { ...defaultSettings, ...parsed, alEntitlement: 12, slEntitlement: 12 };
+        return { ...defaultSettings, ...parsed, department: typeof parsed.department === 'string' ? parsed.department.slice(0, 15) : '', alEntitlement: 12, slEntitlement: 12 };
       }
       return defaultSettings;
     } catch {
@@ -376,25 +375,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Automated delivery of celebration wishes as push notifications and modal popup
-  useEffect(() => {
-    if (settings.notificationsEnabled === false) {
-      return;
-    }
-    const notifs = generateNotifications(settings, specialHolidays, ALL_GAZETTED_HOLIDAYS, records, todayDateStr);
-    const activeCelebration = notifs.find(
-      (n) => n.isCelebration || n.type === 'anniversary' || n.type === 'weekend' || n.type === 'indian_holiday' || n.type === 'special_holiday'
-    );
-    if (activeCelebration) {
-      // Deliver as Mobile / Browser Push Notification (where supported & granted)
-      sendCelebrationPushNotification({
-        title: activeCelebration.title,
-        body: activeCelebration.message,
-        tag: activeCelebration.id,
-        icon: '/pwa-192x192.png'
-      });
-    }
-  }, [settings.notificationsEnabled, todayDateStr, settings.dateOfJoining]);
+  // Celebration wishes are displayed in the Home banner only.
 
   const showToast = (message: string) => {
     setToast({ show: true, message });
@@ -408,7 +389,9 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateSettings = (newSettings: Partial<UserSettings>) => {
-    setSettings((prev) => ({ ...prev, ...newSettings }));
+    const normalized = { ...newSettings };
+    if (normalized.department !== undefined) normalized.department = normalized.department.trim().slice(0, 15);
+    setSettings((prev) => ({ ...prev, ...normalized }));
   };
 
   const openApplyModal = (config?: { initialType?: LeaveType; initialStatus?: LeaveStatus; initialDate?: string }) => {

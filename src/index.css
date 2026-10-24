@@ -275,6 +275,8 @@ html.theme-transitioning *::after {
 }
 
 /* Material Symbols styling */
+/* Let explicit Tailwind sizes win over icon and typography defaults. */
+@layer components {
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined Variable';
   font-weight: normal;
@@ -320,4 +322,5 @@ html.theme-transitioning *::after {
 .text-headline-md { font-size: 24px; line-height: 32px; }
 .text-headline-lg-mobile { font-size: 28px; line-height: 36px; }
 .text-headline-lg { font-size: 32px; line-height: 40px; }
+}
 

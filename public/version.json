@@ -1,19 +1,25 @@
 {
-  "version": "1.3.3",
+  "version": "1.3.4",
   "releaseDate": "2026-10-24",
-  "releaseNotes": "Offline app caching and approval-based updates.",
+  "releaseNotes": "Clearer leave balances, monthly calendar history, and updated employee profiles.",
   "highlights": [
     {
-      "title": "Offline access",
-      "description": "The full app, fonts and icons are saved for offline use.",
-      "icon": "offline_bolt",
-      "color": "emerald"
+      "title": "Monthly calendar",
+      "description": "See the month’s public holidays and leave history, with weekend leave dates excluded.",
+      "icon": "calendar_month",
+      "color": "blue"
     },
     {
-      "title": "You control updates",
-      "description": "Keep your current version until you choose Update Now.",
-      "icon": "system_update",
-      "color": "blue"
+      "title": "Employee profile",
+      "description": "Add your department and view the brighter gold employee badge.",
+      "icon": "badge",
+      "color": "amber"
+    },
+    {
+      "title": "Cleaner leave details",
+      "description": "Aligned balances and one clear comp-off validation warning.",
+      "icon": "check_circle",
+      "color": "emerald"
     }
   ]
 }

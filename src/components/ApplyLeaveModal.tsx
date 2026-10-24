@@ -848,28 +848,7 @@ export const ApplyLeaveModal: React.FC = () => {
               </div>
             )}
 
-            {/* Comp-Off 90-Day Validity Guidance Notice */}
-            {type === 'CO' && (
-              <div className={`p-2.5 rounded-lg flex items-start gap-2 border text-xs mt-1 ${
-                isCompOffPost90Days
-                  ? 'bg-error-container text-on-error-container border-error/30'
-                  : 'bg-leave-compoff-container text-leave-compoff-on-container border-leave-compoff/30'
-              }`}>
-                <span className={`material-symbols-outlined text-[18px] shrink-0 mt-0.5 ${isCompOffPost90Days ? 'text-error' : 'text-leave-compoff'}`}>
-                  {isCompOffPost90Days ? 'event_busy' : 'schedule'}
-                </span>
-                <div className="flex-1">
-                  <span className={`font-semibold block ${isCompOffPost90Days ? 'text-error' : 'text-leave-compoff'}`}>
-                    {isCompOffPost90Days ? 'Comp-Off 90-Day Expiry Restriction:' : 'Comp-Off 90-Day Validity Window:'}
-                  </span>
-                  <span className="leading-snug block mt-0.5 opacity-90">
-                    {isCompOffPost90Days
-                      ? 'Comp-off leave cannot be applied for date post 90-day period. Leave date must be on or below the expire date. Applications can be submitted post expiry, but the leave date must be within 90 days.'
-                      : 'Leave must be applied for a date below the expire date (within 90 days of earned Saturday holiday). Submissions can be done post expiry.'}
-                  </span>
-                </div>
-              </div>
-            )}
+
           </div>
 
           {/* Submit & Cancel Buttons */}
