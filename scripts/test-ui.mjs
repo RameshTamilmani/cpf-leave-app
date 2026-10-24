@@ -79,7 +79,7 @@ try {
     await page.getByText(/Already a public holiday. Not counted twice/).waitFor();
     await page.getByRole('button', { name: /Add Special Holiday/ }).click();
     await page.getByRole('textbox', { name: /^DATE \(/ }).fill('10/08/2026');
-    await page.getByRole('alert').getByText(/National Day \(Observed\) is already recorded/).waitFor();
+    await page.getByRole('alert').getByText(/National Day \(Substitute\) is already recorded/).waitFor();
     assert.equal(await page.getByRole('button', { name: 'Add Special Holiday', exact: true }).isDisabled(), true);
     await page.getByRole('button', { name: 'Cancel', exact: true }).click();
     assert.equal(await page.getByRole('button', { name: 'Choose Date of Joining', exact: true }).count(), 1);
@@ -93,7 +93,7 @@ try {
     assert.equal(await page.getByText('Regular Working Day', { exact: true }).count(), 0);
     await page.getByRole('button', { name: 'Next Month', exact: true }).click();
     await history.getByText('Deepavali', { exact: true }).waitFor();
-    await history.getByText('Deepavali (Observed)', { exact: true }).waitFor();
+    await history.getByText('Deepavali (Substitute)', { exact: true }).waitFor();
     assert.equal(await history.locator('[data-date="2026-11-08"]').count(), 1);
     assert.equal(await history.locator('[data-date="2026-11-09"]').count(), 1);
     await history.getByText('November half day', { exact: true }).waitFor();

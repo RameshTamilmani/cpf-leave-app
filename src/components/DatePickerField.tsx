@@ -1,3 +1,4 @@
+import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState, useRef, useEffect } from 'react';
 import {
   formatDateDDMMYYYY,
@@ -35,6 +36,8 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
   id,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  useModalScrollLock(isOpen);
+
   const [inputValue, setInputValue] = useState(value && isValidISODate(value) ? formatDateDDMMYYYY(value) : '');
 
   // Year and month for current calendar view

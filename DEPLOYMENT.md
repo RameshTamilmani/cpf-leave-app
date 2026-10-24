@@ -26,7 +26,7 @@ Do not clear site data or uninstall the app as a migration step: leave records l
 
 ## Subsequent releases
 
-Update the human-readable version and notes in `public/version.json` and the package version when preparing a release. Every production build generates its own build ID and timestamp, shared by the client, worker, and generated `dist/version.json`. Even a rebuild with the same version label is detectable.
+Update the version in `package.json` using `npm version patch --no-git-tag-version` (or minor/major). The version hook synchronizes `public/version.json`; edit release notes there. Every production build generates its own build ID and timestamp, shared by the client, worker, and generated `dist/version.json`. Even a rebuild with the same version label is detectable.
 
 The worker downloads the complete new release before showing the update dialog. Choosing Later keeps the approved app version, including after all windows close and reopen. Choosing Update Now records approval, activates the downloaded worker when needed, and reloads without deleting leave data or offline assets. A downloaded update can be approved offline.
 
@@ -49,7 +49,7 @@ Wishes now appear only in the Home banner. The settings toggle and automatic wis
 Run npm run test:calendar for month filtering and observed-holiday cases. After building, npm run test:ui checks the profile department limit, balance alignment, calendar month history, single comp-off warning, and light/dark layouts in Chrome at 320px, 390px, and 768px widths. Screenshots are saved under ui-screenshots/ (ignored by Git).
 
 
-## Version 1.1.1: deployment and update corrections
+## deployment and update corrections
 
 The failed Vercel log used commit 2baf370: that commit had bun.lock and no package-lock.json, yet requested npm ci. It cannot succeed. The newer local commit removed Bun but its npm lockfile omitted platform-specific dependencies. A clean npm ci reproduced EUSAGE with missing Tailwind oxide, esbuild and lightningcss variants. Existing node_modules had hidden that second problem.
 
@@ -73,3 +73,17 @@ npm run test:browser
 ```
 
 The browser test covers a delayed download, install events without automatic approval, snooze/manual checks online and offline, missing-cache approval rejection without reloading, retry, profile preservation and offline restart. Browser tests need installed Chrome (or TEST_BROWSER_CHANNEL=msedge).
+
+## modal scrolling and ledger clarity
+
+All modal windows, inline confirmations and calendar popovers use a shared page scroll lock. It fixes the body at its previous position and restores that position and the original styles after the final window closes. Nested dialogs keep the page locked when a child closes; content inside the active modal can still scroll.
+
+The comp-off ledger separates already credited holidays from upcoming holidays, uses distinct muted green/blue sections and status labels, and states that upcoming credits are not part of the available balance. Credited entries now include both expired-window and non-expired-window earned credits, respecting excluded dates. The underlying earning and deduction rules are unchanged.
+
+The special holiday form occupies 85% of the dynamic viewport height on phones and 75% on larger screens, with an internally scrollable form. The weekend default-date calculation uses local calendar arithmetic so Saturday/Sunday correctly advances to Monday in Singapore/India time zones.
+
+After building, run npm run test:modals to verify background locking, internal scrolling, restored page position, nested date pickers, credited/upcoming sections, and large holiday-form dimensions at phone, desktop and short viewport sizes.
+
+## Version source
+
+The release baseline is 1.0.0. package.json is the canonical app version. Vite injects that version into the client and worker and generates dist/version.json. About CutiSG imports the shared APP_VERSION value, so its badge follows every future build without manual editing. Use npm version patch --no-git-tag-version (or minor/major) to update package.json, package-lock.json, public/version.json and README badges together. Manual package.json edits also control all built version displays. Unique build IDs continue detecting deployments even when the version label is unchanged or reset.

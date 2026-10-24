@@ -1,7 +1,7 @@
 {
   "name": "react-example",
   "private": true,
-  "version": "1.1.1",
+  "version": "1.1.2",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
@@ -16,7 +16,9 @@
     "test:holidays": "node --import tsx --test scripts/test-holidays.mjs",
     "test:profile": "node --import tsx --test scripts/test-profile.mjs",
     "test:profile-browser": "node scripts/test-profile-browser.mjs",
-    "test:updates": "node --import tsx --test scripts/test-updates.mjs"
+    "test:updates": "node --import tsx --test scripts/test-updates.mjs",
+    "test:modals": "node scripts/test-modals.mjs",
+    "version": "node scripts/sync-version.mjs"
   },
   "dependencies": {
     "@fontsource-variable/material-symbols-outlined": "^5.2.0",

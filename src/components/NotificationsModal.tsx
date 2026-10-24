@@ -1,3 +1,4 @@
+import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { generateNotifications, AppNotification } from '../utils/notifications';
@@ -22,6 +23,8 @@ export const NotificationsModal: React.FC = () => {
       markNotificationsAsViewed();
     }
   }, [isNotificationsOpen, markNotificationsAsViewed]);
+
+  useModalScrollLock(isNotificationsOpen);
 
   if (!isNotificationsOpen) return null;
 

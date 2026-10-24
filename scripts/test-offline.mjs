@@ -26,7 +26,7 @@ function environment() {
     const events = {};
     let skipped = false;
     vm.runInNewContext(source, {
-      __APP_RELEASE__: { version: '1.3.3', buildId },
+      __APP_RELEASE__: { version: '1.0.0', buildId },
       URL, Response, console, caches,
       async fetch(request) {
         if (offline || String(request).includes(failAsset || 'NEVER_FAIL')) throw new Error('network unavailable');

@@ -1,3 +1,4 @@
+import { holidayLabel } from './holidayLabel';
 import type { LeaveRecord, PublicHoliday } from '../types/leave';
 import { isWeekend } from '../data/singaporeHolidays2026';
 
@@ -23,7 +24,7 @@ export function getMonthEntries(year: number, month: number, holidays: PublicHol
       if (!date.startsWith(prefix) || holidayKeys.has(key)) continue;
       holidayKeys.add(key);
       entries.push({ id: `holiday:${holiday.id || holiday.name}:${date}`, date,
-        title: holiday.name + (date !== holiday.date ? ' (Observed)' : ''), holiday });
+        title: holidayLabel(holiday.name) + (date !== holiday.date ? ' (Substitute)' : ''), holiday });
     }
   }
   const daysInMonth = new Date(year, month + 1, 0).getDate();

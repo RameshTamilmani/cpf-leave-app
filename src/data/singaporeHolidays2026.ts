@@ -74,7 +74,7 @@ export const SINGAPORE_HOLIDAYS_2026: PublicHoliday[] = [
     dayOfWeek: 'Sunday',
     isLongWeekend: true,
     observedDate: '2026-06-01',
-    longWeekendText: 'Observed Mon 1 Jun (Long Weekend)',
+    longWeekendText: 'Substitute Mon 1 Jun (Long Weekend)',
     description: 'Gazetted Public Holiday falls on Sunday. Pursuant to Employment Act Sec 88, Mon 1 Jun is designated public holiday in substitution.',
     emoji: '🪷',
     momSection: 'MOM Section 88'
@@ -85,8 +85,8 @@ export const SINGAPORE_HOLIDAYS_2026: PublicHoliday[] = [
     dayOfWeek: 'Sunday',
     isLongWeekend: true,
     observedDate: '2026-08-10',
-    longWeekendText: 'Observed Mon 10 Aug (Long Weekend)',
-    description: "Singapore's 61st National Day. As 9 Aug is a Sunday, the following Monday 10 Aug is an official observed public holiday.",
+    longWeekendText: 'Substitute Mon 10 Aug (Long Weekend)',
+    description: "Singapore's 61st National Day. As 9 Aug is a Sunday, the following Monday 10 Aug is an official substitute public holiday.",
     emoji: '🇸🇬',
     momSection: 'MOM Section 88'
   },
@@ -96,8 +96,8 @@ export const SINGAPORE_HOLIDAYS_2026: PublicHoliday[] = [
     dayOfWeek: 'Sunday',
     isLongWeekend: true,
     observedDate: '2026-11-09',
-    longWeekendText: 'Observed Mon 9 Nov (Long Weekend)',
-    description: 'Festival of Lights. As 8 Nov is a Sunday, Monday 9 Nov is observed as the official statutory off-day under MOM Section 88.',
+    longWeekendText: 'Substitute Mon 9 Nov (Long Weekend)',
+    description: 'Festival of Lights. As 8 Nov is a Sunday, Monday 9 Nov is the substitute statutory off-day under MOM Section 88.',
     emoji: '🪔',
     momSection: 'MOM Section 88'
   },
@@ -140,8 +140,8 @@ export const SINGAPORE_HOLIDAYS_2027: PublicHoliday[] = [
     dayOfWeek: 'Sunday',
     isLongWeekend: true,
     observedDate: '2027-02-08',
-    longWeekendText: 'Observed Mon 8 Feb (Long Weekend)',
-    description: 'Falls on a Sunday; the following Monday 8 Feb is observed as statutory paid public holiday.',
+    longWeekendText: 'Substitute Mon 8 Feb (Long Weekend)',
+    description: 'Falls on a Sunday; the following Monday 8 Feb is a substitute paid public holiday.',
     emoji: '🍊',
     momSection: 'MOM Section 88'
   },
@@ -180,8 +180,8 @@ export const SINGAPORE_HOLIDAYS_2027: PublicHoliday[] = [
     dayOfWeek: 'Sunday',
     isLongWeekend: true,
     observedDate: '2027-05-17',
-    longWeekendText: 'Observed Mon 17 May (Long Weekend)',
-    description: 'Falls on Sunday; following Monday 17 May observed as statutory off-day.',
+    longWeekendText: 'Substitute Mon 17 May (Long Weekend)',
+    description: 'Falls on Sunday; following Monday 17 May serves as statutory off-day.',
     emoji: '🕌',
     momSection: 'MOM Section 88'
   },
@@ -369,8 +369,8 @@ export const SINGAPORE_HOLIDAYS_2028: PublicHoliday[] = [
     dayOfWeek: 'Sunday',
     isLongWeekend: true,
     observedDate: '2028-02-28',
-    longWeekendText: 'Observed Mon 28 Feb (Long Weekend)',
-    description: 'Falls on Sunday; following Monday observed as statutory off-day.',
+    longWeekendText: 'Substitute Mon 28 Feb (Long Weekend)',
+    description: 'Falls on Sunday; following Monday is the substitute statutory off-day.',
     emoji: '🌙',
     momSection: 'MOM Section 88'
   },

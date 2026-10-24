@@ -1,3 +1,4 @@
+import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React from 'react';
 
 interface UpToDateModalProps {
@@ -7,6 +8,8 @@ interface UpToDateModalProps {
 }
 
 export const UpToDateModal: React.FC<UpToDateModalProps> = ({ isOpen, onClose, version }) => {
+  useModalScrollLock(isOpen);
+
   if (!isOpen) return null;
 
   return (

@@ -1,3 +1,4 @@
+import { APP_RELEASE, APP_VERSION } from '../release';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { registerAppWorker, downloadedRelease, downloadRelease, waitForActivation, workerMessage, type DownloadedRelease } from '../pwa';
 
@@ -6,8 +7,8 @@ export interface VersionInfo {
   version: string; buildTime: number; buildId?: string;
   releaseDate?: string; releaseNotes?: string; highlights?: ReleaseHighlight[];
 }
-const CURRENT_RELEASE: VersionInfo = __APP_RELEASE__;
-export const CURRENT_APP_VERSION = CURRENT_RELEASE.version;
+const CURRENT_RELEASE: VersionInfo = APP_RELEASE;
+export const CURRENT_APP_VERSION = APP_VERSION;
 export const CURRENT_BUILD_TIME = CURRENT_RELEASE.buildTime;
 const SNOOZE_KEY = 'cutisg_update_snooze_until';
 function snoozed() {

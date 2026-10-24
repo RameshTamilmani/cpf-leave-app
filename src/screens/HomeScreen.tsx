@@ -305,7 +305,7 @@ export const HomeScreen: React.FC = () => {
                         <span className="text-xs">{holiday.emoji || '🇸🇬'}</span>
                       </div>
                       <span className="text-[11px] text-on-surface-variant">
-                        {holiday.dayOfWeek} {holiday.observedDate ? `• Observed ${formatDateDDMMYYYY(holiday.observedDate)}` : ''}
+                        {holiday.dayOfWeek} {holiday.observedDate ? `• Substitute ${formatDateDDMMYYYY(holiday.observedDate)}` : ''}
                       </span>
                     </div>
                   </div>

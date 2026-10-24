@@ -1,3 +1,4 @@
+import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useRef, useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { ImageCropModal } from './ImageCropModal';
@@ -13,6 +14,8 @@ export const OnboardingModal: React.FC = () => {
   const [department, setDepartment] = useState('');
   const modalRef = useRef<HTMLDivElement>(null);
   const required = !!profileError(settings, todayDateStr);
+  useModalScrollLock(required);
+
   const colors = tenureColors[tenureTier(dateOfJoining, todayDateStr)];
   const [errorMsg, setErrorMsg] = useState('');
   const [cropModalSrc, setCropModalSrc] = useState<string | null>(null);

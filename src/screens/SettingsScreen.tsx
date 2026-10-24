@@ -1,3 +1,4 @@
+import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useRef, useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { AboutModal } from '../components/AboutModal';
@@ -43,6 +44,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
   // Modals state
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isFactoryResetModalOpen, setIsFactoryResetModalOpen] = useState(false);
+  useModalScrollLock(isResetModalOpen || isFactoryResetModalOpen);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [cropModalSrc, setCropModalSrc] = useState<string | null>(null);
 
@@ -613,9 +615,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
                 <span className="material-symbols-outlined text-[22px]">event_busy</span>
               </div>
               <div>
-                <p className="font-title-sm text-title-sm text-error font-semibold">Reset All Leave Records</p>
+                <p className="font-title-sm text-title-sm text-error font-semibold">Reset Leave Records</p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Erase leave logs and reset balances (keeps Name, Emp ID &amp; Profile info)
+                  Clear leave history. Keep profile and settings.
                 </p>
               </div>
             </div>
@@ -634,9 +636,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
                 <span className="material-symbols-outlined text-[22px]">restart_alt</span>
               </div>
               <div>
-                <p className="font-title-sm text-title-sm text-error font-semibold">Factory Reset (Reset All &amp; Profile)</p>
+                <p className="font-title-sm text-title-sm text-error font-semibold">Factory Reset</p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Restore entire app including profile details, custom holidays &amp; settings to defaults
+                  Clear all personal data and restore defaults.
                 </p>
               </div>
             </div>
@@ -719,10 +721,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
 
             <div>
               <h3 className="font-title-md text-title-md font-bold text-on-surface">
-                Reset Leave Records Only?
+                Reset Leave Records?
               </h3>
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1.5 leading-relaxed">
-                This will erase all logged Annual Leave, Sick Leave, and Comp-Off records and restore your balances back to full entitlement. <strong className="text-on-surface">Your Name, Employee ID, Date of Joining, and Profile photo will be safely preserved.</strong>
+                Delete all leave records and reset balances. Your profile and settings are kept. This cannot be undone.
               </p>
             </div>
 
@@ -765,10 +767,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
 
             <div>
               <h3 className="font-title-md text-title-md font-bold text-on-surface">
-                Factory Reset Entire App?
+                Factory Reset?
               </h3>
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1.5 leading-relaxed">
-                This action is irreversible. It will erase all leave records AND reset your Name, Employee ID, Date of Joining, Profile Picture, custom holidays, and all settings back to factory defaults.
+                Delete your profile, leave records and custom holidays, and restore default settings. This cannot be undone.
               </p>
             </div>
 

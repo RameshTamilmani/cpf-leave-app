@@ -1,3 +1,4 @@
+import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { LeaveType, LeaveRecord } from '../types/leave';
@@ -18,6 +19,8 @@ export const HistoryScreen: React.FC = () => {
 
   // Active record action sheet state for delete confirmation
   const [selectedRecordForSheet, setSelectedRecordForSheet] = useState<LeaveRecord | null>(null);
+
+  useModalScrollLock(!!selectedRecordForSheet);
 
   // Helper to determine effective status:
   // "Leave on the current date should be considered taken, not planned. Only leave greater than the current date should be considered as planned."

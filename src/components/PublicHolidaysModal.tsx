@@ -1,3 +1,4 @@
+import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
@@ -15,6 +16,8 @@ export const PublicHolidaysModal: React.FC = () => {
   } = useLeave();
 
   const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'special'>('upcoming');
+
+  useModalScrollLock(isHolidaysModalOpen);
 
   if (!isHolidaysModalOpen) return null;
 
@@ -126,7 +129,7 @@ export const PublicHolidaysModal: React.FC = () => {
                     </div>
                     <span className="font-body-sm text-body-sm text-on-surface-variant">
                       {holiday.dayOfWeek} • {formatDateDDMMYYYY(holiday.date)}
-                      {holiday.observedDate ? ` (Observed ${formatDateDDMMYYYY(holiday.observedDate)})` : ''}
+                      {holiday.observedDate ? ` (Substitute ${formatDateDDMMYYYY(holiday.observedDate)})` : ''}
                     </span>
                   </div>
                 </div>

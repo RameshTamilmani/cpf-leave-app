@@ -1,3 +1,5 @@
+import { APP_VERSION } from '../release';
+import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React from 'react';
 
 interface AboutModalProps {
@@ -6,6 +8,8 @@ interface AboutModalProps {
 }
 
 export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
+  useModalScrollLock(isOpen);
+
   if (!isOpen) return null;
 
   return (
@@ -24,7 +28,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             </div>
               <div className="flex items-center gap-2">
                 <h3 className="font-title-md text-title-md font-bold text-on-surface">About CutiSG</h3>
-                <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">v1.0.0</span>
+                <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">v{APP_VERSION}</span>
               </div>
               <p className="text-[12px] text-on-surface-variant">Singapore Leave Planner &amp; Public Holiday Tracker</p>
           </div>

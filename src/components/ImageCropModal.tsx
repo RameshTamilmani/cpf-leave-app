@@ -1,3 +1,4 @@
+import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 interface ImageCropModalProps {
@@ -198,6 +199,8 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
     setRotation(0);
     setOffset({ x: 0, y: 0 });
   };
+
+  useModalScrollLock(isOpen);
 
   if (!isOpen) return null;
 

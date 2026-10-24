@@ -1,3 +1,4 @@
+import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { LeaveRecord, SpecialHoliday } from '../types/leave';
@@ -38,6 +39,8 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
     specialHolidays,
     todayDateStr
   } = useLeave();
+
+  useModalScrollLock(isOpen);
 
   if (!isOpen) return null;
 
@@ -239,18 +242,7 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
                   + Apply Leave
                 </button>
               )}
-              {isSpecialList && onAddSpecialHoliday && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onAddSpecialHoliday();
-                  }}
-                  className="mt-2 px-4 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md font-semibold hover:opacity-95 active:scale-95 transition-all cursor-pointer shadow-xs"
-                >
-                  + Add Special Holiday
-                </button>
-              )}
+
             </div>
           ) : isSpecialList ? (
             /* Special Holidays List */

@@ -1,3 +1,4 @@
+import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState } from 'react';
 import { VersionInfo } from '../hooks/useAppUpdate';
 
@@ -19,6 +20,8 @@ export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
   const [error, setError] = useState('');
 
   // Builds can differ even when their human-readable version labels match.
+  useModalScrollLock(isOpen && !!updateInfo);
+
   if (!isOpen || !updateInfo) {
     return null;
   }

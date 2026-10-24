@@ -7,8 +7,10 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
+  const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
   const release = {
     ...JSON.parse(readFileSync('public/version.json', 'utf8')),
+    version,
     buildTime: Date.now(),
     buildId: randomUUID(),
   };

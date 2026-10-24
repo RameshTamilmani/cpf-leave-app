@@ -4,7 +4,7 @@ import { downloadRelease, waitForActivation } from '../src/pwa.ts';
 
 globalThis.window = globalThis;
 class Worker extends EventTarget {
-  constructor(id, state = 'activated') { super(); this.state = state; this.info = { buildId: id, version: '1.1.1', buildTime: id === 'A' ? 10 : 20 }; }
+  constructor(id, state = 'activated') { super(); this.state = state; this.info = { buildId: id, version: '1.0.0', buildTime: id === 'A' ? 10 : 20 }; }
   postMessage(_message, ports) { ports[0].postMessage(this.info); ports[0].close(); }
   change(state) { this.state = state; this.dispatchEvent(new Event('statechange')); }
 }
@@ -13,7 +13,7 @@ class Registration extends EventTarget {
   constructor(update) { super(); this.performUpdate = update; }
   async update() { await this.performUpdate(this); }
 }
-const expected = { buildId: 'B', version: '1.1.1', buildTime: 20 };
+const expected = { buildId: 'B', version: '1.0.0', buildTime: 20 };
 
 test('updatefound after update() resolves still waits for the complete downloaded release', async () => {
   const reg = new Registration(reg => {

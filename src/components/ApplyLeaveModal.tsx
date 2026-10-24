@@ -1,3 +1,4 @@
+import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { LeaveType, LeaveStatus } from '../types/leave';
@@ -299,6 +300,8 @@ export const ApplyLeaveModal: React.FC = () => {
 
     setValidationError(null);
   }, [duplicateConflict, daysToDeduct, isMultiDay, workingDays, startDate, endDate, type, alAvailable, slAvailable, coAvailable, crossedSaturdayHolidays]);
+
+  useModalScrollLock(isApplyModalOpen);
 
   if (!isApplyModalOpen) return null;
 

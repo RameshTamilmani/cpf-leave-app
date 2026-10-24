@@ -1,7 +1,8 @@
+import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { DatePickerField } from './DatePickerField';
-import { isWeekend } from '../data/singaporeHolidays2026';
+import { isWeekend, addDaysToDate } from '../data/singaporeHolidays2026';
 
 export const AddSpecialHolidayModal: React.FC = () => {
   const { isAddSpecialHolidayOpen, setIsAddSpecialHolidayOpen, addSpecialHoliday, todayDateStr, settings, allHolidays } = useLeave();
@@ -11,12 +12,10 @@ export const AddSpecialHolidayModal: React.FC = () => {
     const d = new Date(base + 'T00:00:00');
     const day = d.getDay();
     if (day === 6) {
-      d.setDate(d.getDate() + 2); // Saturday -> Monday
-      return d.toISOString().slice(0, 10);
+      return addDaysToDate(base, 2); // Saturday -> Monday in local calendar time
     }
     if (day === 0) {
-      d.setDate(d.getDate() + 1); // Sunday -> Monday
-      return d.toISOString().slice(0, 10);
+      return addDaysToDate(base, 1); // Sunday -> Monday in local calendar time
     }
     return base;
   };
@@ -30,6 +29,8 @@ export const AddSpecialHolidayModal: React.FC = () => {
       setName('');
     }
   }, [isAddSpecialHolidayOpen]);
+
+  useModalScrollLock(isAddSpecialHolidayOpen);
 
   if (!isAddSpecialHolidayOpen) return null;
 
@@ -79,23 +80,24 @@ export const AddSpecialHolidayModal: React.FC = () => {
 
   return (
     <div
+      role="dialog" aria-modal="true" aria-labelledby="special-holiday-title"
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in"
       onClick={() => setIsAddSpecialHolidayOpen(false)}
     >
       <div
-        className="w-full max-w-lg bg-surface-card rounded-t-3xl sm:rounded-2xl shadow-2xl p-5 border border-surface-container flex flex-col gap-4 max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-lg h-[85dvh] sm:h-[75dvh] max-h-[95dvh] bg-surface-card rounded-t-3xl sm:rounded-2xl shadow-2xl border border-surface-container flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Handle */}
-        <div className="w-12 h-1.5 rounded-full bg-surface-variant self-center mb-1 sm:hidden" />
+        <div className="shrink-0 mt-3 mb-2 w-12 h-1.5 rounded-full bg-surface-variant self-center sm:hidden" />
 
-        <div className="flex items-center justify-between pb-2 border-b border-surface-container">
+        <div className="shrink-0 flex items-center justify-between gap-3 px-5 py-4 border-b border-surface-container">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-full bg-holiday-public-container text-holiday-public flex items-center justify-center font-bold">
               <span className="material-symbols-outlined text-[20px]">add_circle</span>
             </div>
             <div>
-              <h3 className="font-title-md text-title-md font-bold text-on-surface">
+              <h3 id="special-holiday-title" className="font-title-md text-title-md font-bold text-on-surface">
                 Add Special Public Holiday
               </h3>
               <p className="font-body-sm text-body-sm text-on-surface-variant">
@@ -105,13 +107,14 @@ export const AddSpecialHolidayModal: React.FC = () => {
           </div>
           <button
             onClick={() => setIsAddSpecialHolidayOpen(false)}
+            aria-label="Close special holiday form"
             className="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant cursor-pointer transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 flex flex-col gap-5">
           {/* Holiday Name */}
           <div>
             <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
@@ -155,7 +158,7 @@ export const AddSpecialHolidayModal: React.FC = () => {
           )}
 
           {/* Actions */}
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex items-center gap-2 pt-4 mt-auto">
             <button
               type="button"
               onClick={() => setIsAddSpecialHolidayOpen(false)}

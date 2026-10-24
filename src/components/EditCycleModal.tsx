@@ -1,3 +1,4 @@
+import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
@@ -23,7 +24,7 @@ const MONTHS = [
 ];
 
 export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose }) => {
-  const { settings, resetCycleWithWarningConfirm, allHolidays, showToast } = useLeave();
+  const { settings, resetCycleWithWarningConfirm } = useLeave();
 
   const [startMonth, setStartMonth] = useState<number>(settings.cycleStartMonth || 6);
   const [startDay, setStartDay] = useState<number>(settings.cycleStartDay || 13);
@@ -62,6 +63,8 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
       }
     }
   }, [isOpen, settings]);
+
+  useModalScrollLock(isOpen);
 
   if (!isOpen) return null;
 
@@ -123,7 +126,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
     onClose();
   };
 
-  // Live auto-calculation of Comp-Off days for the current modal selection
+  // Preview the selected leave-year dates
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonthNum = now.getMonth() + 1;
@@ -152,15 +155,6 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
   const previewStartDateStr = `${activeStartYear}-${String(startMonth).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`;
   const previewEndDateStr = `${activeEndYear}-${String(endMonth).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
 
-  const previewHolidaysInCycle = allHolidays.filter(
-    (h) => h.date >= previewStartDateStr && h.date <= previewEndDateStr
-  );
-
-  const previewSaturdayHolidays = previewHolidaysInCycle.filter((h) => {
-    const d = new Date(h.date + 'T00:00:00');
-    return d.getDay() === 6 || Boolean(h.isCompOffEligible);
-  });
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in"
@@ -183,7 +177,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
                 Edit Leave Year Cycle
               </h3>
               <p className="font-body-sm text-body-sm text-on-surface-variant">
-                Configure annual entitlement calculation window
+                Choose the start and end dates for your leave year.
               </p>
             </div>
           </div>
@@ -215,7 +209,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
                 <span className="font-title-sm text-title-sm">Jun 13 – Jun 12</span>
                 <span className="material-symbols-outlined text-[18px] text-primary">check_circle</span>
               </div>
-              <span className="font-label-sm text-label-sm opacity-80">Company Policy Cycle</span>
+              <span className="font-label-sm text-label-sm opacity-80">Company cycle</span>
             </button>
 
             {/* Calendar Year: 1 Jan - 31 Dec */}
@@ -232,7 +226,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
                 <span className="font-title-sm text-title-sm">1 Jan – 31 Dec</span>
                 <span className="material-symbols-outlined text-[18px] opacity-60">calendar_today</span>
               </div>
-              <span className="font-label-sm text-label-sm opacity-80">Standard Calendar</span>
+              <span className="font-label-sm text-label-sm opacity-80">Calendar year</span>
             </button>
 
             {/* Financial Year: 1 Apr - 31 Mar */}
@@ -266,7 +260,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
                 <span className="font-title-sm text-title-sm">1 Jul – 30 Jun</span>
                 <span className="material-symbols-outlined text-[18px] opacity-60">date_range</span>
               </div>
-              <span className="font-label-sm text-label-sm opacity-80">Mid-Year Fiscal</span>
+              <span className="font-label-sm text-label-sm opacity-80">Mid-year</span>
             </button>
           </div>
         </div>
@@ -275,15 +269,14 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
         <div className="bg-surface-container-low p-3.5 rounded-xl border border-surface-container flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <span className="font-title-sm text-title-sm text-on-surface font-semibold">
-              Customize Cycle Boundaries
+              Custom dates
             </span>
-            <span className="font-label-sm text-label-sm text-primary font-medium">Annual Window</span>
           </div>
 
           {/* Cycle Starts */}
           <div>
             <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-              CYCLE STARTS ON
+              START DATE
             </label>
             <div className="grid grid-cols-2 gap-2">
               <select
@@ -321,7 +314,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
           {/* Cycle Ends */}
           <div>
             <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-              CYCLE ENDS ON (NEXT YEAR)
+              END DATE {isCrossYear ? '(NEXT YEAR)' : ''}
             </label>
             <div className="grid grid-cols-2 gap-2">
               <select
@@ -357,76 +350,9 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
           </div>
         </div>
 
-        {/* Live Preview Box with Auto-Calculated Comp-Off Details */}
-        <div className="p-3.5 rounded-xl bg-primary-fixed/25 border border-primary/20 flex flex-col gap-2.5">
-          <div className="flex items-start gap-2.5">
-            <span className="material-symbols-outlined text-[20px] text-primary shrink-0 mt-0.5">verified</span>
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <span className="font-title-sm text-title-sm font-bold text-on-surface">
-                  Active Cycle: {startDay} {monthShort(startMonth)} – {endDay} {monthShort(endMonth)}
-                </span>
-                <span className="font-label-sm text-label-sm text-on-surface-variant">
-                  {previewStartDateStr} to {previewEndDateStr}
-                </span>
-              </div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5 leading-snug">
-                Annual and Sick leave allocations renew for this window.
-              </p>
-            </div>
-          </div>
-
-          {/* Auto-Calculated Comp-off Breakdown */}
-          <div className="p-3 rounded-xl bg-surface-card border border-surface-container flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="font-title-sm text-title-sm font-semibold text-on-surface flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[18px] text-leave-compoff">stars</span>
-                Auto-Calculated Comp-off Days
-              </span>
-              <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-leave-compoff-container text-leave-compoff font-bold">
-                +{previewSaturdayHolidays.length} Days
-              </span>
-            </div>
-
-            {previewSaturdayHolidays.length > 0 ? (
-              <div className="flex flex-col gap-2 pt-1.5 border-t border-surface-container">
-                <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
-                  Saturday Public Holidays Detected in Cycle:
-                </span>
-                {previewSaturdayHolidays.map((h) => {
-                  const isCNY = h.name.toLowerCase().includes('chinese new year');
-                  return (
-                    <div key={h.date} className="flex flex-col gap-1 p-2 rounded-lg bg-surface-container/30 border border-surface-container/50">
-                      <div className="flex items-center justify-between text-body-sm">
-                        <span className="text-on-surface font-medium flex items-center gap-1.5">
-                          <span>{h.emoji || '🇸🇬'}</span>
-                          <span>{h.name}</span>
-                          {isCNY && (
-                            <span className="text-[10px] bg-primary-fixed text-on-primary-fixed px-1.5 py-0.2 rounded-full font-semibold">
-                              CNY 2027
-                            </span>
-                          )}
-                          <span className="text-[11px] text-on-surface-variant">({formatDateDDMMYYYY(h.date)})</span>
-                        </span>
-                        <span className="font-label-sm text-label-sm text-leave-compoff font-semibold">
-                          +1 Comp-off
-                        </span>
-                      </div>
-                      {isCNY && (
-                        <p className="text-[11px] text-on-surface-variant leading-snug">
-                          Occurs in February 2027 (inside the 2nd half of this cycle). CNY 2026 was in February 2026 before this cycle began.
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-[12px] text-on-surface-variant pt-1 border-t border-surface-container leading-tight">
-                No Saturday gazetted holidays fall in this cycle. (You can also add special holidays anytime).
-              </p>
-            )}
-          </div>
+        <div className="rounded-xl bg-surface-container-low border border-surface-container p-3">
+          <p className="text-xs text-on-surface-variant">Selected cycle</p>
+          <p className="mt-1 text-sm font-semibold text-on-surface">{formatDateDDMMYYYY(previewStartDateStr)} – {formatDateDDMMYYYY(previewEndDateStr)}</p>
         </div>
 
         {/* Buttons */}
@@ -463,17 +389,11 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
                 </div>
                 <div>
                   <h3 className="font-title-md text-title-md font-bold text-on-surface">Change Leave Cycle?</h3>
-                  <span className="text-xs text-error font-semibold">Important Confirmation</span>
                 </div>
               </div>
 
               <div className="p-3 rounded-xl bg-error-container/20 border border-error/20 text-xs text-on-surface leading-relaxed">
-                <p className="font-semibold text-error mb-1">
-                  Warning: Changing the leave year cycle will delete all the leave logs.
-                </p>
-                <p className="text-on-surface-variant">
-                  If you click confirm, all logged leave entries will be deleted and all leave balances will be reset to default values (12 days Annual Leave, 12 days Sick Leave, 0 Comp-Off days).
-                </p>
+                <p>Changing the cycle clears leave records and resets balances. Your profile is kept.</p>
                 <div className="mt-2 pt-2 border-t border-error/20 text-[11px] text-on-surface">
                   <strong>New Cycle:</strong> {getComputedCycleTitle()}
                 </div>
@@ -492,7 +412,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
                   onClick={handleConfirmResetAndSave}
                   className="flex-1 py-2.5 rounded-full bg-error text-on-error font-label-md text-label-md font-semibold hover:bg-error/90 active:scale-95 transition-all shadow-xs cursor-pointer"
                 >
-                  Confirm & Reset
+                  Confirm Change
                 </button>
               </div>
             </div>

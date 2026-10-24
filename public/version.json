@@ -1,13 +1,13 @@
 {
-  "version": "1.1.1",
+  "version": "1.1.2",
   "releaseDate": "2026-10-24",
   "highlights": [
     {
-      "title": "Reliable updates",
-      "description": "Updates become available after downloading, and activate only after approval.",
-      "icon": "system_update",
-      "color": "emerald"
+      "title": "Simpler settings",
+      "description": "Choose your leave-year dates without extra comp-off details. Reset actions use short, clear explanations.",
+      "icon": "tune",
+      "color": "blue"
     }
   ],
-  "releaseNotes": "Reliable clean deployment installs and approval-based offline updates."
+  "releaseNotes": "Cleaner leave-year editing and concise reset information."
 }

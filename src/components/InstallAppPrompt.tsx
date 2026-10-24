@@ -1,3 +1,4 @@
+import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState } from 'react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { useLeave } from '../context/LeaveContext';
@@ -23,6 +24,8 @@ export const InstallAppPrompt: React.FC<InstallAppPromptProps> = ({ className = 
 
   const { showToast } = useLeave();
   const [copiedLink, setCopiedLink] = useState(false);
+
+  useModalScrollLock(showGuideModal && !isInstalled);
 
   // Once installed (running in standalone mode or after installation), installer is never shown
   if (isInstalled) {

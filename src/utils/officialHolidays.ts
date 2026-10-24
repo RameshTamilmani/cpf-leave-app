@@ -1,3 +1,4 @@
+import { holidayLabel } from './holidayLabel';
 import type { PublicHoliday, SpecialHoliday } from '../types/leave';
 
 export const HOLIDAY_DATASET = 'd_8ef23381f9417e4d4254ee8b4dcdb176';
@@ -9,7 +10,7 @@ export function parseOfficialHolidays(rows: unknown): PublicHoliday[] {
   const holidays = new Map<string, PublicHoliday>();
   for (const row of rows) {
     const date = row?.date;
-    const name = typeof row?.holiday === 'string' ? row.holiday.trim().replace(/’/g, "'") : '';
+    const name = typeof row?.holiday === 'string' ? holidayLabel(row.holiday.trim().replace(/’/g, "'")) : '';
     if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !name || name.length > 150) throw new Error('Invalid holiday row.');
     const parsed = new Date(date + 'T00:00:00Z');
     if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) throw new Error('Invalid holiday date.');
@@ -19,7 +20,7 @@ export function parseOfficialHolidays(rows: unknown): PublicHoliday[] {
       description: 'Published in the Ministry of Manpower public holiday dataset.',
       isLongWeekend: day === 0 || day === 1 || day === 5,
       isSpecial: !regularHoliday.test(name),
-      isCompOffEligible: day === 6 && !/\(Observed\)/i.test(name),
+      isCompOffEligible: day === 6 && !/\((?:Observed|Substitute)\)/i.test(name),
       source: 'official', sourceUrl: HOLIDAY_SOURCE,
     });
   }
@@ -28,10 +29,10 @@ export function parseOfficialHolidays(rows: unknown): PublicHoliday[] {
 
 export function flattenHolidays(holidays: PublicHoliday[]): PublicHoliday[] {
   return holidays.flatMap(holiday => {
-    const base = { ...holiday, observedDate: undefined };
+    const base = { ...holiday, name: holidayLabel(holiday.name), observedDate: undefined };
     if (!holiday.observedDate || holiday.observedDate === holiday.date) return [base];
     const date = new Date(holiday.observedDate + 'T00:00:00');
-    return [base, { ...base, date: holiday.observedDate, name: `${holiday.name} (Observed)`,
+    return [base, { ...base, date: holiday.observedDate, name: `${base.name} (Substitute)`,
       dayOfWeek: date.toLocaleDateString('en-SG', { weekday: 'long' }), isCompOffEligible: false }];
   });
 }

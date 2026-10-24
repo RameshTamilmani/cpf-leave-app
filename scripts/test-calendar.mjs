@@ -12,7 +12,7 @@ test('month history expands working dates, excludes weekends and retains weekend
   ]);
   assert.deepEqual(entries.map(e => [e.date, e.title]), [
     ['2026-11-06', 'span'], ['2026-11-08', 'Deepavali'],
-    ['2026-11-09', 'Deepavali (Observed)'], ['2026-11-10', 'span'],
+    ['2026-11-09', 'Deepavali (Substitute)'], ['2026-11-10', 'span'],
   ]);
 });
 test('month boundaries clip spanning leave records and include observed holidays from the previous month', () => {
