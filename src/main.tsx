@@ -13,33 +13,6 @@ if (import.meta.env.PROD) void registerAppWorker().catch(error => {
   console.warn('Offline setup failed; reconnect and reopen the app to retry.', error);
 });
 
-// Suppress browser pull-to-refresh while preserving smooth internal content scrolling
-if (typeof window !== 'undefined') {
-  let touchStartY = 0;
-  window.addEventListener(
-    'touchstart',
-    (e: TouchEvent) => {
-      if (e.touches.length === 1) {
-        touchStartY = e.touches[0].clientY;
-      }
-    },
-    { passive: true }
-  );
-
-  window.addEventListener(
-    'touchmove',
-    (e: TouchEvent) => {
-      if (e.touches.length === 1) {
-        const touchCurrentY = e.touches[0].clientY;
-        const diffY = touchCurrentY - touchStartY;
-        // If user is at top of document and pulling downwards, cancel browser refresh gesture
-        if (window.scrollY <= 0 && diffY > 0 && e.cancelable) {
-          e.preventDefault();
-        }
-      }
-    },
-    { passive: false }
-  );
-}
-
+// Pull-to-refresh is suppressed by CSS overscroll-behavior. A global
+// touchmove cancellation would also block scrolling back up inside dialogs.
 createRoot(document.getElementById('root')!).render(<App />);

@@ -219,7 +219,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (parsed.userName === 'Employee') parsed.userName = '';
         if (parsed.employeeId === 'EMP-1103118') parsed.employeeId = '';
         if (parsed.dateOfJoining === '2023-08-15') parsed.dateOfJoining = '';
-        return { ...defaultSettings, ...parsed, department: typeof parsed.department === 'string' ? parsed.department.slice(0, 25) : '', alEntitlement: 12, slEntitlement: 12 };
+        return { ...defaultSettings, ...parsed, department: typeof parsed.department === 'string' ? parsed.department.toUpperCase().slice(0, 25) : '', alEntitlement: 12, slEntitlement: 12 };
       }
       return defaultSettings;
     } catch {
@@ -396,7 +396,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateSettings = (newSettings: Partial<UserSettings>) => {
     const normalized = { ...newSettings };
-    if (normalized.department !== undefined) normalized.department = normalized.department.trim().slice(0, 25);
+    if (normalized.department !== undefined) normalized.department = normalized.department.trim().toUpperCase().slice(0, 25);
     setSettings((prev) => ({ ...prev, ...normalized }));
   };
 

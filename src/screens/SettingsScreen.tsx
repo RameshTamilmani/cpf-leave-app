@@ -284,8 +284,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
               </label>
               <div className="relative flex items-center">
                 <span aria-hidden="true" className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">business</span>
-                <input id="department" type="text" required maxLength={25} value={draftDepartment}
-                  onChange={(event) => setDraftDepartment(event.target.value.slice(0, 25))}
+                <input id="department" type="text" autoCapitalize="characters" spellCheck={false} required maxLength={25} value={draftDepartment}
+                  onChange={(event) => setDraftDepartment(event.target.value.toUpperCase().slice(0, 25))}
                   placeholder="Enter department"
                   className="w-full pl-9 pr-3.5 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface font-medium text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
               </div>

@@ -18,6 +18,9 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="about-cutisg-title"
         className="w-full max-w-md bg-surface-card rounded-2xl shadow-2xl p-5 border border-surface-container flex flex-col gap-4 max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
@@ -26,11 +29,10 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             <div className="w-10 h-10 rounded-xl bg-primary-container text-on-primary-fixed flex items-center justify-center">
               <span className="material-symbols-outlined text-[24px]">info</span>
             </div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-title-md text-title-md font-bold text-on-surface">About CutiSG</h3>
-                <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">v{APP_VERSION}</span>
-              </div>
-              <p className="text-[12px] text-on-surface-variant">Singapore Leave Planner &amp; Public Holiday Tracker</p>
+            <div className="min-w-0">
+              <h3 id="about-cutisg-title" className="font-title-md text-title-md font-bold text-on-surface">About CutiSG</h3>
+              <p className="text-xs text-on-surface-variant">Version {APP_VERSION}</p>
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -41,51 +43,31 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        <div className="flex flex-col gap-3.5 text-body-sm text-on-surface leading-relaxed text-[13px]">
-          <div className="p-3 rounded-xl bg-surface-container-low border border-surface-container">
-            <h4 className="font-title-sm text-title-sm font-semibold text-primary mb-1">
-              Why &ldquo;CutiSG&rdquo;?
-            </h4>
-            <p className="text-on-surface-variant">
-              &ldquo;Cuti&rdquo; (/tʃuːti/) is the colloquial Malay and Singlish term for <em>leave</em> or <em>vacation</em> universally understood in Singaporean workplaces (e.g., &ldquo;apply cuti&rdquo;, &ldquo;on cuti&rdquo;). Paired with &ldquo;SG&rdquo;, <strong>CutiSG</strong> provides a streamlined, personal leave tracker tailored specifically to Singapore employment norms.
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-surface-container-low border border-surface-container">
-            <h4 className="font-title-sm text-title-sm font-semibold text-on-surface mb-1">
-              Statutory Leave Standards
-            </h4>
-            <p className="text-on-surface-variant">
-              Under default Singapore employment provisions, employees receive 12 statutory days of paid Annual Leave and 12 days of paid Sick Leave per leave year cycle.
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-surface-container-low border border-surface-container">
-            <h4 className="font-title-sm text-title-sm font-semibold text-on-surface mb-1">
-              Comp-off Leave &amp; Public Holidays
-            </h4>
-            <p className="text-on-surface-variant">
-              When a gazetted Singapore public holiday falls on a Saturday (a non-working day under standard 5-day workweeks), employees earn an off-in-lieu or comp-off day. CutiSG automatically tracks these credits based on the Singapore official calendar.
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-surface-container-low border border-surface-container">
-            <h4 className="font-title-sm text-title-sm font-semibold text-on-surface mb-1">
-              Official MOM Holiday Dataset &amp; Sync
-            </h4>
-            <p className="text-on-surface-variant">
-              Singapore public holidays sync automatically from the official Ministry of Manpower (MOM) open dataset published on data.gov.sg. If the network is offline, CutiSG seamlessly uses built-in verified gazetted dates.
-            </p>
-            <a
-              href="https://data.gov.sg/datasets/d_8ef23381f9417e4d4254ee8b4dcdb176/view"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-primary underline"
-            >
-              <span>View MOM official dataset on data.gov.sg</span>
-              <span className="material-symbols-outlined text-[13px]">open_in_new</span>
-            </a>
-          </div>
+        <div className="space-y-3 text-sm text-on-surface-variant leading-relaxed">
+          <p>Your personal Singapore leave and holiday tracker. “Cuti” means leave.</p>
+          <dl className="space-y-3">
+            <div>
+              <dt className="font-semibold text-on-surface">Leave balances</dt>
+              <dd>Track annual, sick, comp-off and unpaid leave. Default annual and sick leave: 12 days each; follow your company policy.</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-on-surface">Comp-off</dt>
+              <dd>The app credits Saturday public holidays as comp-off.</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-on-surface">Public holidays</dt>
+              <dd>Syncs MOM holiday dates online; uses saved or built-in dates offline.</dd>
+            </div>
+          </dl>
+          <a
+            href="https://data.gov.sg/datasets/d_8ef23381f9417e4d4254ee8b4dcdb176/view"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 font-semibold text-primary underline"
+          >
+            Official holiday source
+            <span aria-hidden="true" className="material-symbols-outlined text-[14px]">open_in_new</span>
+          </a>
         </div>
 
         <button

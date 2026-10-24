@@ -157,9 +157,10 @@ export const HomeScreen: React.FC = () => {
           >
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-300 shrink-0 shadow-2xs border border-rose-200 dark:border-rose-800/40">
-                <span className="material-symbols-outlined text-[18px]">
-                  money_off
-                </span>
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 3h12M6 7h12M8 3c7 0 7 8 0 8H6l10 10" />
+                  <path d="m3 3 18 18" />
+                </svg>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <h3 className="text-sm font-semibold leading-tight">

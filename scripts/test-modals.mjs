@@ -22,7 +22,7 @@ const errors = [];
 try {
   browser = await chromium.launch({ channel: process.env.TEST_BROWSER_CHANNEL || 'chrome', headless: true });
   for (const [width, height] of [[320, 740], [390, 844], [900, 844], [390, 500]]) {
-    const context = await browser.newContext({ viewport: { width, height }, timezoneId: 'Asia/Kolkata', serviceWorkers: 'block' });
+    const context = await browser.newContext({ viewport: { width, height }, timezoneId: 'Asia/Kolkata', serviceWorkers: 'block', hasTouch: true });
     await context.addInitScript(() => {
       localStorage.setItem('cutisg_settings', JSON.stringify({ userName: 'Ramesh Tamilmani', employeeId: '6509', department: 'HIS', dateOfJoining: '2022-11-18', theme: 'dark' }));
       localStorage.setItem('cutisg_records', JSON.stringify([{ id: 'co-used', type: 'CO', title: 'Comp-off half day', startDate: '2026-04-06', endDate: '2026-04-06', days: 0.5, status: 'taken', halfDay: 'am', createdAt: '2026-04-06' }]));
@@ -62,6 +62,29 @@ try {
     await scroll.hover(); await page.mouse.wheel(0, 600);
     await page.waitForFunction(() => document.querySelector('[data-testid="ledger-scroll"]').scrollTop > 0);
     assert.equal(await page.evaluate(() => document.body.style.top), lockedTop);
+    // Separate real touch gestures reproduce lifting a finger and reversing direction.
+    const cdp = await context.newCDPSession(page);
+    async function swipe(fromY, toY) {
+      const box = await scroll.boundingBox();
+      const x = box.x + box.width / 2;
+      const y = box.y + box.height * fromY;
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+      for (let step = 1; step <= 12; step++) {
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y + box.height * (toY - fromY) * step / 12 }] });
+        await page.waitForTimeout(20);
+      }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await page.waitForTimeout(250);
+    }
+    await scroll.evaluate(node => { node.scrollTop = 0; });
+    await swipe(0.8, 0.2);
+    const afterDown = await scroll.evaluate(node => node.scrollTop);
+    assert.ok(afterDown > 0, 'finger swipe scrolls down inside modal');
+    await swipe(0.2, 0.8);
+    assert.ok(await scroll.evaluate(node => node.scrollTop) < afterDown, 'new finger gesture scrolls back up after release');
+    assert.equal(await page.evaluate(() => document.body.style.top), lockedTop);
+    assert.equal(await page.evaluate(() => scrollY), 0);
+    await cdp.detach();
     await ledger.screenshot({ path: path.join(screenshots, `ledger-${width}-${height}.png`) });
     await ledger.getByRole('button', { name: 'Close', exact: true }).click();
     assert.equal(await page.evaluate(() => document.body.style.position), '');

@@ -238,8 +238,8 @@ export const OnboardingModal: React.FC = () => {
 
             <div>
               <label htmlFor="onboarding-department" className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">DEPARTMENT *</label>
-              <input id="onboarding-department" type="text" required maxLength={25} value={department}
-                onChange={event => { setDepartment(event.target.value.slice(0, 25)); setErrorMsg(''); }}
+              <input id="onboarding-department" type="text" autoCapitalize="characters" spellCheck={false} required maxLength={25} value={department}
+                onChange={event => { setDepartment(event.target.value.toUpperCase().slice(0, 25)); setErrorMsg(''); }}
                 placeholder="Enter department" className="w-full px-3.5 h-11 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
 
