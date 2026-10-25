@@ -10,6 +10,7 @@ export interface LeaveRecord {
   endDate: string;   // YYYY-MM-DD
   days: number;
   halfDay?: 'full' | 'am' | 'pm';
+  halfDayDate?: string; // Working date with AM/PM leave, including within a multi-day period
   status: LeaveStatus;
   notes?: string;
   createdAt: string;

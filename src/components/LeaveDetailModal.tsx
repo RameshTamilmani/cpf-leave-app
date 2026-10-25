@@ -1,3 +1,4 @@
+import { halfDaySummary } from '../utils/leaveDuration';
 import { LopIcon } from './LopIcon';
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React from 'react';
@@ -296,6 +297,7 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
                             {formatDateDDMMYYYY(r.startDate)}
                             {r.startDate !== r.endDate ? ` to ${formatDateDDMMYYYY(r.endDate)}` : ''}
                             {' '}• {isAL ? 'Annual Leave' : 'Sick Leave'}
+                            {halfDaySummary(r) && <span className="block mt-1 text-xs text-primary">{halfDaySummary(r)}</span>}
                           </p>
                         </div>
                       </div>
@@ -364,7 +366,7 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
                             {formatDateDDMMYYYY(r.startDate)}
                             {r.startDate !== r.endDate ? ` to ${formatDateDDMMYYYY(r.endDate)}` : ''}
                             {' '}• {Number(r.days).toFixed(1)} Day{Number(r.days) !== 1 ? 's' : ''}
-                            {r.halfDay && r.halfDay !== 'full' ? ` (${r.halfDay.toUpperCase()})` : ''}
+                            {halfDaySummary(r) && <span className="block mt-1 text-xs text-primary">{halfDaySummary(r)}</span>}
                           </p>
                         </div>
                       </div>

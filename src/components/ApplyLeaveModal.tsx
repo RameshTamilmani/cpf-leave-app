@@ -1,3 +1,4 @@
+import { workingLeaveDates, halfDaySelectionError, leavePeriodsOverlap } from '../utils/leaveDuration';
 import { LopIcon } from './LopIcon';
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState, useEffect } from 'react';
@@ -27,6 +28,8 @@ export const ApplyLeaveModal: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   const [durationMode, setDurationMode] = useState<'full' | 'half-am' | 'half-pm'>('full');
   const [daysToDeduct, setDaysToDeduct] = useState<number>(1.0);
+  const [halfDayDate, setHalfDayDate] = useState('');
+  const [halfDaySession, setHalfDaySession] = useState<'' | 'am' | 'pm'>('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleStartDateChange = (newStart: string) => {
@@ -54,6 +57,8 @@ export const ApplyLeaveModal: React.FC = () => {
       setStartDate(initial);
       setEndDate(initial);
       setDurationMode('full');
+      setHalfDayDate('');
+      setHalfDaySession('');
       setDaysToDeduct(1.0);
       setValidationError(null);
       setRemarks('');
@@ -76,6 +81,13 @@ export const ApplyLeaveModal: React.FC = () => {
   const workingDays = startDate && endDate && endDate >= startDate
     ? calculateWorkingDays(startDate, endDate, allHolidays)
     : 0;
+
+  const workingDates = workingLeaveDates(startDate, endDate, allHolidays);
+  const needsHalfDayChoice = isMultiDay && workingDays > 1 && daysToDeduct === workingDays - 0.5;
+  const halfDayChoiceError = needsHalfDayChoice ? halfDaySelectionError(workingDates, halfDayDate, halfDaySession) : null;
+  useEffect(() => {
+    if (halfDayDate && !workingDates.includes(halfDayDate)) setHalfDayDate('');
+  }, [startDate, endDate, allHolidays, halfDayDate]);
 
   // Strict Validation Rule:
   // - Single day (startDate === endDate): allowed deduction is 1.0 day or 0.5 day (AM/PM)
@@ -101,24 +113,12 @@ export const ApplyLeaveModal: React.FC = () => {
     : 0.5;
 
   // Check for duplicate / overlapping leaves with existing records:
-  const duplicateConflict = records.find((r) => {
-    if (!startDate || !endDate) return false;
-    // Check if intervals overlap
-    const overlaps = startDate <= r.endDate && endDate >= r.startDate;
-    if (!overlaps) return false;
-
-    // Exception: Single-day Half-Day AM and Half-Day PM can co-exist on the same day
-    const isCurrentHalfDay = durationMode === 'half-am' || durationMode === 'half-pm';
-    const isExistingHalfDay = r.halfDay === 'am' || r.halfDay === 'pm';
-    if (startDate === endDate && r.startDate === r.endDate && isCurrentHalfDay && isExistingHalfDay) {
-      const currentHalf = durationMode === 'half-am' ? 'am' : 'pm';
-      if (currentHalf !== r.halfDay) {
-        return false;
-      }
-    }
-
-    return true;
-  });
+  const candidate = {
+    startDate, endDate, days: daysToDeduct,
+    halfDay: needsHalfDayChoice ? (halfDaySession || 'full') : durationMode === 'half-am' ? 'am' : durationMode === 'half-pm' ? 'pm' : 'full',
+    halfDayDate: needsHalfDayChoice ? halfDayDate : startDate,
+  } as const;
+  const duplicateConflict = records.find(record => leavePeriodsOverlap(candidate, record, allHolidays));
 
   const isDuplicate = Boolean(duplicateConflict);
 
@@ -353,12 +353,14 @@ export const ApplyLeaveModal: React.FC = () => {
     isExceedingQuota ||
     isInvalidDate ||
     isHalfDayMultiDay ||
+    !!halfDayChoiceError ||
     daysToDeduct <= 0
   );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (halfDayChoiceError) { setValidationError(halfDayChoiceError); return; }
     if (!startDate || !endDate) {
       setValidationError('Please select valid start and end dates.');
       return;
@@ -464,7 +466,7 @@ export const ApplyLeaveModal: React.FC = () => {
     const finalDays = Math.max(0.5, Number(daysToDeduct) || 1.0);
     // Leave on the current date is considered taken; only leave greater than current date is planned
     const status: LeaveStatus = startDate > todayDateStr ? 'planned' : 'taken';
-    const halfDay = durationMode === 'half-am' ? 'am' : durationMode === 'half-pm' ? 'pm' : 'full';
+    const halfDay = needsHalfDayChoice ? halfDaySession as 'am' | 'pm' : durationMode === 'half-am' ? 'am' : durationMode === 'half-pm' ? 'pm' : 'full';
 
     addRecord({
       type,
@@ -473,6 +475,7 @@ export const ApplyLeaveModal: React.FC = () => {
       endDate,
       days: finalDays,
       halfDay,
+      halfDayDate: halfDay === 'full' ? undefined : needsHalfDayChoice ? halfDayDate : startDate,
       status,
       notes: remarks.trim() || undefined
     });
@@ -678,6 +681,25 @@ export const ApplyLeaveModal: React.FC = () => {
               </div>
             )}
           </div>
+
+          {needsHalfDayChoice && (
+            <fieldset className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container space-y-3">
+              <legend className="px-1 text-sm font-semibold text-on-surface">Half-Day Details</legend>
+              <p className="text-xs text-on-surface-variant">Choose when you will be on half-day leave. All other working dates are full-day leave.</p>
+              <label className="block text-xs font-semibold text-on-surface-variant" htmlFor="leave-half-day-date">Half-Day Date</label>
+              <select id="leave-half-day-date" required value={halfDayDate} onChange={event => setHalfDayDate(event.target.value)} className="w-full h-11 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface text-sm px-3">
+                <option value="">Choose a date</option>
+                {workingDates.map(date => <option key={date} value={date}>{formatDateDDMMYYYY(date)} · {new Date(date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short' })}</option>)}
+              </select>
+              <div role="group" aria-label="Half-day leave session" className="grid grid-cols-2 gap-2">
+                {(['am', 'pm'] as const).map(session => <button key={session} type="button" aria-pressed={halfDaySession === session} onClick={() => setHalfDaySession(session)} className={
+                  'py-2.5 rounded-xl border text-sm font-semibold cursor-pointer ' + (halfDaySession === session ? 'bg-primary-fixed text-on-primary-fixed border-primary' : 'bg-surface-container-lowest text-on-surface-variant border-surface-container')
+                }>{session === 'am' ? 'AM · Morning Leave' : 'PM · Afternoon Leave'}</button>)}
+              </div>
+              {halfDayChoiceError ? <p className="text-xs text-on-surface-variant" role="status">{halfDayChoiceError}</p>
+                : <p className="text-xs font-semibold text-primary">Half-day leave: {formatDateDDMMYYYY(halfDayDate)} · {halfDaySession.toUpperCase()}</p>}
+            </fieldset>
+          )}
 
           {/* Interactive Days to Deduct Stepper strictly bound to Validation Rule */}
           <div className="flex flex-col gap-1.5 p-3.5 rounded-xl bg-surface-container-low border border-surface-container">

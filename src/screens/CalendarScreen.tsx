@@ -1,3 +1,4 @@
+import { halfDayOnDate } from '../utils/leaveDuration';
 import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
@@ -60,6 +61,7 @@ export const CalendarScreen: React.FC = () => {
             const dayEntries = entries.filter(entry => entry.date === date);
             const holiday = dayEntries.find(entry => entry.holiday);
             const leave = dayEntries.find(entry => entry.record)?.record;
+            const leaveHalf = leave ? halfDayOnDate(leave, date) : null;
             const weekend = (offset + i) % 7 > 4;
             const selected = selectedCalendarDate === date;
             const isToday = date === todayDateStr;
@@ -69,11 +71,11 @@ export const CalendarScreen: React.FC = () => {
               : 'bg-surface-container-low text-on-surface';
             return (
               <button type="button" key={date} onClick={() => setSelectedCalendarDate(date)}
-                aria-label={`${formatDateDDMMYYYY(date)}${holiday ? ', ' + holiday.title : leave ? ', ' + leaveLabels[leave.type] : ''}${isToday ? ', Today' : ''}`}
+                aria-label={`${formatDateDDMMYYYY(date)}${holiday ? ', ' + holiday.title : leave ? ', ' + leaveLabels[leave.type] + (leaveHalf ? ', Half Day (' + leaveHalf.toUpperCase() + ')' : '') : ''}${isToday ? ', Today' : ''}`}
                 aria-pressed={selected} aria-current={isToday ? 'date' : undefined}
                 className={`min-w-0 aspect-square rounded-lg flex flex-col items-center justify-center gap-1 text-xs sm:text-sm font-semibold cursor-pointer ${color} ${selected ? 'ring-2 ring-primary ring-inset' : ''} ${isToday ? 'font-bold outline outline-1 outline-primary -outline-offset-1' : ''}`}>
                 <span>{day}</span>
-                <span aria-hidden="true" className="text-[8px] sm:text-[10px] leading-none font-medium">{holiday ? 'PH' : leave ? leave.type === 'CL' ? 'CO' : leave.type : isToday ? 'Today' : '\u00a0'}</span>
+                <span aria-hidden="true" className="text-[8px] sm:text-[10px] leading-none font-medium">{holiday ? 'PH' : leave ? (leave.type === 'CL' ? 'CO' : leave.type) + (leaveHalf ? ' ' + leaveHalf.toUpperCase() : '') : isToday ? 'Today' : '\u00a0'}</span>
               </button>
             );
           })}
@@ -93,7 +95,7 @@ export const CalendarScreen: React.FC = () => {
               const date = new Date(entry.date + 'T00:00:00');
               const label = entry.holiday ? entry.holiday.isSpecial ? 'Special Holiday' : 'Public Holiday' : leaveLabels[entry.record!.type];
               const color = entry.holiday ? 'bg-holiday-public-container text-holiday-public-on-container' : leaveColors[entry.record!.type];
-              const half = entry.record?.startDate === entry.record?.endDate && entry.record?.days === 0.5;
+              const half = entry.record ? halfDayOnDate(entry.record, entry.date) : null;
               return (
                 <li key={entry.id} data-date={entry.date} className="flex items-start gap-3 p-3 sm:p-4">
                   <time dateTime={entry.date} aria-label={formatDateDDMMYYYY(entry.date)} className="w-11 shrink-0 rounded-lg bg-surface-container-low py-1.5 text-center tabular-nums">
@@ -104,7 +106,7 @@ export const CalendarScreen: React.FC = () => {
                     <p className="text-sm font-semibold leading-5 text-on-surface break-words">{entry.title}</p>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
                       <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${color}`}>{label}</span>
-                      {entry.record && <span className="text-xs text-on-surface-variant capitalize">{entry.record.status}{half ? ` · Half day${entry.record.halfDay === 'am' ? ' (AM)' : entry.record.halfDay === 'pm' ? ' (PM)' : ''}` : ''}</span>}
+                      {entry.record && <span className="text-xs text-on-surface-variant capitalize">{entry.record.status}{half ? ` · Half Day (${half.toUpperCase()})` : ''}</span>}
                     </div>
                   </div>
                 </li>

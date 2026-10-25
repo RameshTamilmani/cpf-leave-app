@@ -1,3 +1,4 @@
+import { workingLeaveDates, halfDaySelectionError, leavePeriodsOverlap } from '../utils/leaveDuration';
 import { restoreContentError } from '../utils/restoreValidation';
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { LeaveRecord, UserSettings, LeaveType, LeaveStatus, PublicHoliday, SpecialHoliday } from '../types/leave';
@@ -664,7 +665,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return;
     }
     const sortedForExport = [...records].sort((a, b) => a.startDate.localeCompare(b.startDate));
-    const headers = ['Type', 'Title', 'Start Date', 'End Date', 'Days', 'Status', 'Remarks'];
+    const headers = ['Type', 'Title', 'Start Date', 'End Date', 'Days', 'Status', 'Remarks', 'Half Day Date', 'Half Day Session'];
     const rows = sortedForExport.map((r) => [
       `"${r.type}"`,
       `"${r.title.replace(/"/g, '""')}"`,
@@ -672,7 +673,9 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       `"${r.endDate}"`,
       r.days,
       `"${r.status}"`,
-      `"${(r.notes || '').replace(/"/g, '""')}"`
+      `"${(r.notes || '').replace(/"/g, '""')}"`,
+      `"${r.halfDayDate || (r.startDate === r.endDate && (r.halfDay === 'am' || r.halfDay === 'pm') ? r.startDate : '')}"`,
+      `"${r.halfDay || ''}"`
     ]);
 
     const csvContent = [headers.join(','), ...rows.map((e) => e.join(','))].join('\r\n');
@@ -709,6 +712,8 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const daysIdx = headers.findIndex((h) => h.includes('day'));
       const statusIdx = headers.findIndex((h) => h.includes('status'));
       const remarksIdx = headers.findIndex((h) => h.includes('remark') || h.includes('note'));
+      const halfDateIdx = headers.indexOf('half day date');
+      const halfSessionIdx = headers.indexOf('half day session');
 
       const cleanCell = (str: string) => {
         let val = str.trim();
@@ -730,6 +735,8 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         days: number;
         status: LeaveStatus;
         notes?: string;
+        halfDay?: 'full' | 'am' | 'pm';
+        halfDayDate?: string;
       }[] = [];
 
       let duplicateCount = 0;
@@ -764,6 +771,20 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const statusRaw = cols[statusIdx >= 0 ? statusIdx : 5]?.toLowerCase();
         const status: LeaveStatus = statusRaw === 'taken' ? 'taken' : 'planned';
         const notes = remarksIdx >= 0 ? cols[remarksIdx] : undefined;
+        const sessionRaw = halfSessionIdx >= 0 ? cols[halfSessionIdx]?.toLowerCase() || '' : '';
+        const halfDay = sessionRaw === 'am' || sessionRaw === 'pm' || sessionRaw === 'full' ? sessionRaw : undefined;
+        const rawHalfDate = halfDateIdx >= 0 ? cols[halfDateIdx] || '' : '';
+        const halfDayDate = rawHalfDate ? parseDDMMYYYYToISO(rawHalfDate) : halfDay && halfDay !== 'full' && startDate === endDate ? startDate : undefined;
+        if ((sessionRaw && !halfDay) || (rawHalfDate && !halfDayDate) || (halfDayDate && (!halfDay || halfDay === 'full'))) {
+          invalidCount++; continue;
+        }
+        if (halfDay === 'am' || halfDay === 'pm') {
+          const dates = workingLeaveDates(startDate, endDate, allHolidays);
+          if (halfDaySelectionError(dates, halfDayDate || '', halfDay) || days !== dates.length - 0.5) {
+            invalidCount++; continue;
+          }
+        }
+
 
         // Basic date consistency
         if (!startDate || !endDate || endDate < startDate) {
@@ -779,10 +800,9 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         // Strict duplicate and overlap validation:
         // 1. Check against records already added in this import batch
-        const isInternalDuplicate = validRows.some((existing) => {
-          const overlaps = startDate <= existing.endDate && endDate >= existing.startDate;
-          return overlaps;
-        });
+        const isInternalDuplicate = validRows.some(existing => leavePeriodsOverlap(
+          { startDate, endDate, days, halfDay, halfDayDate }, existing, allHolidays
+        ));
 
         if (isInternalDuplicate) {
           duplicateCount++;
@@ -796,7 +816,9 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           endDate,
           days,
           status,
-          notes: notes ? notes.trim() : undefined
+          notes: notes ? notes.trim() : undefined,
+          halfDay,
+          halfDayDate
         });
       }
 

@@ -3,15 +3,15 @@
   "releaseDate": "2026-10-25",
   "highlights": [
     {
-      "title": "Safer file restore",
-      "description": "Unsupported or empty files now show a clear warning. Your leave records stay unchanged.",
-      "icon": "upload_file",
+      "title": "Choose your half-day leave",
+      "description": "For a longer leave period, choose the exact half-day date and AM or PM. See that detail in Calendar and History, and keep it in your exports.",
+      "icon": "event",
       "color": "blue"
     }
   ],
-  "releaseNotes": "Restore now warns about unsupported and empty files before changing any leave records.",
+  "releaseNotes": "Choose exactly which date is half-day leave, with morning or afternoon leave clearly recorded.",
   "notesReview": {
-    "sourceHash": "cabe033dd354ccb0569ad15b37782e3016a1e609f3055695ac28906f6c14baef",
-    "notesHash": "d26c65a6bad8f0d10ec2d0eacef04e990f21a5b2df1aba6ad45cfad1b5669260"
+    "sourceHash": "919e22887b40dd083b59add50e9d9415bf1c620b9c5ebc96fa50e81137c34c5e",
+    "notesHash": "cf57b8c5168b166b4bff4c436e20f9d3769bdbb14a7d713f79fff042045beac4"
   }
 }

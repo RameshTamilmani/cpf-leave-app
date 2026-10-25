@@ -22,7 +22,8 @@
     "prebuild": "node scripts/sync-version.mjs && node scripts/release-notes.mjs --build-check",
     "release:notes": "node scripts/release-notes.mjs --review",
     "test:release-notes": "node --import tsx --test scripts/test-release-notes.mjs",
-    "release:check": "node scripts/release-notes.mjs --check"
+    "release:check": "node scripts/release-notes.mjs --check",
+    "test:leave-duration": "node --import tsx --test scripts/test-leave-duration.mjs"
   },
   "dependencies": {
     "@fontsource-variable/material-symbols-outlined": "^5.2.0",
