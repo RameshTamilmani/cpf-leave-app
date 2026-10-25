@@ -39,9 +39,6 @@ export const UpToDateModal: React.FC<UpToDateModalProps> = ({ isOpen, onClose, v
               ✓ Latest
             </span>
           </div>
-          <p className="font-body-sm text-body-sm text-on-surface-variant text-[12.5px] mt-2.5 leading-relaxed">
-            You are running the latest deployed version of CutiSG. Holiday data is refreshed separately.
-          </p>
         </div>
 
         <button

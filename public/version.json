@@ -7,11 +7,17 @@
       "description": "For a longer leave period, choose the exact half-day date and AM or PM. See that detail in Calendar and History, and keep it in your exports.",
       "icon": "event",
       "color": "blue"
+    },
+    {
+      "title": "A simpler update message",
+      "description": "The up-to-date popup now shows only the confirmation and your app version.",
+      "icon": "check_circle",
+      "color": "emerald"
     }
   ],
-  "releaseNotes": "Choose exactly which date is half-day leave, with morning or afternoon leave clearly recorded.",
+  "releaseNotes": "Choose exactly which date is half-day leave, with morning or afternoon leave clearly recorded. The up-to-date popup now has less text.",
   "notesReview": {
-    "sourceHash": "919e22887b40dd083b59add50e9d9415bf1c620b9c5ebc96fa50e81137c34c5e",
-    "notesHash": "cf57b8c5168b166b4bff4c436e20f9d3769bdbb14a7d713f79fff042045beac4"
+    "sourceHash": "2b0373ab5523bd82d0be89a4ab83e5ef9adb24bf0681cb482a0b36270cbe6de8",
+    "notesHash": "d5c9fab156cff2d9b95589e26a31009832ae829e327ea7af1b576c3af11c7fd6"
   }
 }
