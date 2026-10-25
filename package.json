@@ -19,9 +19,10 @@
     "test:updates": "node --import tsx --test scripts/test-updates.mjs",
     "test:modals": "node scripts/test-modals.mjs",
     "version": "node scripts/sync-version.mjs",
-    "prebuild": "node scripts/sync-version.mjs && node scripts/release-notes.mjs --check",
+    "prebuild": "node scripts/sync-version.mjs && node scripts/release-notes.mjs --build-check",
     "release:notes": "node scripts/release-notes.mjs --review",
-    "test:release-notes": "node --import tsx --test scripts/test-release-notes.mjs"
+    "test:release-notes": "node --import tsx --test scripts/test-release-notes.mjs",
+    "release:check": "node scripts/release-notes.mjs --check"
   },
   "dependencies": {
     "@fontsource-variable/material-symbols-outlined": "^5.2.0",

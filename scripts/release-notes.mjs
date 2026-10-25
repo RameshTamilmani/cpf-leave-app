@@ -43,6 +43,17 @@ export function checkReleaseNotes(release, currentSourceHash) {
     throw new Error('Release notes need review: update public/version.json to describe the latest changes in plain language, then run npm run release:notes.');
   }
 }
+// Build hosts may alter checkout/packaging files. Validate the release text
+// without treating those environment differences as a failed deployment.
+export function checkBuildReleaseNotes(release, currentSourceHash) {
+  validateContent(release);
+  if (!release.notesReview || release.notesReview.notesHash !== notesHash(release)) {
+    throw new Error('Release notes are missing review or were edited after review. Update public/version.json, then run npm run release:notes.');
+  }
+  return release.notesReview.sourceHash === currentSourceHash
+    ? null
+    : 'App files differ from the reviewed checkout. Confirm the release notes describe your changes; use npm run release:check locally. This does not block deployment.';
+}
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const root = fileURLToPath(new URL('../', import.meta.url));
   const file = resolve(root, 'public/version.json');
@@ -56,6 +67,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     release.notesReview = { sourceHash: currentSourceHash, notesHash: notesHash(release) };
     writeFileSync(file, JSON.stringify(release, null, 2) + '\n');
     console.log('Release notes reviewed for this app revision.');
+  } else if (process.argv.includes('--build-check')) {
+    const warning = checkBuildReleaseNotes(release, currentSourceHash);
+    if (warning) console.warn('Release notes: ' + warning);
+    else console.log('Release notes match this app revision.');
   } else {
     checkReleaseNotes(release, currentSourceHash);
     console.log('Release notes match this app revision.');

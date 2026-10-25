@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { checkReleaseNotes, notesHash, sourceHash } from './release-notes.mjs';
+import { checkReleaseNotes, checkBuildReleaseNotes, notesHash, sourceHash } from './release-notes.mjs';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -35,4 +35,11 @@ test('update dialog renders each downloaded release notes even with the same ver
   assert.ok(second.includes('Simpler resets')); assert.ok(!second.includes('Clearer headings'));
   const fallback = render({ version: '1.0.0', buildId: 'c', buildTime: 3, releaseNotes: 'Better calendar scrolling.' });
   assert.ok(fallback.includes('Better calendar scrolling.')); assert.ok(!fallback.includes('Clearer headings'));
+});
+
+test('deployment tolerates checkout differences while enforcing reviewed release text', () => {
+  assert.equal(checkBuildReleaseNotes(reviewed(), 'source-a'), null);
+  assert.match(checkBuildReleaseNotes(reviewed(), 'vercel-checkout'), /does not block/);
+  assert.throws(() => checkBuildReleaseNotes({ ...reviewed(), releaseNotes: 'Unreviewed text' }, 'vercel-checkout'), /edited after review/);
+  assert.throws(() => checkBuildReleaseNotes(release, 'vercel-checkout'), /missing review/);
 });

@@ -21,9 +21,9 @@
       "color": "purple"
     }
   ],
-  "releaseNotes": "Matching headings, clearer reset options and consistent Loss of Pay icons.",
+  "releaseNotes": "Matching headings, clearer reset options, consistent Loss of Pay icons and update details written for this release.",
   "notesReview": {
-    "sourceHash": "352308a4961803ece2e61136d8720d22c239d91d837217f7030979a0248540ae",
-    "notesHash": "6de61bc90100fbef02667ceaf6ac47656fd2652600fab464c425dbc04bfc087a"
+    "sourceHash": "04bb34ba7dcbe4e7013b1ec3444b423cd11bf358223c20e2f002ee044062cfa0",
+    "notesHash": "e587f54737ea9c1a9381167e0d5015abac425bbe996f78e97f013105d2bfafaf"
   }
 }
