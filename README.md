@@ -1,4 +1,4 @@
-# CutiSG - Singapore MOM Leave & Public Holiday Management System (v1.1.2)
+# CutiSG - Singapore MOM Leave & Public Holiday Management System (v1.0.0)
 
 **CutiSG** is a comprehensive, production-grade Singapore personal leave management Progressive Web Application (PWA) built strictly in accordance with the **Singapore Ministry of Manpower (MOM) Employment Act (Cap. 91)**.
 
@@ -22,7 +22,7 @@
 
 ---
 
-## 🌟 Key Highlights & Current Features (v1.1.2)
+## 🌟 Key Highlights & Current Features (v1.0.0)
 
 ### 1. Executive Employee Profile & Tenure Styling
 - **Mandatory Profile Setup**: Name (up to 40 characters), numeric Employee ID (up to 12 digits), Department (up to 25 characters), and Date of Joining (non-future date). Photo upload is optional and supports square cropping up to 8MB.
@@ -54,7 +54,7 @@
 - **iPhone / iOS Safari**: Tailored 3-step guide detailing the Apple Share button `[⎋]` → **Add to Home Screen** action.
 - **Overscroll Lock**: Suppressed browser pull-to-refresh gestures to ensure a native mobile app feel.
 
-### 5. Reliable App Updates (v1.1.2)
+### 5. Reliable App Updates (v1.0.0)
 - **Positioning**: The **App Updates** card is positioned directly above the **About CutiSG** button in Settings.
 - **Clear Status Modals**:
   - Clicking **"Check for updates"** when already up-to-date opens a dedicated, prominent **"You're Up to Date"** confirmation dialog (`UpToDateModal`) with a green verified badge.
