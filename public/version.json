@@ -3,21 +3,27 @@
   "releaseDate": "2026-10-25",
   "highlights": [
     {
-      "title": "Choose your half-day leave",
-      "description": "For a longer leave period, choose the exact half-day date and AM or PM. See that detail in Calendar and History, and keep it in your exports.",
-      "icon": "event",
+      "title": "Safer backups and saving",
+      "description": "Invalid backups leave your records untouched. Restore asks before replacing records, and saving in two windows keeps both changes.",
+      "icon": "backup",
       "color": "blue"
     },
     {
-      "title": "A simpler update message",
-      "description": "The up-to-date popup now shows only the confirmation and your app version.",
-      "icon": "check_circle",
+      "title": "More accurate leave balances",
+      "description": "Balances follow the correct leave year. Comp-Off leave uses credits that are valid for the selected dates.",
+      "icon": "event_available",
       "color": "emerald"
+    },
+    {
+      "title": "Clearer calendar and settings",
+      "description": "Both half-day sessions appear in Calendar, past bookings show Taken consistently, and custom cycle dates stay as saved.",
+      "icon": "calendar_month",
+      "color": "purple"
     }
   ],
-  "releaseNotes": "Choose exactly which date is half-day leave, with morning or afternoon leave clearly recorded. The up-to-date popup now has less text.",
+  "releaseNotes": "Safer restore and saving, accurate leave-year balances and Comp-Off checks, and consistent calendar details. Older records keep their saved totals and leave types.",
   "notesReview": {
-    "sourceHash": "2b0373ab5523bd82d0be89a4ab83e5ef9adb24bf0681cb482a0b36270cbe6de8",
-    "notesHash": "d5c9fab156cff2d9b95589e26a31009832ae829e327ea7af1b576c3af11c7fd6"
+    "sourceHash": "f7312e004899ec334625d3e947784c0918b2f3142a210030730df6856b875b3c",
+    "notesHash": "c0bc624b908dc027d68eb7b97cd06b4bddc967c57f3172760758d08b94c4362a"
   }
 }

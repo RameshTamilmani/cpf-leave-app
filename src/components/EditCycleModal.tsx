@@ -1,3 +1,4 @@
+import { cycleDayLimit, validCycle } from '../utils/leaveAccounting';
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
@@ -36,31 +37,9 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
   useEffect(() => {
     if (isOpen) {
       setShowWarningModal(false);
-      if (settings.cycle.includes('Jun 13') || (settings.cycleStartMonth === 6 && settings.cycleStartDay === 13)) {
-        setStartMonth(6);
-        setStartDay(13);
-        setEndMonth(6);
-        setEndDay(12);
-        setSelectedPreset('jun13');
-      } else if (settings.cycle.includes('1 Apr') || (settings.cycleStartMonth === 4 && settings.cycleStartDay === 1)) {
-        setStartMonth(4);
-        setStartDay(1);
-        setEndMonth(3);
-        setEndDay(31);
-        setSelectedPreset('apr1');
-      } else if (settings.cycle.includes('1 Jan') || (settings.cycleStartMonth === 1 && settings.cycleStartDay === 1)) {
-        setStartMonth(1);
-        setStartDay(1);
-        setEndMonth(12);
-        setEndDay(31);
-        setSelectedPreset('jan1');
-      } else {
-        setStartMonth(settings.cycleStartMonth || 6);
-        setStartDay(settings.cycleStartDay || 13);
-        setEndMonth(settings.cycleEndMonth || 6);
-        setEndDay(settings.cycleEndDay || 12);
-        setSelectedPreset('custom');
-      }
+      const sm=settings.cycleStartMonth??6,sd=settings.cycleStartDay??13,em=settings.cycleEndMonth??6,ed=settings.cycleEndDay??12;
+      setStartMonth(sm);setStartDay(sd);setEndMonth(em);setEndDay(ed);
+      setSelectedPreset(sm===6&&sd===13&&em===6&&ed===12?'jun13':sm===1&&sd===1&&em===12&&ed===31?'jan1':sm===4&&sd===1&&em===3&&ed===31?'apr1':sm===7&&sd===1&&em===6&&ed===30?'jul1':'custom');
     }
   }, [isOpen, settings]);
 
@@ -108,13 +87,14 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
   };
 
   const handleOpenWarning = () => {
-    setShowWarningModal(true);
+    if(validCycle(startMonth,startDay,endMonth,endDay))setShowWarningModal(true);
   };
 
-  const handleConfirmResetAndSave = () => {
+  const handleConfirmResetAndSave = async () => {
+    if(!validCycle(startMonth,startDay,endMonth,endDay))return;
     const cycleTitle = getComputedCycleTitle();
 
-    resetCycleWithWarningConfirm({
+    const saved = await resetCycleWithWarningConfirm({
       cycle: cycleTitle,
       cycleStartMonth: startMonth,
       cycleStartDay: startDay,
@@ -122,6 +102,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
       cycleEndDay: endDay
     });
 
+    if(!saved)return;
     setShowWarningModal(false);
     onClose();
   };
@@ -283,6 +264,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
                 value={startMonth}
                 onChange={(e) => {
                   setStartMonth(Number(e.target.value));
+                  setStartDay(day=>Math.min(day,cycleDayLimit(Number(e.target.value))));
                   setSelectedPreset('custom');
                 }}
                 className="px-3 py-2 rounded-lg border border-surface-outline bg-surface-container-lowest text-on-surface font-label-md focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
@@ -302,7 +284,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
                 }}
                 className="px-3 py-2 rounded-lg border border-surface-outline bg-surface-container-lowest text-on-surface font-label-md focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
               >
-                {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                {Array.from({ length: cycleDayLimit(startMonth) }, (_, i) => i + 1).map((d) => (
                   <option key={d} value={d}>
                     Day {d}
                   </option>
@@ -321,6 +303,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
                 value={endMonth}
                 onChange={(e) => {
                   setEndMonth(Number(e.target.value));
+                  setEndDay(day=>Math.min(day,cycleDayLimit(Number(e.target.value))));
                   setSelectedPreset('custom');
                 }}
                 className="px-3 py-2 rounded-lg border border-surface-outline bg-surface-container-lowest text-on-surface font-label-md focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
@@ -340,7 +323,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
                 }}
                 className="px-3 py-2 rounded-lg border border-surface-outline bg-surface-container-lowest text-on-surface font-label-md focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
               >
-                {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                {Array.from({ length: cycleDayLimit(endMonth) }, (_, i) => i + 1).map((d) => (
                   <option key={d} value={d}>
                     Day {d}
                   </option>
@@ -367,6 +350,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
           <button
             type="button"
             onClick={handleOpenWarning}
+            disabled={!validCycle(startMonth,startDay,endMonth,endDay)}
             className="flex-1 py-2.5 rounded-full bg-primary text-on-primary font-label-md text-label-md font-semibold hover:opacity-95 active:scale-95 transition-all shadow-xs cursor-pointer"
           >
             Save Leave Cycle

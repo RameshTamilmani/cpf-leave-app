@@ -1,3 +1,6 @@
+import { cycleView, compOffAllocation, quotaImpact, validCycle, cycleFor } from '../utils/leaveAccounting';
+import { parseLeaveCSV } from '../utils/leaveCSV';
+import { readRecords, transactRecords } from '../utils/recordStorage';
 import { workingLeaveDates, halfDaySelectionError, leavePeriodsOverlap } from '../utils/leaveDuration';
 import { restoreContentError } from '../utils/restoreValidation';
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
@@ -18,7 +21,11 @@ interface LeaveContextType {
   setCurrentTab: (tab: 'home' | 'calendar' | 'history' | 'settings') => void;
   
   records: LeaveRecord[];
-  addRecord: (record: Omit<LeaveRecord, 'id' | 'createdAt'>) => void;
+  addRecord: (record: Omit<LeaveRecord, 'id' | 'createdAt'>) => Promise<boolean>;
+  cycleRecords: LeaveRecord[];
+  accountingWarning: string;
+  compOffError: (record: LeaveRecord, existing?: LeaveRecord[]) => string | null;
+  getQuotaImpact: (record: LeaveRecord) => ReturnType<typeof quotaImpact>;
   deleteRecord: (id: string) => void;
   updateRecord: (id: string, updated: Partial<LeaveRecord>) => void;
   
@@ -120,10 +127,10 @@ interface LeaveContextType {
   triggerSync: () => Promise<void>;
   isSyncing: boolean;
   exportCSV: () => void;
-  restoreCSV: (csvStr: string) => boolean;
-  resetAllData: () => void;
-  resetEntireAppToDefaults: () => void;
-  resetCycleWithWarningConfirm: (newCycleSettings: Partial<UserSettings>) => void;
+  restoreCSV: (csvStr: string, expected?: string) => Promise<boolean>;
+  resetAllData: () => Promise<boolean>;
+  resetEntireAppToDefaults: () => Promise<boolean>;
+  resetCycleWithWarningConfirm: (newCycleSettings: Partial<UserSettings>) => Promise<boolean>;
 }
 
 const defaultSettings: UserSettings = {
@@ -351,12 +358,10 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [settings.theme]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('cutisg_records', JSON.stringify(records));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [records]);
+    const sync = () => { try { setRecords(readRecords()); } catch {} };
+    window.addEventListener('storage', sync); window.addEventListener('focus', sync);
+    return () => { window.removeEventListener('storage', sync); window.removeEventListener('focus', sync); };
+  }, []);
 
   useEffect(() => {
     try {
@@ -415,30 +420,25 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setApplyModalConfig((prev) => ({ ...prev, isOpen: false }));
   };
 
-  const addRecord = (record: Omit<LeaveRecord, 'id' | 'createdAt'>) => {
-    const newRecord: LeaveRecord = {
-      ...record,
-      id: 'cuti_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-      createdAt: new Date().toISOString()
-    };
-    // Sorting of dates in logged entries should be based on descending order of dates
-    setRecords((prev) => [newRecord, ...prev].sort((a, b) => b.startDate.localeCompare(a.startDate)));
-    showToast(`Leave logged: ${record.title} (-${record.days} day${record.days !== 1 ? 's' : ''})`);
+  const commitRecords = async (change: (latest: LeaveRecord[]) => LeaveRecord[], expected?: string) => {
+    try { const next = await transactRecords(change, expected); setRecords(next); return true; }
+    catch (error) { showToast(error instanceof Error ? error.message : 'Records could not be saved. No changes were applied.'); return false; }
   };
-
-  const deleteRecord = (id: string) => {
-    const target = records.find((r) => r.id === id);
-    setRecords((prev) => prev.filter((r) => r.id !== id));
-    if (target) {
-      showToast(`Removed entry: ${target.title} (Restored +${target.days} days)`);
-    }
+  const addRecord = async (record: Omit<LeaveRecord, 'id' | 'createdAt'>) => {
+    const newRecord: LeaveRecord = {...record,id:crypto.randomUUID(),createdAt:new Date().toISOString()};
+    const saved = await commitRecords(latest => {
+      if(latest.some(r=>leavePeriodsOverlap(r,newRecord,allHolidays)))throw Error('This leave overlaps a saved record. Check History and try again.');
+      if(newRecord.type==='AL'||newRecord.type==='SL'){if(quotaImpact(newRecord,latest,settings,allHolidays).outsideCycle)throw Error('Some selected dates fall outside your configured leave-year window. Check the cycle dates in Settings.');}
+      const error=compOffError(newRecord,latest);if(error)throw Error(error);
+      return [...latest,newRecord].sort((a,b)=>b.startDate.localeCompare(a.startDate));
+    });
+    if(saved)showToast('Leave saved successfully.');return saved;
   };
-
-  const updateRecord = (id: string, updated: Partial<LeaveRecord>) => {
-    setRecords((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, ...updated } : r))
-    );
-    showToast('Updated leave details');
+  const deleteRecord = async (id:string) => {
+    if(await commitRecords(latest=>latest.filter(r=>r.id!==id)))showToast('Leave record removed.');
+  };
+  const updateRecord = async (id:string, updated:Partial<LeaveRecord>) => {
+    if(await commitRecords(latest=>latest.map(r=>r.id===id?{...r,...updated}:r)))showToast('Leave details updated.');
   };
 
   const holidaySync = useOfficialHolidays();
@@ -562,7 +562,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!settings.saturdayCompOffEnabled) return false;
     const d = new Date(h.date + 'T00:00:00');
     const isSat = d.getDay() === 6; // Saturday
-    if (!isSat && !h.isCompOffEligible) return false;
+    if (!(h.isCompOffEligible ?? isSat)) return false;
 
     const validityEndDate = addDaysToDate(h.date, 90);
     const fallsInCycle = h.date >= cycleStartDateStr && h.date <= cycleEndDateStr;
@@ -621,27 +621,29 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const totalCompOffPool = autoCompOffEarned + manualCompOffCredits;
 
-  // Balances calculation
-  const alUsed = records
-    .filter((r) => r.type === 'AL')
-    .reduce((sum, r) => sum + (Number(r.days) || 0), 0);
-
-  const slUsed = records
-    .filter((r) => r.type === 'SL')
-    .reduce((sum, r) => sum + (Number(r.days) || 0), 0);
-
-  const coUsed = records
-    .filter((r) => r.type === 'CO' || r.type === 'CL')
-    .reduce((sum, r) => sum + (Number(r.days) || 0), 0);
-
-  const alAvailable = Math.max(0, settings.alEntitlement - alUsed);
-  const slAvailable = Math.max(0, settings.slEntitlement - slUsed);
-  const coAvailable = Math.max(0, totalCompOffPool - coUsed);
-
-  // LOP (Loss of Pay) calculations: any AL or SL taken beyond statutory 12/12 days
-  const alLOP = Math.max(0, alUsed - settings.alEntitlement);
-  const slLOP = Math.max(0, slUsed - settings.slEntitlement);
-  const totalLOP = alLOP + slLOP;
+  const cycleRecords = cycleView(records,cycleStartDateStr,cycleEndDateStr,allHolidays);
+  const alUsed=cycleRecords.filter(r=>r.type==='AL').reduce((s,r)=>s+r.days,0);
+  const slUsed=cycleRecords.filter(r=>r.type==='SL').reduce((s,r)=>s+r.days,0);
+  const allocation=compOffAllocation(records,settings.saturdayCompOffEnabled?allHolidays:[],todayDateStr,excludedHolidayDates);
+  const currentCreditDates=new Set(crossedSaturdayHolidays.filter(h=>!excludedHolidayDates.includes(h.date)).map(h=>h.date));
+  const coUsed=[...allocation.used].filter(([date])=>currentCreditDates.has(date)).reduce((s,[,days])=>s+days,0);
+  const alAvailable=Math.max(0,settings.alEntitlement-alUsed),slAvailable=Math.max(0,settings.slEntitlement-slUsed);
+  const coAvailable=Math.max(0,totalCompOffPool-coUsed);
+  const alLOP=Math.max(0,alUsed-settings.alEntitlement),slLOP=Math.max(0,slUsed-settings.slEntitlement),totalLOP=alLOP+slLOP;
+  const compOffError = (record:LeaveRecord, existing:LeaveRecord[]=records):string|null => {
+    if(record.type!=='CO'&&record.type!=='CL')return null;
+    const result=compOffAllocation([...existing,record],settings.saturdayCompOffEnabled?allHolidays:[],todayDateStr,excludedHolidayDates);
+    return result.unfunded.length ? 'Not enough eligible Comp-Off credit for these leave dates. Each credit can cover one day within its own 90-day period. Check earlier Comp-Off records too.' : null;
+  };
+  const ambiguousSpans=records.filter(r=>r.startDate!==r.endDate&&r.days%1===0.5&&!r.halfDayDate&&cycleFor(r.startDate,settings).start!==cycleFor(r.endDate,settings).start);
+  const accountingWarning=ambiguousSpans.length?'An older half-day record spans two leave years without a half-day date. Its balance is reserved conservatively. Export a backup, then re-enter it with the correct date.':allocation.unfunded.length?'Some older Comp-Off records need credit or half-day details reviewed before more Comp-Off leave can be added.':'';
+  const getQuotaImpact=(record:LeaveRecord)=>{
+    if(record.type==='CO'||record.type==='CL'){
+      const available=allocation.credits.filter(c=>c.date<=record.endDate&&c.end>=record.startDate).reduce((s,c)=>s+c.left,0);
+      return {available,remaining:Math.max(0,available-record.days),lop:0,outsideCycle:false};
+    }
+    return quotaImpact(record,records,settings,allHolidays);
+  };
 
   const triggerSync = async () => {
     setIsSyncing(true);
@@ -693,181 +695,36 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   // Restore CSV containing mandatory data with strict duplicate validation and DD/MM/YYYY support
-  const restoreCSV = (csvStr: string): boolean => {
-    const error = restoreContentError(csvStr);
-    if (error) { showToast(error); return false; }
+  const restoreCSV = async (csvStr:string,expected?:string):Promise<boolean> => {
     try {
-      const lines = csvStr.trim().split(/\r?\n/).filter(Boolean);
-      if (lines.length < 2) {
-        showToast('CSV is empty or missing data rows');
-        return false;
-      }
-      const headerLine = lines[0].toLowerCase();
-      const headers = headerLine.split(',').map((h) => h.trim().replace(/^="?|"$/g, '').replace(/^"|"$/g, ''));
-
-      const typeIdx = headers.findIndex((h) => h.includes('type'));
-      const titleIdx = headers.findIndex((h) => h.includes('title') || h.includes('reason'));
-      const startIdx = headers.findIndex((h) => h.includes('start'));
-      const endIdx = headers.findIndex((h) => h.includes('end'));
-      const daysIdx = headers.findIndex((h) => h.includes('day'));
-      const statusIdx = headers.findIndex((h) => h.includes('status'));
-      const remarksIdx = headers.findIndex((h) => h.includes('remark') || h.includes('note'));
-      const halfDateIdx = headers.indexOf('half day date');
-      const halfSessionIdx = headers.indexOf('half day session');
-
-      const cleanCell = (str: string) => {
-        let val = str.trim();
-        if (val.startsWith('="') && val.endsWith('"')) {
-          val = val.slice(2, -1);
-        } else if (val.startsWith('"') && val.endsWith('"')) {
-          val = val.slice(1, -1);
-        } else if (val.startsWith('=')) {
-          val = val.slice(1).replace(/^"|"$/g, '');
-        }
-        return val.replace(/""/g, '"').trim();
-      };
-
-      const validRows: {
-        type: LeaveType;
-        title: string;
-        startDate: string;
-        endDate: string;
-        days: number;
-        status: LeaveStatus;
-        notes?: string;
-        halfDay?: 'full' | 'am' | 'pm';
-        halfDayDate?: string;
-      }[] = [];
-
-      let duplicateCount = 0;
-      let invalidCount = 0;
-
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i];
-        const cols: string[] = [];
-        let inQuotes = false;
-        let current = '';
-        for (let c = 0; c < line.length; c++) {
-          const char = line[c];
-          if (char === '"') {
-            inQuotes = !inQuotes;
-          } else if (char === ',' && !inQuotes) {
-            cols.push(cleanCell(current));
-            current = '';
-          } else {
-            current += char;
-          }
-        }
-        cols.push(cleanCell(current));
-
-        const typeRaw = cols[typeIdx >= 0 ? typeIdx : 0]?.toUpperCase() || 'AL';
-        const type: LeaveType = typeRaw === 'SL' ? 'SL' : typeRaw === 'CO' ? 'CO' : 'AL';
-        const title = cols[titleIdx >= 0 ? titleIdx : 1] || (type === 'AL' ? 'Annual Leave' : type === 'SL' ? 'Sick Leave' : 'Comp-off Leave');
-        const rawStart = cols[startIdx >= 0 ? startIdx : 2] || todayDateStr;
-        const rawEnd = cols[endIdx >= 0 ? endIdx : 3] || rawStart;
-        const startDate = parseDDMMYYYYToISO(rawStart);
-        const endDate = parseDDMMYYYYToISO(rawEnd);
-        const days = Math.max(0.5, Number(cols[daysIdx >= 0 ? daysIdx : 4]) || 1.0);
-        const statusRaw = cols[statusIdx >= 0 ? statusIdx : 5]?.toLowerCase();
-        const status: LeaveStatus = statusRaw === 'taken' ? 'taken' : 'planned';
-        const notes = remarksIdx >= 0 ? cols[remarksIdx] : undefined;
-        const sessionRaw = halfSessionIdx >= 0 ? cols[halfSessionIdx]?.toLowerCase() || '' : '';
-        const halfDay = sessionRaw === 'am' || sessionRaw === 'pm' || sessionRaw === 'full' ? sessionRaw : undefined;
-        const rawHalfDate = halfDateIdx >= 0 ? cols[halfDateIdx] || '' : '';
-        const halfDayDate = rawHalfDate ? parseDDMMYYYYToISO(rawHalfDate) : halfDay && halfDay !== 'full' && startDate === endDate ? startDate : undefined;
-        if ((sessionRaw && !halfDay) || (rawHalfDate && !halfDayDate) || (halfDayDate && (!halfDay || halfDay === 'full'))) {
-          invalidCount++; continue;
-        }
-        if (halfDay === 'am' || halfDay === 'pm') {
-          const dates = workingLeaveDates(startDate, endDate, allHolidays);
-          if (halfDaySelectionError(dates, halfDayDate || '', halfDay) || days !== dates.length - 0.5) {
-            invalidCount++; continue;
-          }
-        }
-
-
-        // Basic date consistency
-        if (!startDate || !endDate || endDate < startDate) {
-          invalidCount++;
-          continue;
-        }
-
-        // Rule: 0.5 days is allowed only if start date and end date are the same
-        if (startDate !== endDate && days < 1.0) {
-          invalidCount++;
-          continue;
-        }
-
-        // Strict duplicate and overlap validation:
-        // 1. Check against records already added in this import batch
-        const isInternalDuplicate = validRows.some(existing => leavePeriodsOverlap(
-          { startDate, endDate, days, halfDay, halfDayDate }, existing, allHolidays
-        ));
-
-        if (isInternalDuplicate) {
-          duplicateCount++;
-          continue;
-        }
-
-        validRows.push({
-          type,
-          title,
-          startDate,
-          endDate,
-          days,
-          status,
-          notes: notes ? notes.trim() : undefined,
-          halfDay,
-          halfDayDate
-        });
-      }
-
-      if (validRows.length === 0) {
-        if (duplicateCount > 0) {
-          showToast(`Restore blocked: Found ${duplicateCount} duplicate or overlapping entries in CSV.`);
-        } else {
-          showToast(`Restore failed: ${invalidCount} invalid rows found, no valid records.`);
-        }
-        return false;
-      }
-
-      const imported: LeaveRecord[] = validRows.map((row, idx) => ({
-        id: 'cuti_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 4),
-        ...row,
-        createdAt: new Date().toISOString()
-      })).sort((a, b) => b.startDate.localeCompare(a.startDate));
-
-      setRecords(imported);
-      localStorage.setItem('cutisg_records', JSON.stringify(imported));
-
-      if (duplicateCount > 0) {
-        showToast(`Restored ${imported.length} records (${duplicateCount} duplicates blocked).`);
-      } else {
-        showToast(`Successfully restored ${imported.length} leave record${imported.length !== 1 ? 's' : ''} from CSV!`);
-      }
-      return true;
-    } catch (e) {
-      console.error(e);
-      showToast('Error restoring CSV: invalid format');
-      return false;
-    }
+      const parsed=parseLeaveCSV(csvStr,allHolidays);
+      if(parsed.some(r=>(r.type==='AL'||r.type==='SL')&&quotaImpact(r,[],settings,allHolidays).outsideCycle))throw Error('Some backup dates fall outside the configured yearly cycle window. Check Settings before restoring. No records were changed.');
+      if(parsed.some(r=>r.startDate!==r.endDate&&r.days%1===0.5&&!r.halfDayDate&&cycleFor(r.startDate,settings).start!==cycleFor(r.endDate,settings).start))throw Error('A half-day record spans two leave years without its exact half-day date. Add that detail to the backup before restoring. No records were changed.');
+      const allocation=compOffAllocation(parsed,settings.saturdayCompOffEnabled?allHolidays:[],todayDateStr,excludedHolidayDates);
+      if(allocation.unfunded.length)throw Error('The backup contains Comp-Off leave without enough eligible credit, or an unspecified half-day date. No records were changed.');
+      const imported=parsed.map(r=>({...r,id:crypto.randomUUID()}));
+      const saved=await commitRecords(()=>imported,expected);
+      if(saved)showToast('All '+imported.length+' leave records restored.');return saved;
+    } catch(error) {showToast(error instanceof Error?error.message:'The backup could not be restored.');return false;}
   };
 
   // "Reset All Leave Data": deletes ONLY the leave records, preserving user profile info
-  const resetAllData = () => {
-    setRecords([]);
+  const resetAllData = async () => {
+    if(!await commitRecords(()=>[]))return false;
     setManualCompOffCredits(0);
     try {
-      localStorage.setItem('cutisg_records', '[]');
       localStorage.setItem('cutisg_manual_compoff', '0');
     } catch (e) {
       console.error(e);
     }
     showToast('All leave records deleted. Profile info & settings preserved.');
+    return true;
   };
 
   // Changing leave year cycle: updates cycle, deletes all leave logs, and resets leaves to default values
-  const resetCycleWithWarningConfirm = (newCycleSettings: Partial<UserSettings>) => {
+  const resetCycleWithWarningConfirm = async (newCycleSettings: Partial<UserSettings>) => {
+    if(!validCycle(newCycleSettings.cycleStartMonth!,newCycleSettings.cycleStartDay!,newCycleSettings.cycleEndMonth!,newCycleSettings.cycleEndDay!)) {showToast('Choose valid cycle dates. February supports days 1–28 for a yearly cycle.');return false;}
+    if(!await commitRecords(()=>[]))return false;
     setSettings((prev) => {
       const updated: UserSettings = {
         ...prev,
@@ -885,26 +742,24 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setRecords([]);
     setManualCompOffCredits(0);
     try {
-      localStorage.setItem('cutisg_records', '[]');
       localStorage.setItem('cutisg_manual_compoff', '0');
     } catch (e) {
       console.error(e);
     }
     showToast('Leave cycle updated: all leave entries deleted and balances reset to default values.');
+    return true;
   };
 
   // "Factory Reset": resets entire app, all records, profile details, and settings to defaults
-  const resetEntireAppToDefaults = () => {
-    setRecords([]);
+  const resetEntireAppToDefaults = async () => {
+    if(!await commitRecords(()=>[]))return false;
     setSettings(defaultSettings);
     setSpecialHolidays([]);
     setManualCompOffCredits(0);
     try {
-      localStorage.removeItem('cutisg_records');
       localStorage.removeItem('cutisg_special_holidays');
       localStorage.removeItem('cutisg_manual_compoff');
       localStorage.removeItem('cutisg_profile_setup_prompted');
-      localStorage.setItem('cutisg_records', '[]');
       localStorage.setItem('cutisg_special_holidays', '[]');
       localStorage.setItem('cutisg_manual_compoff', '0');
       localStorage.setItem('cutisg_settings', JSON.stringify(defaultSettings));
@@ -912,6 +767,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error(e);
     }
     showToast('Entire app, profile details, and settings reset to factory defaults.');
+    return true;
   };
 
   return (
@@ -920,6 +776,10 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         currentTab,
         setCurrentTab,
         records,
+        cycleRecords,
+        accountingWarning,
+        compOffError,
+        getQuotaImpact,
         addRecord,
         deleteRecord,
         updateRecord,

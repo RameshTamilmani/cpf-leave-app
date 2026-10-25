@@ -1,3 +1,4 @@
+import { effectiveStatus } from '../utils/leaveAccounting';
 import { halfDayOnDate } from '../utils/leaveDuration';
 import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
@@ -60,7 +61,10 @@ export const CalendarScreen: React.FC = () => {
             const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const dayEntries = entries.filter(entry => entry.date === date);
             const holiday = dayEntries.find(entry => entry.holiday);
-            const leave = dayEntries.find(entry => entry.record)?.record;
+            const leaves = dayEntries.filter(entry=>entry.record).map(entry=>entry.record!);
+            const leave = leaves[0];
+            const leaveSummary = leaves.map(r=>leaveLabels[r.type]+(halfDayOnDate(r,date)?', Half Day ('+halfDayOnDate(r,date)!.toUpperCase()+')':'')).join('; ');
+            const leaveBadge = leaves.map(r=>(r.type==='CL'?'CO':r.type)+(halfDayOnDate(r,date)?' '+halfDayOnDate(r,date)!.toUpperCase():'')).join(' / ');
             const leaveHalf = leave ? halfDayOnDate(leave, date) : null;
             const weekend = (offset + i) % 7 > 4;
             const selected = selectedCalendarDate === date;
@@ -71,11 +75,11 @@ export const CalendarScreen: React.FC = () => {
               : 'bg-surface-container-low text-on-surface';
             return (
               <button type="button" key={date} onClick={() => setSelectedCalendarDate(date)}
-                aria-label={`${formatDateDDMMYYYY(date)}${holiday ? ', ' + holiday.title : leave ? ', ' + leaveLabels[leave.type] + (leaveHalf ? ', Half Day (' + leaveHalf.toUpperCase() + ')' : '') : ''}${isToday ? ', Today' : ''}`}
+                aria-label={`${formatDateDDMMYYYY(date)}${holiday ? ', ' + holiday.title : leave ? ', ' + leaveSummary : ''}${isToday ? ', Today' : ''}`}
                 aria-pressed={selected} aria-current={isToday ? 'date' : undefined}
                 className={`min-w-0 aspect-square rounded-lg flex flex-col items-center justify-center gap-1 text-xs sm:text-sm font-semibold cursor-pointer ${color} ${selected ? 'ring-2 ring-primary ring-inset' : ''} ${isToday ? 'font-bold outline outline-1 outline-primary -outline-offset-1' : ''}`}>
                 <span>{day}</span>
-                <span aria-hidden="true" className="text-[8px] sm:text-[10px] leading-none font-medium">{holiday ? 'PH' : leave ? (leave.type === 'CL' ? 'CO' : leave.type) + (leaveHalf ? ' ' + leaveHalf.toUpperCase() : '') : isToday ? 'Today' : '\u00a0'}</span>
+                <span aria-hidden="true" className="text-[8px] sm:text-[10px] leading-tight font-medium break-words px-0.5">{holiday ? 'PH' : leave ? leaveBadge : isToday ? 'Today' : '\u00a0'}</span>
               </button>
             );
           })}
@@ -106,7 +110,7 @@ export const CalendarScreen: React.FC = () => {
                     <p className="text-sm font-semibold leading-5 text-on-surface break-words">{entry.title}</p>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
                       <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${color}`}>{label}</span>
-                      {entry.record && <span className="text-xs text-on-surface-variant capitalize">{entry.record.status}{half ? ` · Half Day (${half.toUpperCase()})` : ''}</span>}
+                      {entry.record && <span className="text-xs text-on-surface-variant capitalize">{effectiveStatus(entry.record,todayDateStr)}{half ? ` · Half Day (${half.toUpperCase()})` : ''}</span>}
                     </div>
                   </div>
                 </li>

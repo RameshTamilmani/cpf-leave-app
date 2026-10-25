@@ -46,8 +46,8 @@ try {
       await page.keyboard.press('Tab');
       assert.equal(await page.evaluate(() => !!document.activeElement.closest('[role="dialog"]')), true);
     }
-    const department = dialog.getByLabel('DEPARTMENT *', { exact: true });
-    const date = dialog.getByRole('textbox', { name: 'DATE OF JOINING *', exact: true });
+    const department = dialog.getByLabel('Department *', { exact: true });
+    const date = dialog.getByRole('textbox', { name: 'Date of Joining *', exact: true });
     const save = dialog.getByRole('button', { name: /Save & Continue/ });
     await department.fill('HIS');
     await date.fill('25/10/2026');
@@ -67,15 +67,15 @@ try {
     assert.equal(await card.getAttribute('data-tenure'), 'gold');
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('cutisg_settings')));
     assert.equal(saved.department, 'HIS'); assert.equal(saved.avatarUrl, '');
-    assert.equal(await page.getByTestId('employee-id-badge').evaluate(node => getComputedStyle(node).borderTopWidth), '1px');
-    assert.equal(await page.getByTestId('employee-id-badge').evaluate(node => getComputedStyle(node).borderTopColor), await page.evaluate(() => {
-      const swatch = document.createElement('span'); swatch.style.color = 'var(--color-red-500)';
-      document.body.append(swatch); const color = getComputedStyle(swatch).color; swatch.remove(); return color;
+    assert.match(await page.getByTestId('employee-id-badge').innerText(), /EMP\s+6509/);
+    assert.equal(await page.getByTestId('employee-id-badge').evaluate(node => getComputedStyle(node).backgroundColor), await page.evaluate(() => {
+      const swatch = document.createElement('span'); swatch.style.backgroundColor = 'var(--color-amber-300)';
+      document.body.append(swatch); const color = getComputedStyle(swatch).backgroundColor; swatch.remove(); return color;
     }));
     const colors = {};
     for (const [joined, tier] of [['24/10/2026', 'green'], ['24/10/2025', 'blue'], ['24/10/2024', 'blue'], ['23/10/2024', 'gold']]) {
       await card.getByRole('button', { name: 'Edit profile', exact: true }).click();
-      await page.getByRole('textbox', { name: 'DATE OF JOINING', exact: true }).fill(joined);
+      await page.getByRole('textbox', { name: 'Date of Joining', exact: true }).fill(joined);
       await page.getByRole('button', { name: /Save Profile Changes/ }).click();
       await page.getByRole('button', { name: /Home/ }).last().click();
       assert.equal(await card.getAttribute('data-tenure'), tier);
@@ -85,12 +85,12 @@ try {
     }
     assert.equal(new Set(Object.values(colors)).size, 3);
     await card.getByRole('button', { name: 'Edit profile', exact: true }).click();
-    const settingDate = page.getByRole('textbox', { name: 'DATE OF JOINING', exact: true });
+    const settingDate = page.getByRole('textbox', { name: 'Date of Joining', exact: true });
     await settingDate.fill('25/10/2026');
     await page.getByRole('textbox', { name: 'Full name', exact: true }).fill('Changed name');
     await page.getByRole('button', { name: /Save Profile Changes/ }).click();
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('cutisg_settings')).dateOfJoining), '2024-10-23');
-    await page.getByRole('textbox', { name: 'DATE OF JOINING', exact: true }).fill('23/10/2024');
+    await page.getByRole('textbox', { name: 'Date of Joining', exact: true }).fill('23/10/2024');
     await page.getByText('Light', { exact: true }).click();
     await page.getByRole('button', { name: /Home/ }).last().click();
     await card.screenshot({ path: path.join(screenshots, `profile-gold-${width}-light.png`) });

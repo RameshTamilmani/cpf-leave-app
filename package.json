@@ -23,7 +23,10 @@
     "release:notes": "node scripts/release-notes.mjs --review",
     "test:release-notes": "node --import tsx --test scripts/test-release-notes.mjs",
     "release:check": "node scripts/release-notes.mjs --check",
-    "test:leave-duration": "node --import tsx --test scripts/test-leave-duration.mjs"
+    "test:leave-duration": "node --import tsx --test scripts/test-leave-duration.mjs",
+    "test:logic": "node --import tsx --test scripts/test-logic-fixes.mjs",
+    "test:logic-browser": "node scripts/test-logic-browser.mjs",
+    "test:restore": "node --import tsx --test scripts/test-restore.mjs"
   },
   "dependencies": {
     "@fontsource-variable/material-symbols-outlined": "^5.2.0",

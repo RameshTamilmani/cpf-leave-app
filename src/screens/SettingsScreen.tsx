@@ -1,3 +1,4 @@
+import { parseLeaveCSV } from '../utils/leaveCSV';
 import { restoreFileError, restoreContentError } from '../utils/restoreValidation';
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useRef, useState, useEffect } from 'react';
@@ -13,6 +14,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
   const {
     settings,
     records,
+    allHolidays,
     updateSettings,
     exportCSV,
     restoreCSV,
@@ -50,6 +52,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
   const [cropModalSrc, setCropModalSrc] = useState<string | null>(null);
 
   const [restoreWarning, setRestoreWarning] = useState('');
+  const [pendingRestore,setPendingRestore] = useState<{content:string;count:number;snapshot:string}|null>(null);
+  const [restoring,setRestoring] = useState(false);
+  useModalScrollLock(!!pendingRestore);
   const csvInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -121,7 +126,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
       const content = typeof reader.result === 'string' ? reader.result : '';
       const error = restoreContentError(content);
       if (error) { setRestoreWarning(error); return; }
-      restoreCSV(content);
+      try {
+        const parsed=parseLeaveCSV(content,allHolidays);
+        setPendingRestore({content,count:parsed.length,snapshot:localStorage.getItem('cutisg_records')||'[]'});
+      } catch(error) {setRestoreWarning(error instanceof Error?error.message:'This backup could not be read. No records were changed.');}
     };
     reader.onerror = () => setRestoreWarning('Could not read this file. Please choose it again.');
     reader.readAsText(file);
@@ -131,6 +139,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
 
   return (
     <div className="flex flex-col w-full px-margin space-y-space-md max-w-xl mx-auto pb-8">
+      {pendingRestore && <div role="dialog" aria-modal="true" aria-labelledby="restore-title" className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="w-full max-w-sm rounded-2xl bg-surface-card border border-surface-container p-5 space-y-4 shadow-2xl">
+          <h2 id="restore-title" className="text-base font-bold text-on-surface">Replace Leave Records?</h2>
+          <p className="text-sm text-on-surface-variant">Restore {pendingRestore.count} leave record{pendingRestore.count===1?'':'s'} from this file. This replaces your {records.length} existing record{records.length===1?'':'s'}. Your profile and settings are kept.</p>
+          <p className="text-xs text-on-surface-variant">Export your current records first if you need a backup.</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" disabled={restoring} onClick={()=>setPendingRestore(null)} className="rounded-full bg-surface-container px-3 py-2.5 text-sm font-semibold cursor-pointer">Cancel</button>
+            <button type="button" disabled={restoring} onClick={async()=>{
+              setRestoring(true);
+              const saved=await restoreCSV(pendingRestore.content,pendingRestore.snapshot);
+              setRestoring(false);setPendingRestore(null);
+              if(!saved)setRestoreWarning('Restore was not applied. Check the warning, then select the file again.');
+            }} className="rounded-full bg-primary text-on-primary px-3 py-2.5 text-sm font-semibold cursor-pointer">{restoring?'Restoring…':'Replace & Restore'}</button>
+          </div>
+        </div>
+      </div>}
+
       {/* 1. Employee Profile & Identity Configuration */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
@@ -746,8 +771,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  resetAllData();
+                onClick={async () => {
+                  if(!await resetAllData())return;
                   setIsResetModalOpen(false);
                 }}
                 className="flex-1 py-2.5 rounded-full bg-error text-on-error font-label-md text-label-md font-semibold hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
@@ -792,8 +817,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  resetEntireAppToDefaults();
+                onClick={async () => {
+                  if(!await resetEntireAppToDefaults())return;
                   setIsFactoryResetModalOpen(false);
                   setDraftName('');
                   setDraftEmpId('');

@@ -9,6 +9,7 @@ import { generateNotifications } from '../utils/notifications';
 export const HomeScreen: React.FC = () => {
   const {
     alAvailable,
+    accountingWarning,
     slAvailable,
     coAvailable,
     coUsed,
@@ -52,6 +53,7 @@ export const HomeScreen: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full px-margin pb-6 gap-3 max-w-xl mx-auto">
+      {accountingWarning && <p role="status" className="rounded-xl p-3 text-xs leading-5 bg-alert-warning/10 text-on-surface border border-alert-warning/25">{accountingWarning}</p>}
       <EmployeeProfileCard settings={settings} today={todayDateStr} onEdit={() => setCurrentTab('settings')} />
 
         {/* Home Screen Greeting Ribbon - Static, warm greeting (no popup modal) */}

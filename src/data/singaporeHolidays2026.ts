@@ -460,7 +460,7 @@ export function getGazettedHolidayForDate(dateStr: string): PublicHoliday | unde
 // Helper to check if a date string YYYY-MM-DD is any holiday (gazetted or special)
 export function getPublicHolidayForDate(
   dateStr: string,
-  customHolidays: PublicHoliday[] = []
+  customHolidays: PublicHoliday[] = ALL_GAZETTED_HOLIDAYS
 ): PublicHoliday | undefined {
   const merged = [...ALL_GAZETTED_HOLIDAYS, ...customHolidays];
   return merged.find(
@@ -489,7 +489,7 @@ export function calculateWorkingDays(
 
   if (start > end) return 0;
 
-  const allHols = [...ALL_GAZETTED_HOLIDAYS, ...customHolidays];
+  const allHols = customHolidays;
 
   let workingDays = 0;
   const cur = new Date(start);

@@ -1,3 +1,4 @@
+import { effectiveStatus } from '../utils/leaveAccounting';
 import { halfDaySummary } from '../utils/leaveDuration';
 import { LopIcon } from './LopIcon';
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
@@ -30,7 +31,7 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
   onAddSpecialHoliday
 }) => {
   const {
-    records,
+    cycleRecords: records,
     alAvailable,
     slAvailable,
     coAvailable,
@@ -47,12 +48,7 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
   if (!isOpen) return null;
 
   // Helper to determine status
-  const getEffectiveStatus = (r: LeaveRecord) => {
-    if (r.status === 'planned' && r.startDate <= todayDateStr) {
-      return 'taken';
-    }
-    return r.status;
-  };
+  const getEffectiveStatus = (r: LeaveRecord) => effectiveStatus(r,todayDateStr);
 
   // Filter records by category
   let title = '';

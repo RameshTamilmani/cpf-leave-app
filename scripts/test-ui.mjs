@@ -50,7 +50,7 @@ try {
     page.on('pageerror', error => errors.push(error.message));
     await page.clock.install({ time: new Date('2026-10-24T12:00:00+05:30') });
     await page.goto(origin);
-    await page.getByText('Engineering', { exact: true }).waitFor();
+    await page.getByText('ENGINEERING', { exact: true }).waitFor();
     await page.getByText('Happy Weekend! 🎉', { exact: true }).waitFor();
     const cards = page.locator('article');
     assert.equal(await cards.count(), 5);
@@ -68,7 +68,7 @@ try {
     await page.getByRole('button', { name: /Settings/ }).last().click();
     assert.equal(await page.getByText('Notifications & Wishes', { exact: true }).count(), 0);
     assert.equal(await page.getByText('Special Holidays (Rare Cases)', { exact: true }).count(), 0);
-    const department = page.getByLabel('DEPARTMENT', { exact: true });
+    const department = page.getByLabel('Department', { exact: true });
     await department.fill('Operations-Team-Long-Name-Plus');
     assert.equal((await department.inputValue()).length, 25);
     const departmentName = await department.inputValue();
@@ -78,7 +78,7 @@ try {
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('cutisg_settings')).department), departmentName);
     await page.getByText(/Already a public holiday. Not counted twice/).waitFor();
     await page.getByRole('button', { name: /Add Special Holiday/ }).click();
-    await page.getByRole('textbox', { name: /^DATE \(/ }).fill('10/08/2026');
+    await page.getByRole('textbox', { name: /^Date \(/ }).fill('10/08/2026');
     await page.getByRole('alert').getByText(/National Day \(Substitute\) is already recorded/).waitFor();
     assert.equal(await page.getByRole('button', { name: 'Add Special Holiday', exact: true }).isDisabled(), true);
     await page.getByRole('button', { name: 'Cancel', exact: true }).click();
@@ -97,7 +97,7 @@ try {
     assert.equal(await history.locator('[data-date="2026-11-08"]').count(), 1);
     assert.equal(await history.locator('[data-date="2026-11-09"]').count(), 1);
     await history.getByText('November half day', { exact: true }).waitFor();
-    await history.getByText(/Half day \(PM\)/).waitFor();
+    await history.getByText(/Half Day \(PM\)/).waitFor();
     const before = await history.innerText();
     const weekendColor = await page.getByRole('button', { name: /^07\/11\/2026/ }).evaluate(node => getComputedStyle(node).backgroundColor);
     const normalColor = await page.getByRole('button', { name: /^04\/11\/2026/ }).evaluate(node => getComputedStyle(node).backgroundColor);
@@ -113,8 +113,8 @@ try {
     await page.getByText(departmentName, { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Apply Leave', exact: true }).click();
     await page.getByRole('button', { name: /Comp-Off.*Available/ }).click();
-    await page.getByLabel('START DATE', { exact: true }).fill('14/10/2026');
-    await page.getByLabel('END DATE', { exact: true }).fill('14/10/2026');
+    await page.getByLabel('Start Date', { exact: true }).fill('14/10/2026');
+    await page.getByLabel('End Date', { exact: true }).fill('14/10/2026');
     await page.getByRole('button', { name: 'Half Day (AM)', exact: true }).click();
     await page.getByText('Validation Error', { exact: true }).waitFor();
     assert.equal(await page.getByText(/Comp-Off 90-Day Expiry Restriction:/).count(), 0);

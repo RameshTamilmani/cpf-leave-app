@@ -1,3 +1,4 @@
+import { effectiveStatus } from '../utils/leaveAccounting';
 import { halfDaySummary } from '../utils/leaveDuration';
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState } from 'react';
@@ -25,16 +26,11 @@ export const HistoryScreen: React.FC = () => {
 
   // Helper to determine effective status:
   // "Leave on the current date should be considered taken, not planned. Only leave greater than the current date should be considered as planned."
-  const getEffectiveStatus = (r: LeaveRecord) => {
-    if (r.status === 'planned' && r.startDate <= todayDateStr) {
-      return 'taken';
-    }
-    return r.status;
-  };
+  const getEffectiveStatus = (r: LeaveRecord) => effectiveStatus(r,todayDateStr);
 
   // Filter records by leave type
   const filteredRecords = records.filter((r) => {
-    if (typeFilter !== 'ALL' && r.type !== typeFilter) return false;
+    if (typeFilter !== 'ALL' && r.type !== typeFilter && !(typeFilter === 'CO' && r.type === 'CL')) return false;
     return true;
   });
 
@@ -65,6 +61,7 @@ export const HistoryScreen: React.FC = () => {
         return 'Annual Leave';
       case 'SL':
         return 'Sick Leave';
+      case 'CL':
       case 'CO':
         return 'Comp Off';
       default:
@@ -307,7 +304,7 @@ export const HistoryScreen: React.FC = () => {
                 <span>Confirm Deletion</span>
               </span>
               <p className="font-body-sm text-body-sm text-on-surface-variant">
-                Are you sure you want to delete this {getLeaveTypeFullName(selectedRecordForSheet.type)} booking? {Number(selectedRecordForSheet.days).toFixed(1)} day will be returned to your balance.
+                Are you sure you want to delete this {getLeaveTypeFullName(selectedRecordForSheet.type)} booking? Balances for its leave year will be recalculated.
               </p>
             </div>
 

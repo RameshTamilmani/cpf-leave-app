@@ -13,6 +13,8 @@ export const ApplyLeaveModal: React.FC = () => {
     applyModalConfig,
     closeApplyModal,
     addRecord,
+    compOffError,
+    getQuotaImpact,
     records,
     allHolidays,
     todayDateStr,
@@ -23,6 +25,7 @@ export const ApplyLeaveModal: React.FC = () => {
   } = useLeave();
 
   const [type, setType] = useState<LeaveType>('AL');
+  const [saving, setSaving] = useState(false);
   const [remarks, setRemarks] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -114,10 +117,12 @@ export const ApplyLeaveModal: React.FC = () => {
 
   // Check for duplicate / overlapping leaves with existing records:
   const candidate = {
-    startDate, endDate, days: daysToDeduct,
+    type, startDate, endDate, days: daysToDeduct,
     halfDay: needsHalfDayChoice ? (halfDaySession || 'full') : durationMode === 'half-am' ? 'am' : durationMode === 'half-pm' ? 'pm' : 'full',
     halfDayDate: needsHalfDayChoice ? halfDayDate : startDate,
   } as const;
+  const requestRecord = {...candidate,id:'candidate',title:'Leave',status:'planned' as const,createdAt:''};
+  const creditError = halfDayChoiceError ? null : compOffError(requestRecord);
   const duplicateConflict = records.find(record => leavePeriodsOverlap(candidate, record, allHolidays));
 
   const isDuplicate = Boolean(duplicateConflict);
@@ -242,65 +247,10 @@ export const ApplyLeaveModal: React.FC = () => {
       return;
     }
 
-    // Quota check: AL and SL are ALLOWED to exceed entitlement and calculated as LOP (Loss of Pay)
-    // Only Comp-off (CO) requires active comp-off pool balance
-    const available = type === 'AL' ? alAvailable : type === 'SL' ? slAvailable : coAvailable;
-    if (type === 'CO' && daysToDeduct > available) {
-      setValidationError(
-        `Insufficient quota: You only have ${available} Comp-Off day${available !== 1 ? 's' : ''} available, cannot deduct ${daysToDeduct} days.`
-      );
-      return;
-    }
-
-    // Comp-off 90-day period validation:
-    // "Comp-off leave should not be allowed to apply for the date post 90 days period. It should be applied for date, below the expire date. Leave apply can be done post expiry but date should be within the 90 days period."
-    if (type === 'CO') {
-      if (crossedSaturdayHolidays.length === 0) {
-        setValidationError(
-          'No earned Comp-Off credits available. Comp-Off credits are earned when a gazetted holiday falls on a Saturday.'
-        );
-        return;
-      }
-
-      const isWithin90Days = crossedSaturdayHolidays.some((h) => {
-        const expireDate = addDaysToDate(h.date, 90);
-        return startDate >= h.date && endDate <= expireDate;
-      });
-
-      if (!isWithin90Days) {
-        const maxExpire = crossedSaturdayHolidays.reduce((max, h) => {
-          const exp = addDaysToDate(h.date, 90);
-          return exp > max ? exp : max;
-        }, '');
-        const refHol = crossedSaturdayHolidays.find((h) => addDaysToDate(h.date, 90) === maxExpire);
-
-        if (maxExpire && endDate > maxExpire) {
-          setValidationError(
-            `Comp-off leave cannot be applied for date post 90-day period. Leave date must be on or below the expire date (${formatDateDDMMYYYY(maxExpire)} for ${refHol?.name || 'credited holiday'}). Leave apply can be done post expiry but date should be within the 90 days period.`
-          );
-          return;
-        }
-
-        const earliestDate = crossedSaturdayHolidays.reduce((min, h) => {
-          return !min || h.date < min ? h.date : min;
-        }, '');
-
-        if (earliestDate && startDate < earliestDate) {
-          setValidationError(
-            `Comp-off leave cannot be applied for a date before the credited holiday occurred (${formatDateDDMMYYYY(earliestDate)}).`
-          );
-          return;
-        }
-
-        setValidationError(
-          'Comp-off leave cannot be applied for date post 90-day period. It should be applied for date, below the expire date.'
-        );
-        return;
-      }
-    }
+    if(creditError){setValidationError(creditError);return;}
 
     setValidationError(null);
-  }, [duplicateConflict, daysToDeduct, isMultiDay, workingDays, startDate, endDate, type, alAvailable, slAvailable, coAvailable, crossedSaturdayHolidays]);
+  }, [duplicateConflict, daysToDeduct, isMultiDay, workingDays, startDate, endDate, type, alAvailable, slAvailable, coAvailable, crossedSaturdayHolidays, creditError]);
 
   useModalScrollLock(isApplyModalOpen);
 
@@ -309,11 +259,8 @@ export const ApplyLeaveModal: React.FC = () => {
   const holidayOnStart = allHolidays.find((h) => h.date === startDate || h.observedDate === startDate);
   const holidayOnEnd = allHolidays.find((h) => h.date === endDate || h.observedDate === endDate);
 
-  const getAvailableBalance = () => {
-    if (type === 'AL') return alAvailable;
-    if (type === 'SL') return slAvailable;
-    return coAvailable;
-  };
+  const quota = getQuotaImpact(requestRecord);
+  const getAvailableBalance = () => quota.available;
 
   const isDeductionMismatch = isMultiDay
     ? workingDays <= 0 || (daysToDeduct !== workingDays && daysToDeduct !== Number((workingDays - 0.5).toFixed(1)))
@@ -329,26 +276,21 @@ export const ApplyLeaveModal: React.FC = () => {
 
   // Comp-off 90-day validity check:
   // "Comp-off leave should not be allowed to apply for the date post 90 days period. It should be applied for date, below the expire date. Leave apply can be done post expiry but date should be within the 90 days period."
-  const isCompOffWithin90Days =
-    type !== 'CO' ||
-    (crossedSaturdayHolidays.length > 0 &&
-      crossedSaturdayHolidays.some((h) => {
-        const expireDate = addDaysToDate(h.date, 90);
-        return startDate >= h.date && endDate <= expireDate;
-      }));
-  const isCompOffPost90Days = type === 'CO' && !isCompOffWithin90Days;
+  const isCompOffBlocked = Boolean(creditError);
 
   // Only Comp-off is restricted by quota; AL and SL allow exceeding quota and count as Loss of Pay (LOP)
-  const isExceedingQuota = type === 'CO' && daysToDeduct > getAvailableBalance();
-  const isLOPApplicable = (type === 'AL' || type === 'SL') && daysToDeduct > getAvailableBalance();
-  const lopDays = isLOPApplicable ? Number((daysToDeduct - getAvailableBalance()).toFixed(1)) : 0;
+  const isExceedingQuota = false;
+  const isLOPApplicable = quota.lop > 0;
+  const lopDays = quota.lop;
   const isInvalidDate = Boolean(startDate && endDate && endDate < startDate);
   const isHalfDayMultiDay = Boolean(isMultiDay && daysToDeduct === 0.5);
   const isFormInvalid = Boolean(
+    saving ||
+    quota.outsideCycle ||
     isDuplicate ||
     isWeekendBlocked ||
     isHolidayBlocked ||
-    isCompOffPost90Days ||
+    isCompOffBlocked ||
     isDeductionMismatch ||
     isExceedingQuota ||
     isInvalidDate ||
@@ -357,9 +299,11 @@ export const ApplyLeaveModal: React.FC = () => {
     daysToDeduct <= 0
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if(saving)return;
 
+    if(quota.outsideCycle){setValidationError('Some dates fall outside the configured leave-year window. Check the cycle dates in Settings.');return;}
     if (halfDayChoiceError) { setValidationError(halfDayChoiceError); return; }
     if (!startDate || !endDate) {
       setValidationError('Please select valid start and end dates.');
@@ -438,28 +382,7 @@ export const ApplyLeaveModal: React.FC = () => {
       }
     }
 
-    // Only Comp-Off cannot exceed available quota; AL/SL calculate excess as LOP
-    if (type === 'CO' && daysToDeduct > getAvailableBalance()) {
-      setValidationError(
-        `Requested ${daysToDeduct} days exceeds your available Comp-Off quota of ${getAvailableBalance()} day(s).`
-      );
-      return;
-    }
-
-    // Strict Comp-off 90-day period validation:
-    // "Comp-off leave should not be allowed to apply for the date post 90 days period. It should be applied for date, below the expire date. Leave apply can be done post expiry but date should be within the 90 days period."
-    if (type === 'CO') {
-      const isWithin90Days = crossedSaturdayHolidays.some((h) => {
-        const expireDate = addDaysToDate(h.date, 90);
-        return startDate >= h.date && endDate <= expireDate;
-      });
-      if (!isWithin90Days) {
-        setValidationError(
-          'Comp-off leave cannot be applied for date post 90-day period. It should be applied for date, below the expire date (within the 90-day window).'
-        );
-        return;
-      }
-    }
+    if(creditError){setValidationError(creditError);return;}
 
     // Always store the default title based on the type of leaves selected
     const defaultTitle = type === 'AL' ? 'Annual Leave' : type === 'SL' ? 'Sick Leave' : 'Comp-off Leave';
@@ -468,7 +391,8 @@ export const ApplyLeaveModal: React.FC = () => {
     const status: LeaveStatus = startDate > todayDateStr ? 'planned' : 'taken';
     const halfDay = needsHalfDayChoice ? halfDaySession as 'am' | 'pm' : durationMode === 'half-am' ? 'am' : durationMode === 'half-pm' ? 'pm' : 'full';
 
-    addRecord({
+    setSaving(true);
+    const saved = await addRecord({
       type,
       title: defaultTitle,
       startDate,
@@ -480,10 +404,11 @@ export const ApplyLeaveModal: React.FC = () => {
       notes: remarks.trim() || undefined
     });
 
-    closeApplyModal();
+    setSaving(false);
+    if(saved)closeApplyModal();
   };
 
-  const remainingBalanceAfter = Math.max(0, getAvailableBalance() - daysToDeduct);
+  const remainingBalanceAfter = quota.remaining;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-xs p-0 sm:p-4">
@@ -853,7 +778,7 @@ export const ApplyLeaveModal: React.FC = () => {
               </p>
             )}
             <div className="flex items-center justify-between pt-1 border-t border-surface-container text-label-sm">
-              <span className="text-on-surface-variant">Current Available: <strong>{getAvailableBalance()} Days</strong></span>
+              <span className="text-on-surface-variant">Available for This Period: <strong>{getAvailableBalance()} Days</strong></span>
               <span className={`font-semibold ${isExceedingQuota ? 'text-error' : isLOPApplicable ? 'text-error' : 'text-primary'}`}>
                 Remaining after: <strong>{remainingBalanceAfter.toFixed(1)} Days{isLOPApplicable ? ` (+${lopDays}d LOP)` : ''}</strong>
               </span>
@@ -877,6 +802,7 @@ export const ApplyLeaveModal: React.FC = () => {
 
           </div>
 
+          {quota.outsideCycle && <p role="alert" className="text-sm text-error">Some dates fall outside the configured leave-year window. Check the cycle dates in Settings.</p>}
           {/* Submit & Cancel Buttons */}
           <div className="flex items-center gap-2 pt-2">
             <button
@@ -907,8 +833,8 @@ export const ApplyLeaveModal: React.FC = () => {
                 ? 'Days Must Match Date Range'
                 : isExceedingQuota
                 ? 'Exceeds Available Comp-Off'
-                : isCompOffPost90Days
-                ? 'Date Post 90 Days (Below Expiry Only)'
+                : isCompOffBlocked
+                ? 'Check Comp-Off Credits'
                 : 'Confirm & Log Leave'}
             </button>
           </div>
