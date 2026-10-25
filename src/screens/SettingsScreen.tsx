@@ -128,7 +128,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
       {/* 1. Employee Profile & Identity Configuration */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
-          <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
+          <h2 className="section-heading">
             Employee Profile
           </h2>
           <span className="font-label-sm text-label-sm text-primary font-semibold">
@@ -214,7 +214,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-                EMPLOYEE ID
+                Employee ID
               </label>
               <div className="relative flex items-center">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">
@@ -250,7 +250,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
 
             <div>
               <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-                FULL NAME
+                Full Name
               </label>
               <div className="relative flex items-center">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">
@@ -280,7 +280,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
 
             <div>
               <label htmlFor="department" className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-                DEPARTMENT
+                Department
               </label>
               <div className="relative flex items-center">
                 <span aria-hidden="true" className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant pointer-events-none">business</span>
@@ -294,7 +294,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
             <div>
               <DatePickerField
                 required
-                label="DATE OF JOINING"
+                label="Date of Joining"
                 value={draftDoj}
                 onChange={setDraftDoj}
                 max={isValidISODate(todayDateStr) ? todayDateStr : undefined}
@@ -334,7 +334,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
       {/* 2. Leave Year Cycle */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
-          <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
+          <h2 className="section-heading">
             Leave Year Cycle
           </h2>
         </div>
@@ -373,7 +373,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
       {/* 3. Special Holidays - Kept exactly one button */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
-          <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
+          <h2 className="section-heading">
             Special Holidays
           </h2>
           <button
@@ -430,7 +430,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
       {/* 5. Appearance & Theme */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
-          <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
+          <h2 className="section-heading">
             Appearance &amp; Theme
           </h2>
           <span className="font-label-sm text-label-sm text-primary font-semibold flex items-center gap-1">
@@ -547,7 +547,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
       {/* 6. Data Management */}
       <section className="space-y-space-xs">
         <div className="px-1 flex items-center justify-between">
-          <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
+          <h2 className="section-heading">
             Data Management
           </h2>
         </div>
@@ -652,7 +652,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
       {/* 6.5 App Updates - Positioned directly above About CutiSG */}
       <section className="space-y-space-xs" aria-label="App updates">
         <div className="px-1 flex items-center justify-between">
-          <h2 className="font-title-sm text-title-sm text-on-surface-variant tracking-wider uppercase font-semibold">
+          <h2 className="section-heading">
             App Updates
           </h2>
         </div>

@@ -52,7 +52,7 @@ export const CompOffModal: React.FC = () => {
 
           <section aria-label="Credited comp-offs" className="rounded-xl border border-emerald-200 dark:border-emerald-800/40 overflow-hidden shrink-0">
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 border-b border-emerald-200 dark:border-emerald-800/40">
-              <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-300">Credited comp-offs</h3>
+              <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-300">Credited Comp-Offs</h3>
               <p className="mt-1 text-xs text-on-surface-variant">Earned credits. Used leave is deducted from your available balance.</p>
             </div>
             <ul className="divide-y divide-surface-container">
@@ -74,7 +74,7 @@ export const CompOffModal: React.FC = () => {
 
           <section aria-label="Upcoming comp-offs" className="rounded-xl border border-blue-200 dark:border-blue-800/40 overflow-hidden shrink-0">
             <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border-b border-blue-200 dark:border-blue-800/40">
-              <h3 className="text-sm font-bold text-blue-800 dark:text-blue-300">Upcoming comp-offs</h3>
+              <h3 className="text-sm font-bold text-blue-800 dark:text-blue-300">Upcoming Comp-Offs</h3>
               <p className="mt-1 text-xs text-on-surface-variant">Scheduled holidays. These do not increase your available balance yet.</p>
             </div>
             <ul className="divide-y divide-surface-container">

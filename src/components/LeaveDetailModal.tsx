@@ -1,3 +1,4 @@
+import { LopIcon } from './LopIcon';
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React from 'react';
 import { useLeave } from '../context/LeaveContext';
@@ -107,7 +108,6 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
       .sort((a, b) => b.startDate.localeCompare(a.startDate));
   } else if (category === 'LOP') {
     title = 'Loss of Pay (LOP) Records';
-    icon = 'money_off';
     containerClass = 'bg-rose-100 text-rose-800 border border-rose-200';
     subtitle = totalLOP > 0
       ? `${totalLOP} Day(s) Total Unpaid LOP (${alLOP > 0 ? `${alLOP}d AL` : ''}${alLOP > 0 && slLOP > 0 ? ' • ' : ''}${slLOP > 0 ? `${slLOP}d SL` : ''} exceeding 12-day entitlement)`
@@ -183,7 +183,7 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
         <div className="flex items-center justify-between px-5 py-4 border-b border-surface-container bg-surface-container-low">
           <div className="flex items-center gap-3 min-w-0">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${containerClass}`}>
-              <span className="material-symbols-outlined text-[22px]">{icon}</span>
+              {category === 'LOP' ? <LopIcon size={22} /> : <span className="material-symbols-outlined text-[22px]">{icon}</span>}
             </div>
             <div className="min-w-0">
               <h2 className="font-title-md text-title-md text-on-surface font-bold truncate">
@@ -224,7 +224,7 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
             /* Empty State */
             <div className="py-10 flex flex-col items-center justify-center text-center gap-3">
               <div className="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-on-surface-variant/60">
-                <span className="material-symbols-outlined text-[32px]">{icon}</span>
+                {category === 'LOP' ? <LopIcon size={32} /> : <span className="material-symbols-outlined text-[32px]">{icon}</span>}
               </div>
               <div className="max-w-xs">
                 <p className="font-title-sm text-title-sm font-semibold text-on-surface">{emptyTitle}</p>
@@ -286,7 +286,7 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-9 h-9 rounded-lg bg-error-container text-on-error-container flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-[18px]">money_off</span>
+                          <LopIcon />
                         </div>
                         <div className="min-w-0">
                           <p className="font-title-sm text-title-sm text-on-surface font-semibold truncate">

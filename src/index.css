@@ -324,3 +324,14 @@ html.theme-transitioning *::after {
 .text-headline-lg { font-size: 32px; line-height: 40px; }
 }
 
+
+/* One section-heading style shared by Home and Settings. */
+.section-heading {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--color-on-surface);
+}

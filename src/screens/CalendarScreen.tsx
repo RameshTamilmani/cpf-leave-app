@@ -82,7 +82,7 @@ export const CalendarScreen: React.FC = () => {
 
       <section aria-label="Monthly holidays and leave history" className="rounded-xl border border-surface-container bg-surface-container-lowest shadow-xs overflow-hidden">
         <div className="p-3 sm:p-4 border-b border-surface-container">
-          <h2 className="text-sm sm:text-base font-bold text-on-surface">Holidays &amp; leave history</h2>
+          <h2 className="text-sm sm:text-base font-bold text-on-surface">Holidays &amp; Leave History</h2>
           <p className="text-xs text-on-surface-variant mt-1">{monthTitle}</p>
         </div>
         {entries.length === 0 ? (

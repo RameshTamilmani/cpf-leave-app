@@ -97,7 +97,7 @@ export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
 
         {/* Dynamic Highlights from Server Version Info */}
         <div className="p-4 rounded-2xl bg-surface-container-low border border-surface-container space-y-2.5 max-h-[48vh] overflow-y-auto">
-          <p className="text-[11.5px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
+          <p className="text-[11.5px] font-bold text-primary flex items-center gap-1.5">
             <span className="material-symbols-outlined text-[15px]">auto_awesome</span>
             <span>What&apos;s New in v{newVersion}</span>
           </p>

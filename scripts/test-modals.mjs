@@ -95,7 +95,7 @@ try {
     await page.getByRole('button', { name: '+ Add Special Holiday', exact: true }).click();
     const special = page.getByRole('dialog', { name: 'Add Special Public Holiday', exact: true });
     await special.waitFor();
-    assert.equal(await special.getByRole('textbox', { name: /^DATE / }).inputValue(), '26/10/2026', 'weekend opening defaults to Monday without a UTC date shift');
+    assert.equal(await special.getByRole('textbox', { name: /^Date / }).inputValue(), '26/10/2026', 'weekend opening defaults to Monday without a UTC date shift');
     const panelHeight = await special.locator(':scope > div').evaluate(node => node.getBoundingClientRect().height);
     assert.ok(panelHeight >= height * 0.65, `large holiday form at ${width}x${height}`);
     assert.equal(await page.evaluate(() => document.body.style.position), 'fixed');

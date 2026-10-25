@@ -192,7 +192,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
         {/* Quick Presets Selection */}
         <div className="flex flex-col gap-2">
           <label className="font-label-md text-label-md text-on-surface-variant font-semibold">
-            CYCLE PRESETS
+            Cycle Presets
           </label>
           <div className="grid grid-cols-2 gap-2">
             {/* User Requested Preset: Jun 13 - Jun 12 */}
@@ -276,7 +276,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
           {/* Cycle Starts */}
           <div>
             <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-              START DATE
+              Start Date
             </label>
             <div className="grid grid-cols-2 gap-2">
               <select
@@ -314,7 +314,7 @@ export const EditCycleModal: React.FC<EditCycleModalProps> = ({ isOpen, onClose 
           {/* Cycle Ends */}
           <div>
             <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-              END DATE {isCrossYear ? '(NEXT YEAR)' : ''}
+              End Date {isCrossYear ? '(Next Year)' : ''}
             </label>
             <div className="grid grid-cols-2 gap-2">
               <select

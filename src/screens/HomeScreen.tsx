@@ -1,3 +1,4 @@
+import { LopIcon } from '../components/LopIcon';
 import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
@@ -71,7 +72,7 @@ export const HomeScreen: React.FC = () => {
       {/* 2. Leave Balance Cards (Clickable to view applied leaves list) */}
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-sm font-semibold text-on-surface">Leave Balances</h2>
+          <h2 className="section-heading">Leave Balances</h2>
           <span className="text-[10.5px] text-on-surface-variant">Tap card to view details</span>
         </div>
         <div className="flex flex-col gap-2">
@@ -157,10 +158,7 @@ export const HomeScreen: React.FC = () => {
           >
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-300 shrink-0 shadow-2xs border border-rose-200 dark:border-rose-800/40">
-                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M6 3h12M6 7h12M8 3c7 0 7 8 0 8H6l10 10" />
-                  <path d="m3 3 18 18" />
-                </svg>
+                <LopIcon />
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <h3 className="text-sm font-semibold leading-tight">
@@ -215,7 +213,7 @@ export const HomeScreen: React.FC = () => {
       {/* 3. Quick Action Buttons - Leave History and Comp-off Ledger */}
       <section className="flex flex-col gap-2 mt-0.5">
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-sm font-semibold text-on-surface">Quick Actions</h2>
+          <h2 className="section-heading">Quick Actions</h2>
         </div>
         <div className="grid grid-cols-2 gap-2.5">
           {/* Move to History Tab Button */}
@@ -252,7 +250,7 @@ export const HomeScreen: React.FC = () => {
       <section className="flex flex-col gap-2 mt-0.5">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-1.5">
-            <h2 className="text-sm font-semibold text-on-surface">
+            <h2 className="section-heading">
               Upcoming Public Holidays
             </h2>
             <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-holiday-public-container text-holiday-public font-bold">

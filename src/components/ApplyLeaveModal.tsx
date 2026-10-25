@@ -1,3 +1,4 @@
+import { LopIcon } from './LopIcon';
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
@@ -512,7 +513,7 @@ export const ApplyLeaveModal: React.FC = () => {
           {/* Leave Type Selector Chips */}
           <div>
             <label className="font-label-md text-label-md text-on-surface-variant font-semibold block mb-2">
-              LEAVE CATEGORY
+              Leave Category
             </label>
             <div className="grid grid-cols-3 gap-2">
               <button
@@ -563,7 +564,7 @@ export const ApplyLeaveModal: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <DatePickerField
-                label="START DATE"
+                label="Start Date"
                 value={startDate}
                 onChange={handleStartDateChange}
                 required
@@ -572,7 +573,7 @@ export const ApplyLeaveModal: React.FC = () => {
             </div>
             <div>
               <DatePickerField
-                label="END DATE"
+                label="End Date"
                 value={endDate}
                 onChange={handleEndDateChange}
                 min={startDate || undefined}
@@ -586,7 +587,7 @@ export const ApplyLeaveModal: React.FC = () => {
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block">
-                DURATION SELECTION
+                Duration Selection
               </label>
               <span className="text-[11px] text-on-surface-variant font-medium">
                 {isMultiDay
@@ -771,7 +772,7 @@ export const ApplyLeaveModal: React.FC = () => {
           {/* Remarks (Optional) - placed at the last */}
           <div>
             <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-              REMARKS (OPTIONAL)
+              Remarks (Optional)
             </label>
             <input
               type="text"
@@ -839,7 +840,7 @@ export const ApplyLeaveModal: React.FC = () => {
             {/* LOP (Loss of Pay) Notice when AL/SL exceeds quota */}
             {isLOPApplicable && (
               <div className="p-2.5 rounded-lg bg-surface-container-high text-on-surface flex items-start gap-2 border border-surface-container text-xs mt-1">
-                <span className="material-symbols-outlined text-[18px] text-error shrink-0 mt-0.5">money_off</span>
+                <LopIcon className="text-error shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold text-error block">Loss of Pay (LOP) Notice:</span>
                   <span className="text-on-surface-variant">

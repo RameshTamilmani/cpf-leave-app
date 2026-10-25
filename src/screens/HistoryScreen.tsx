@@ -263,7 +263,7 @@ export const HistoryScreen: React.FC = () => {
             <span className="material-symbols-outlined text-[28px]">event_busy</span>
           </div>
           <h2 className="font-title-md text-title-md text-on-surface font-semibold">
-            No leave entries logged yet
+            No Leave Entries Logged Yet
           </h2>
           <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
             Recorded leaves will be listed here.

@@ -173,7 +173,7 @@ export const OnboardingModal: React.FC = () => {
           <div className="flex flex-col gap-3.5">
             <div>
               <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-                FULL NAME *
+                Full Name *
               </label>
               <div className="relative flex items-center">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant pointer-events-none">
@@ -203,7 +203,7 @@ export const OnboardingModal: React.FC = () => {
 
             <div>
               <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-                EMPLOYEE ID *
+                Employee ID *
               </label>
               <div className="relative flex items-center">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant pointer-events-none">
@@ -237,7 +237,7 @@ export const OnboardingModal: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="onboarding-department" className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">DEPARTMENT *</label>
+              <label htmlFor="onboarding-department" className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">Department *</label>
               <input id="onboarding-department" type="text" autoCapitalize="characters" spellCheck={false} required maxLength={25} value={department}
                 onChange={event => { setDepartment(event.target.value.toUpperCase().slice(0, 25)); setErrorMsg(''); }}
                 placeholder="Enter department" className="w-full px-3.5 h-11 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
@@ -245,7 +245,7 @@ export const OnboardingModal: React.FC = () => {
 
             <DatePickerField
               required
-              label="DATE OF JOINING *"
+              label="Date of Joining *"
               value={dateOfJoining}
               onChange={setDateOfJoining}
               max={todayDateStr}

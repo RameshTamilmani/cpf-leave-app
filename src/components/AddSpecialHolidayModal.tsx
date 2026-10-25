@@ -118,7 +118,7 @@ export const AddSpecialHolidayModal: React.FC = () => {
           {/* Holiday Name */}
           <div>
             <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-              HOLIDAY NAME
+              Holiday Name
             </label>
             <input
               type="text"
@@ -133,7 +133,7 @@ export const AddSpecialHolidayModal: React.FC = () => {
           {/* Date Picker */}
           <div>
             <DatePickerField
-              label={`DATE ${dayName ? `(${dayName})` : ''}`}
+              label={`Date ${dayName ? `(${dayName})` : ''}`}
               value={date}
               onChange={setDate}
               required

@@ -47,15 +47,15 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
           <p>Your personal Singapore leave and holiday tracker. “Cuti” means leave.</p>
           <dl className="space-y-3">
             <div>
-              <dt className="font-semibold text-on-surface">Leave balances</dt>
+              <dt className="font-semibold text-on-surface">Leave Balances</dt>
               <dd>Track annual, sick, comp-off and unpaid leave. Default annual and sick leave: 12 days each; follow your company policy.</dd>
             </div>
             <div>
-              <dt className="font-semibold text-on-surface">Comp-off</dt>
+              <dt className="font-semibold text-on-surface">Comp-Off</dt>
               <dd>The app credits Saturday public holidays as comp-off.</dd>
             </div>
             <div>
-              <dt className="font-semibold text-on-surface">Public holidays</dt>
+              <dt className="font-semibold text-on-surface">Public Holidays</dt>
               <dd>Syncs MOM holiday dates online; uses saved or built-in dates offline.</dd>
             </div>
           </dl>
