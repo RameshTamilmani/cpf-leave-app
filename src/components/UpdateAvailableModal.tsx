@@ -36,7 +36,7 @@ export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({
 
   const newVersion = updateInfo.version;
 
-  // Get dynamic highlights from version info, or fallback to current release highlights
+  // Always describe the downloaded release, including when version labels match.
   const highlights = updateInfo.highlights && updateInfo.highlights.length > 0
     ? updateInfo.highlights
     : [{ title: 'App update', description: updateInfo.releaseNotes || 'Improvements and fixes are ready to install.', icon: 'system_update', color: 'blue' }];

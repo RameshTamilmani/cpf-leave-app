@@ -106,3 +106,5 @@ Modal dialogs lock background scrolling while keeping their own content scrollab
 ## App version
 
 The app version is defined in package.json. Settings, About CutiSG, update dialogs, the service worker, and generated version.json use the same bundled release metadata. Run npm version patch --no-git-tag-version (or minor/major) to update the package and lockfile; the version lifecycle script synchronizes public/version.json and README version labels. Edit release notes in public/version.json. Rebuild and deploy to publish a version change.
+
+Update notes are written for each release in public/version.json. After changing the app and its plain-language highlights, run npm run release:notes before building. See DEPLOYMENT.md for the release checklist.

@@ -87,3 +87,13 @@ After building, run npm run test:modals to verify background locking, internal s
 ## Version source
 
 The release baseline is 1.0.0. package.json is the canonical app version. Vite injects that version into the client and worker and generates dist/version.json. About CutiSG imports the shared APP_VERSION value, so its badge follows every future build without manual editing. Use npm version patch --no-git-tag-version (or minor/major) to update package.json, package-lock.json, public/version.json and README badges together. Manual package.json edits also control all built version displays. Unique build IDs continue detecting deployments even when the version label is unchanged or reset.
+
+## Release notes for every update
+
+The popup displays the highlights bundled with the downloaded release, even when the version number stays the same. It does not generate summaries from code. Before deploying an app change:
+
+1. Edit public/version.json: set releaseDate and replace highlights with 1–5 short items explaining what users will notice. Use simple wording, for example: Reset Leave Records stays off until you have a leave record.
+2. Run npm run release:notes after finishing the code and notes. This records the reviewed app revision.
+3. Run npm run build and commit all changed files, including public/version.json and the release-note scripts.
+
+Prebuild stops deployment if app files changed after review or notes were edited without review. Reviewing changed app files with unchanged notes also fails. Rebuilding unchanged app files may reuse the same notes. Windows/Linux line endings are normalized. These checks detect stale notes; the author must still ensure the summary accurately describes the change. Do not hand-edit notesReview. Version numbers still come from package.json; keep 1.0.0 until a version change is requested.

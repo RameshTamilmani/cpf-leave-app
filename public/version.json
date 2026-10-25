@@ -1,13 +1,29 @@
 {
   "version": "1.0.0",
-  "releaseDate": "2026-10-24",
+  "releaseDate": "2026-10-25",
   "highlights": [
     {
-      "title": "Simpler settings",
-      "description": "Choose your leave-year dates without extra comp-off details. Reset actions use short, clear explanations.",
-      "icon": "tune",
+      "title": "Clearer headings",
+      "description": "Home and Settings now use matching headings that are easier to read.",
+      "icon": "text_fields",
       "color": "blue"
+    },
+    {
+      "title": "Simpler reset options",
+      "description": "Each reset has one icon. Reset Leave Records stays off until you have a leave record.",
+      "icon": "restart_alt",
+      "color": "emerald"
+    },
+    {
+      "title": "Matching leave icons",
+      "description": "Loss of Pay now uses the crossed-out rupee symbol throughout the app.",
+      "icon": "currency_rupee",
+      "color": "purple"
     }
   ],
-  "releaseNotes": "Cleaner leave-year editing and concise reset information."
+  "releaseNotes": "Matching headings, clearer reset options and consistent Loss of Pay icons.",
+  "notesReview": {
+    "sourceHash": "352308a4961803ece2e61136d8720d22c239d91d837217f7030979a0248540ae",
+    "notesHash": "6de61bc90100fbef02667ceaf6ac47656fd2652600fab464c425dbc04bfc087a"
+  }
 }

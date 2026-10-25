@@ -20,4 +20,5 @@ jobs:
       - run: npm run lint
       - run: npm run test:offline
       - run: npm run test:updates
+      - run: npm run test:release-notes
       - run: npm run build
