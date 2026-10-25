@@ -607,8 +607,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
 
           {/* Action 1: Reset Leave Records Only (Preserves Profile Info) */}
           <button
-            onClick={() => setIsResetModalOpen(true)}
-            className="w-full flex items-center justify-between py-2 text-left group cursor-pointer"
+            onClick={() => { if (records.length > 0) setIsResetModalOpen(true); }}
+            disabled={records.length === 0}
+            title={records.length > 0 ? 'Reset leave records' : 'No leave records to reset'}
+            className="w-full flex items-center justify-between py-2 text-left group cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <div className="flex items-center gap-space-sm">
               <div className="w-10 h-10 rounded-lg bg-error-container/60 text-error flex items-center justify-center shrink-0">
@@ -621,7 +623,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
                 </p>
               </div>
             </div>
-            <span className="material-symbols-outlined text-error text-[20px]">warning</span>
           </button>
 
           <div className="h-[1px] bg-surface-container" />
@@ -642,7 +643,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
                 </p>
               </div>
             </div>
-            <span className="material-symbols-outlined text-error text-[20px]">delete_forever</span>
           </button>
         </div>
       </section>
