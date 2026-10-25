@@ -1,3 +1,4 @@
+import { restoreFileError, restoreContentError } from '../utils/restoreValidation';
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useRef, useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
@@ -48,6 +49,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [cropModalSrc, setCropModalSrc] = useState<string | null>(null);
 
+  const [restoreWarning, setRestoreWarning] = useState('');
   const csvInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -109,16 +111,20 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
 
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = ''; // Allow selecting the same file again after a warning.
     if (!file) return;
+    setRestoreWarning('');
+    const error = restoreFileError(file);
+    if (error) { setRestoreWarning(error); return; }
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      if (content) {
-        restoreCSV(content);
-      }
+    reader.onload = () => {
+      const content = typeof reader.result === 'string' ? reader.result : '';
+      const error = restoreContentError(content);
+      if (error) { setRestoreWarning(error); return; }
+      restoreCSV(content);
     };
+    reader.onerror = () => setRestoreWarning('Could not read this file. Please choose it again.');
     reader.readAsText(file);
-    e.target.value = '';
   };
 
   const activeYearSpan = `${cycleStartDateStr.slice(0, 4)}–${cycleEndDateStr.slice(0, 4)}`;
@@ -602,6 +608,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
               className="hidden"
             />
           </div>
+          {restoreWarning && <p role="alert" className="text-sm text-error leading-relaxed">{restoreWarning}</p>}
+
 
           <div className="h-[1px] bg-surface-container" />
 

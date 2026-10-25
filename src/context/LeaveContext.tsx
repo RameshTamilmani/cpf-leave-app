@@ -1,3 +1,4 @@
+import { restoreContentError } from '../utils/restoreValidation';
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { LeaveRecord, UserSettings, LeaveType, LeaveStatus, PublicHoliday, SpecialHoliday } from '../types/leave';
 import { ALL_GAZETTED_HOLIDAYS, addDaysToDate, formatDateDDMMYYYY, parseDDMMYYYYToISO, isWeekend } from '../data/singaporeHolidays2026';
@@ -690,6 +691,8 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Restore CSV containing mandatory data with strict duplicate validation and DD/MM/YYYY support
   const restoreCSV = (csvStr: string): boolean => {
+    const error = restoreContentError(csvStr);
+    if (error) { showToast(error); return false; }
     try {
       const lines = csvStr.trim().split(/\r?\n/).filter(Boolean);
       if (lines.length < 2) {
