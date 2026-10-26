@@ -53,20 +53,20 @@ export const CompOffModal: React.FC = () => {
           <section aria-label="Credited comp-offs" className="rounded-xl border border-emerald-200 dark:border-emerald-800/40 overflow-hidden shrink-0">
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 border-b border-emerald-200 dark:border-emerald-800/40">
               <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-300">Credited Comp-Offs</h3>
-              <p className="mt-1 text-xs text-on-surface-variant">Earned credits. Each holiday can be selected once for a full-day application.</p>
+              <p className="mt-1 text-xs text-on-surface-variant">Earned credits. Each holiday covers 1 day or two half days. The remaining balance stays available within its leave window.</p>
             </div>
             <ul className="divide-y divide-surface-container">
               {credited.map(h => {
                 const end = addDaysToDate(h.date, 90);
-                const booking=records.find(r=>r.id===compOffCreditUsage.get(h.date));
-                const usedDate=booking?.compOffCredits?.find(c=>c.holidayDate===h.date)?.leaveDate||booking?.startDate;
+                const usage=compOffCreditUsage.get(h.date)||[];
                 return <li key={h.date} className="p-3 bg-surface-container-low flex flex-col gap-2">
                   <div className="flex items-start justify-between gap-2">
                     <p className="min-w-0 text-sm font-semibold text-on-surface break-words">{h.name}</p>
                     <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">+1 Credited</span>
                   </div>
                   <p className="text-xs text-on-surface-variant">Holiday: {formatDateDDMMYYYY(h.date)}</p>
-                  {usedDate&&<p className="text-xs text-on-surface font-medium">Used for {formatDateDDMMYYYY(usedDate)}{booking?.days===0.5?' · Half Day':''}</p>}
+                  {usage.map((part,i)=><p key={i} className="text-xs text-on-surface font-medium">{part.days} day used on {formatDateDDMMYYYY(part.leaveDate)}{part.days===0.5?' · '+(records.find(r=>r.id===part.recordId)?.halfDay?.toUpperCase()||'Half Day'):''}</p>)}
+                  <p className="text-xs text-on-surface-variant">{1-usage.reduce((sum,p)=>sum+p.days,0)} day remaining</p>
                   <p className="text-[11px] text-on-surface-variant">90-day leave window: {formatDateDDMMYYYY(h.date)} – {formatDateDDMMYYYY(end)}{end <= todayDateStr ? ' · Window ended' : ''}</p>
                 </li>;
               })}

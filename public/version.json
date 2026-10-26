@@ -3,21 +3,27 @@
   "releaseDate": "2026-10-26",
   "highlights": [
     {
-      "title": "Contact number in your profile",
-      "description": "Save your phone number with your employee details. Timesheets use it automatically; Home keeps it private.",
-      "icon": "contact_phone",
+      "title": "Split your Comp-Off into half days",
+      "description": "Use one holiday credit as two half days. Choose AM or PM and keep track of the remaining balance.",
+      "icon": "event_available",
       "color": "teal"
     },
     {
-      "title": "Full-day Comp-Off with clear reasons",
-      "description": "Comp-Off uses full days and verified, unused holiday credits. Its reason fills automatically and cannot be edited; backups check the same rules.",
-      "icon": "event_available",
+      "title": "Clearer timesheet text",
+      "description": "Comp-Off reasons omit dates, headings resize to fit, and downloads use a clear month-and-year filename such as Optimum India_Timesheet Oct 2026.xlsx.",
+      "icon": "table_view",
       "color": "emerald"
+    },
+    {
+      "title": "Simpler timesheet controls",
+      "description": "Removed extra text from the Timesheet card and made its calendar button clearer in light and dark themes.",
+      "icon": "calendar_month",
+      "color": "teal"
     }
   ],
-  "releaseNotes": "Contact Number is now part of Employee Profile. Comp-Off is full-day only with an automatic, locked holiday reason. CSV backups and HR Excel export validate the selected holiday credits.",
+  "releaseNotes": "Split a Comp-Off credit into two half-day bookings with AM/PM. Backups preserve and validate the remaining credit and sessions. Comp-Off reasons omit dates, and Excel headings resize to fit. Timesheet filenames now use the selected three-letter month and year without an employee ID. The Timesheet card now has less text and a clearer calendar button.",
   "notesReview": {
-    "sourceHash": "3cf407c2d9039d907ffa961af5cc578b07da59c63ea9330d54558cfbe5a11935",
-    "notesHash": "1aad9917d29cf15926ab7e2035b7bd4506dbfbd6b584b815bc91c103f951c771"
+    "sourceHash": "1193ac1b235506e7000f0035635cc4829cbcbb9d07dc1e66a1ebe280a54d5602",
+    "notesHash": "22defb6d079ad2056a1dd4915816024a751483567acc329307c5135344b8948b"
   }
 }

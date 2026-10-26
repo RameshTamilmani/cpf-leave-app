@@ -1,4 +1,4 @@
-import { compOffReason, fullDayCompOffError } from '../utils/compOff';
+import { compOffReason, compOffDurationError } from '../utils/compOff';
 import { cycleView, compOffAllocation, quotaImpact, validCycle, cycleFor } from '../utils/leaveAccounting';
 import { parseLeaveCSV } from '../utils/leaveCSV';
 import { readRecords, transactRecords } from '../utils/recordStorage';
@@ -23,7 +23,7 @@ interface LeaveContextType {
   addRecord: (record: Omit<LeaveRecord, 'id' | 'createdAt'>) => Promise<boolean>;
   cycleRecords: LeaveRecord[];
   accountingWarning: string;
-  compOffCreditUsage: ReturnType<typeof compOffAllocation>['reserved'];
+  compOffCreditUsage: ReturnType<typeof compOffAllocation>['usage'];
   availableCompOffCredits: ReturnType<typeof compOffAllocation>['credits'];
   compOffError: (record: LeaveRecord, existing?: LeaveRecord[]) => string | null;
   getQuotaImpact: (record: LeaveRecord) => ReturnType<typeof quotaImpact>;
@@ -588,22 +588,22 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const currentCreditDates=new Set(crossedSaturdayHolidays.filter(h=>!excludedHolidayDates.includes(h.date)).map(h=>h.date));
   const coUsed=[...allocation.used].filter(([date])=>currentCreditDates.has(date)).reduce((s,[,days])=>s+days,0);
   const alAvailable=Math.max(0,settings.alEntitlement-alUsed),slAvailable=Math.max(0,settings.slEntitlement-slUsed);
-  const availableCompOffCredits=allocation.credits.filter(c=>c.left===1&&!allocation.reserved.has(c.date));
-  const coAvailable=availableCompOffCredits.filter(c=>currentCreditDates.has(c.date)).length;
+  const availableCompOffCredits=allocation.credits.filter(c=>c.left>0);
+  const coAvailable=availableCompOffCredits.filter(c=>currentCreditDates.has(c.date)).reduce((sum,c)=>sum+c.left,0);
   const alLOP=Math.max(0,alUsed-settings.alEntitlement),slLOP=Math.max(0,slUsed-settings.slEntitlement),totalLOP=alLOP+slLOP;
   const compOffError = (record:LeaveRecord, existing:LeaveRecord[]=records):string|null => {
     if(record.type!=='CO'&&record.type!=='CL')return null;
-    const policyError=fullDayCompOffError(record);if(policyError)return policyError;
+    const policyError=compOffDurationError(record);if(policyError)return policyError;
     if(!record.compOffCredits?.length)return 'Select a Comp-Off holiday credit for every working leave date.';
     const result=compOffAllocation([...existing,record],settings.saturdayCompOffEnabled?allHolidays:[],todayDateStr,excludedHolidayDates);
-    return result.unfunded.length ? 'Select different unused Comp-Off credits within their 90-day periods. Each holiday credit can be used for one application only. Check earlier Comp-Off records too.' : null;
+    return result.unfunded.length ? 'The selected Comp-Off credit has insufficient remaining balance or is outside its 90-day period. A holiday covers one full day or two half days in total.' : null;
   };
   const ambiguousSpans=records.filter(r=>r.startDate!==r.endDate&&r.days%1===0.5&&!r.halfDayDate&&cycleFor(r.startDate,settings).start!==cycleFor(r.endDate,settings).start);
-  const accountingWarning=records.some(r=>fullDayCompOffError(r))?'An older half-day Comp-Off record needs review. Comp-Off now supports full days only; export and restore will not change it automatically.':ambiguousSpans.length?'An older half-day record spans two leave years without a half-day date. Its balance is reserved conservatively. Export a backup, then re-enter it with the correct date.':allocation.unfunded.length?'Some older Comp-Off records need credit or half-day details reviewed before more Comp-Off leave can be added.':'';
+  const accountingWarning=records.some(r=>compOffDurationError(r))?'An older Comp-Off record needs its half-day date or AM/PM details reviewed. Export and restore will not guess missing details.':ambiguousSpans.length?'An older half-day record spans two leave years without a half-day date. Its balance is reserved conservatively. Export a backup, then re-enter it with the correct date.':allocation.unfunded.length?'Some older Comp-Off records need credit or half-day details reviewed before more Comp-Off leave can be added.':'';
   const getQuotaImpact=(record:LeaveRecord)=>{
     if(record.type==='CO'||record.type==='CL'){
-      const available=availableCompOffCredits.filter(c=>c.date<=record.endDate&&c.end>=record.startDate).length;
-      return {available,remaining:Math.max(0,available-workingLeaveDates(record.startDate,record.endDate,allHolidays).length),lop:0,outsideCycle:false};
+      const available=availableCompOffCredits.filter(c=>c.date<=record.endDate&&c.end>=record.startDate).reduce((sum,c)=>sum+c.left,0);
+      return {available,remaining:Math.max(0,available-record.days),lop:0,outsideCycle:false};
     }
     return quotaImpact(record,records,settings,allHolidays);
   };
@@ -616,7 +616,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!records || records.length === 0) {
       return;
     }
-    const policyError=records.map(fullDayCompOffError).find(Boolean);if(policyError){showToast(policyError);return;}
+    const policyError=records.map(compOffDurationError).find(Boolean);if(policyError){showToast(policyError);return;}
     const credits=compOffAllocation(records,settings.saturdayCompOffEnabled?allHolidays:[],todayDateStr,excludedHolidayDates);
     if(credits.unfunded.length){showToast('Review Comp-Off credits in History before exporting. No records were changed.');return;}
     const sortedForExport = records.map(r=>{
@@ -639,6 +639,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     ]);
 
     const csvContent = [headers.join(','), ...rows.map((e) => e.join(','))].join('\r\n');
+    try{parseLeaveCSV(csvContent,allHolidays);}catch(e){showToast(e instanceof Error?e.message:'Records need review before export.');return;}
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -740,7 +741,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         records,
         cycleRecords,
         accountingWarning,
-        compOffCreditUsage: allocation.reserved,
+        compOffCreditUsage: allocation.usage,
         availableCompOffCredits,
         compOffError,
         getQuotaImpact,

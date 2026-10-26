@@ -16,7 +16,7 @@ test('future unbooked dates are nine hours; future booked leave and Singapore we
 });
 test('half days preserve AM/PM and Comp-Off reason while HR formula excludes full-day CO',()=>{
  const records=[r({days:0.5,halfDay:'pm',halfDayDate:'2026-10-14'}),r({id:'co',type:'CO',startDate:'2026-10-15',endDate:'2026-10-15',compOffCredits:[{holidayDate:'2026-10-10',holidayName:'Credit B',leaveDate:'2026-10-15'}]})];
- const result=buildTimesheet('2026-10',records,holidays);assert.equal(result.rows[13].hours,4.5);assert.match(result.rows[13].remarks,/PM/);assert.equal(result.rows[14].hours,'CO');assert.match(result.rows[14].remarks,/Credit B \(10\/10\/2026\)/);assert.equal(result.totalLeave,0.5);
+ const result=buildTimesheet('2026-10',records,holidays);assert.equal(result.rows[13].hours,4.5);assert.match(result.rows[13].remarks,/PM/);assert.equal(result.rows[14].hours,'CO');assert.match(result.rows[14].remarks,/Credit B Comp-off/);assert.equal(result.totalLeave,0.5);
 });
 test('all month lengths and year transitions use the actual calendar',()=>{
  assert.equal(buildTimesheet('2028-02',[],[]).rows.length,29);assert.equal(buildTimesheet('2027-02',[],[]).rows.length,28);assert.equal(buildTimesheet('2026-04',[],[]).rows.length,30);assert.equal(buildTimesheet('2026-12',[],[]).rows.at(-1).date,'2026-12-31');assert.throws(()=>buildTimesheet('2026-13',[],[]));
@@ -30,9 +30,9 @@ test('selected credit is required to be unused, earned and in its own date windo
  assert.equal(compOffAllocation([co('expired','2027-01-11','2026-10-10')],holidays,'2027-01-12').unfunded.length,1);
  assert.equal(compOffAllocation([a],holidays,'2026-09-25').unfunded.length,1);
 });
-test('historical half-day credit stays reserved; distinct credits and deletion release work',()=>{
+test('half-day credit retains 0.5 balance; a full-day reuse is blocked and deletion releases it',()=>{
  const a=co('a','2026-10-27','2026-09-26',{days:0.5,halfDay:'am',halfDayDate:'2026-10-27'});
- const b=co('b','2026-10-28','2026-09-26');let result=compOffAllocation([a],holidays,'2026-10-26');assert.equal(result.credits.find(c=>c.date==='2026-09-26').left,0);assert.equal(result.used.get('2026-09-26'),0.5);
+ const b=co('b','2026-10-28','2026-09-26');let result=compOffAllocation([a],holidays,'2026-10-26');assert.equal(result.credits.find(c=>c.date==='2026-09-26').left,0.5);assert.equal(result.used.get('2026-09-26'),0.5);
  assert.deepEqual(compOffAllocation([a,b],holidays,'2026-10-26').unfunded,['b']);assert.equal(compOffAllocation([b],holidays,'2026-10-26').unfunded.length,0);
  assert.equal(compOffAllocation([a,co('b','2026-10-28','2026-10-10')],holidays,'2026-10-26').unfunded.length,0);
 });

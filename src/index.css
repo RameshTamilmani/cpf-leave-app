@@ -340,5 +340,7 @@ html.theme-transitioning *::after {
   color: var(--color-on-surface);
 }
 
-
-
+/* The Timesheet month field uses the same themed calendar button as date fields. */
+.timesheet-month-input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+}

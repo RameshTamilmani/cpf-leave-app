@@ -67,6 +67,29 @@ export function fillTimesheet(template: Uint8Array, month: string, settings: Use
   const fonts=styles.getElementsByTagNameNS(NS,'fonts')[0];
   const wrapped=new Map<string,string>();
   const canvas=document.createElement('canvas').getContext('2d');
+  // Size the actual title font to the merged D6:G7 width. shrinkToFit alone
+  // is unreliable for merged cells in mobile Excel and Google Sheets.
+  const titleCell=findCell('D6'),titleStyle=xfs.children[Number(titleCell.getAttribute('s')||'0')];
+  const titleFont=fonts.children[Number(titleStyle.getAttribute('fontId')||'0')];
+  const originalSize=Number(titleFont.getElementsByTagNameNS(NS,'sz')[0]?.getAttribute('val')||20);
+  const titleText=titleCell.getElementsByTagNameNS(NS,'v')[0]?.textContent||'';
+  const titleFamily=titleFont.getElementsByTagNameNS(NS,'name')[0]?.getAttribute('val')||'Arial';
+  let titleWidth=0;
+  for(let columnIndex=4;columnIndex<=7;columnIndex++){
+    const column=[...sheet.getElementsByTagNameNS(NS,'col')].find(c=>Number(c.getAttribute('min'))<=columnIndex&&Number(c.getAttribute('max'))>=columnIndex);
+    titleWidth+=Number(column?.getAttribute('width')||8.43)*7+5;
+  }
+  let measured=titleText.length*originalSize*0.8;
+  if(canvas){canvas.font=originalSize+'pt '+titleFamily;measured=canvas.measureText(titleText).width;canvas.font=originalSize+'pt Arial';measured=Math.max(measured,canvas.measureText(titleText).width);}
+  const fittedSize=Math.max(8,Math.floor(Math.min(originalSize,originalSize*(titleWidth-24)/Math.max(1,measured)*0.9)*2)/2);
+  const fittedFont=titleFont.cloneNode(true) as Element;
+  fittedFont.getElementsByTagNameNS(NS,'sz')[0].setAttribute('val',String(fittedSize));
+  const fittedStyle=titleStyle.cloneNode(true) as Element;
+  fittedStyle.setAttribute('fontId',String(fonts.children.length));fittedStyle.setAttribute('applyFont','1');fittedStyle.setAttribute('applyAlignment','1');
+  let titleAlignment=fittedStyle.getElementsByTagNameNS(NS,'alignment')[0];
+  if(!titleAlignment){titleAlignment=styles.createElementNS(NS,'alignment');fittedStyle.insertBefore(titleAlignment,fittedStyle.getElementsByTagNameNS(NS,'protection')[0]||null);}
+  titleAlignment.setAttribute('horizontal','center');titleAlignment.setAttribute('vertical','center');titleAlignment.setAttribute('shrinkToFit','1');titleAlignment.setAttribute('wrapText','0');titleAlignment.removeAttribute('indent');
+  titleCell.setAttribute('s',String(xfs.children.length));fonts.appendChild(fittedFont);xfs.appendChild(fittedStyle);fonts.setAttribute('count',String(fonts.children.length));
   for(const address of ['G8','G10',...result.rows.map((_,i)=>'G'+(i+14))]) {
     const cell=findCell(address),text=cell.getElementsByTagNameNS(NS,'t')[0]?.textContent;
     if(!text)continue;
@@ -98,7 +121,7 @@ export function fillTimesheet(template: Uint8Array, month: string, settings: Use
     const row=cell.parentElement!;row.setAttribute('ht',String(Math.min(409.5,Math.max(Number(row.getAttribute('ht')||15),lines*(size+4)))));row.setAttribute('customHeight','1');
   }
   xfs.setAttribute('count',String(xfs.children.length));
-  if(wrapped.size)files['xl/styles.xml']=strToU8(new XMLSerializer().serializeToString(styles));
+  files['xl/styles.xml']=strToU8(new XMLSerializer().serializeToString(styles));
   files[sheetPath] = strToU8(new XMLSerializer().serializeToString(sheet));
   // The old calculation chain refers to date formulas replaced above. Excel rebuilds it.
   delete files['xl/calcChain.xml'];
@@ -115,6 +138,8 @@ export async function exportTimesheet(month: string, settings: UserSettings, rec
   const response = await fetch(templateURL); if (!response.ok) throw Error('Timesheet template is unavailable. Reopen online to finish installing the app, then try again.');
   const bytes = fillTimesheet(new Uint8Array(await response.arrayBuffer()),month,settings,records,holidays);
   const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
-  const link = document.createElement('a'); link.href=url; link.download=`Optimum India_Timesheet_${month}_${settings.employeeId}.xlsx`;
+  const [chosenYear,chosenMonth]=month.split('-');
+  const monthName=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(chosenMonth)-1];
+  const link = document.createElement('a'); link.href=url; link.download=`Optimum India_Timesheet ${monthName} ${chosenYear}.xlsx`;
   document.body.appendChild(link); link.click(); link.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);
 }

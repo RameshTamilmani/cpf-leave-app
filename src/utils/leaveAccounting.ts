@@ -1,3 +1,4 @@
+import { compOffDurationError } from './compOff';
 import type { LeaveRecord, PublicHoliday, UserSettings } from '../types/leave';
 import { isValidISODate, addDaysToDate } from '../data/singaporeHolidays2026';
 import { workingLeaveDates, halfDayOnDate } from './leaveDuration';
@@ -48,6 +49,7 @@ export function quotaImpact(r: LeaveRecord, records: LeaveRecord[], settings: Us
 export function compOffAllocation(records: LeaveRecord[], holidays: PublicHoliday[], today: string, excluded: string[] = []) {
   const credits = [...new Map(holidays.filter(h => (h.isCompOffEligible ?? new Date(h.date+'T00:00:00').getDay()===6) && h.date<today && !excluded.includes(h.date)).map(h=>[h.date,{date:h.date,name:h.name,end:addDaysToDate(h.date,90),left:1}])).values()].sort((a,b)=>a.end.localeCompare(b.end));
   const used = new Map<string,number>(), reserved = new Map<string,string>();
+  const usage=new Map<string,{recordId:string;leaveDate:string;days:number}[]>();
   const assignments = new Map<string,NonNullable<LeaveRecord['compOffCredits']>>();
   const unfunded: string[]=[];
   const demands: {id:string;date:string;days:number}[]=[];
@@ -66,6 +68,7 @@ export function compOffAllocation(records: LeaveRecord[], holidays: PublicHolida
       if(credit.date>demand.date||credit.end<demand.date||credit.left===0)continue;
       const amount=Math.min(needed,credit.left);credit.left-=amount;needed-=amount;
       used.set(credit.date,(used.get(credit.date)||0)+amount); reserved.set(credit.date,demand.id);
+      usage.set(credit.date,[...(usage.get(credit.date)||[]),{recordId:demand.id,leaveDate:demand.date,days:amount}]);
       const list=assignments.get(demand.id)||[];
       if(!list.some(c=>c.holidayDate===credit.date&&c.leaveDate===demand.date))list.push({holidayDate:credit.date,holidayName:credit.name,leaveDate:demand.date});
       assignments.set(demand.id,list);
@@ -73,19 +76,22 @@ export function compOffAllocation(records: LeaveRecord[], holidays: PublicHolida
     }
     if(needed)unfunded.push(demand.id);
   }
-  // New records bind one distinct credit to each working leave date. Even a
-  // half-day application reserves that holiday credit against another booking.
+  // Each holiday has one day of capacity. Two separate AM/PM half-day
+  // applications may use the same credit; all bindings are checked atomically.
   for(const r of records.filter(r=>(r.type==='CO'||r.type==='CL') && r.compOffCredits!==undefined)) {
-    const dates=workingLeaveDates(r.startDate,r.endDate,holidays), selections=r.compOffCredits!;
+    const dates=workingLeaveDates(r.startDate,r.endDate,holidays),selections=r.compOffCredits!;
     const total=dates.reduce((s,d)=>s+(dates.length===1?r.days:halfDayOnDate(r,d)?0.5:1),0);
-    if(!dates.length||total!==r.days||selections.length!==dates.length||new Set(selections.map(c=>c.holidayDate)).size!==selections.length||new Set(selections.map(c=>c.leaveDate)).size!==dates.length||(r.days%1===0.5&&r.startDate!==r.endDate&&!r.halfDayDate)) { unfunded.push(r.id); continue; }
-    const chosen=selections.map(c=>({selection:c,credit:credits.find(x=>x.date===c.holidayDate)}));
-    if(chosen.some(({selection:c,credit})=>!dates.includes(c.leaveDate)||!c.holidayName?.trim()||!credit||credit.left!==1||reserved.has(c.holidayDate)||credit.date>c.leaveDate||credit.end<c.leaveDate)) {unfunded.push(r.id);continue;}
-    for(const {selection:c,credit} of chosen) {
-      credit!.left=0;reserved.set(c.holidayDate,r.id);
-      used.set(c.holidayDate,dates.length===1?r.days:halfDayOnDate(r,c.leaveDate)?0.5:1);
+    if(compOffDurationError(r)||!dates.length||total!==r.days||selections.length!==dates.length||new Set(selections.map(c=>c.leaveDate)).size!==dates.length){unfunded.push(r.id);continue;}
+    const wanted=new Map<string,number>();
+    const chosen=selections.map(c=>({selection:c,credit:credits.find(x=>x.date===c.holidayDate),amount:dates.length===1?r.days:halfDayOnDate(r,c.leaveDate)?0.5:1}));
+    for(const c of chosen)wanted.set(c.selection.holidayDate,(wanted.get(c.selection.holidayDate)||0)+c.amount);
+    if(chosen.some(({selection:c,credit})=>!dates.includes(c.leaveDate)||!c.holidayName?.trim()||!credit||credit.date>c.leaveDate||credit.end<c.leaveDate)||[...wanted].some(([date,amount])=>amount>(credits.find(c=>c.date===date)?.left||0))){unfunded.push(r.id);continue;}
+    for(const {selection:c,credit,amount} of chosen){
+      credit!.left-=amount;reserved.set(c.holidayDate,r.id);
+      used.set(c.holidayDate,(used.get(c.holidayDate)||0)+amount);
+      usage.set(c.holidayDate,[...(usage.get(c.holidayDate)||[]),{recordId:r.id,leaveDate:c.leaveDate,days:amount}]);
     }
     assignments.set(r.id,selections);
   }
-  return {credits,used,reserved,assignments,unfunded:[...new Set(unfunded)]};
+  return {credits,used,reserved,usage,assignments,unfunded:[...new Set(unfunded)]};
 }

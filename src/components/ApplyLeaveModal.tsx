@@ -1,5 +1,5 @@
-import { compOffReason, fullDayCompOffError } from '../utils/compOff';
-import { workingLeaveDates, halfDaySelectionError, leavePeriodsOverlap } from '../utils/leaveDuration';
+import { compOffReason, compOffDurationError } from '../utils/compOff';
+import { workingLeaveDates, halfDaySelectionError, leavePeriodsOverlap, halfDayOnDate } from '../utils/leaveDuration';
 import { LopIcon } from './LopIcon';
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState, useEffect } from 'react';
@@ -104,19 +104,19 @@ export const ApplyLeaveModal: React.FC = () => {
   //   If workingDays >= 1: allowed deduction is STRICTLY workingDays or workingDays - 0.5 (for half-day adjustments).
   //   Any other value (< workingDays - 0.5 or > workingDays) is completely blocked!
   //   Selecting 0.5 days is allowed ONLY if startDate === endDate.
-  const allowedDeductionValues: number[] = isCompOff ? [workingDays] : isMultiDay
+  const allowedDeductionValues: number[] = isMultiDay
     ? workingDays > 0
       ? [workingDays, Number((workingDays - 0.5).toFixed(1))]
       : []
     : [1.0, 0.5];
 
-  const maxAllowedDays = isCompOff ? workingDays : isMultiDay
+  const maxAllowedDays = isMultiDay
     ? workingDays
     : durationMode === 'half-am' || durationMode === 'half-pm'
     ? 0.5
     : 1.0;
 
-  const minAllowedDays = isCompOff ? workingDays : isMultiDay
+  const minAllowedDays = isMultiDay
     ? workingDays > 0 ? Number((workingDays - 0.5).toFixed(1)) : 0
     : 0.5;
 
@@ -136,7 +136,6 @@ export const ApplyLeaveModal: React.FC = () => {
   // Automatically recalculate recommended days whenever dates, type, or duration change
   useEffect(() => {
     if (!startDate || !endDate) return;
-    if(isCompOff){setDurationMode('full');setDaysToDeduct(workingDays);setHalfDayDate('');setHalfDaySession('');return;}
 
     if (isMultiDay) {
       if (durationMode === 'half-am' || durationMode === 'half-pm') {
@@ -293,7 +292,7 @@ export const ApplyLeaveModal: React.FC = () => {
   const isHalfDayMultiDay = Boolean(isMultiDay && daysToDeduct === 0.5);
   const isFormInvalid = Boolean(
     saving ||
-    !!fullDayCompOffError(requestRecord) ||
+    !!compOffDurationError(requestRecord) ||
     quota.outsideCycle ||
     isDuplicate ||
     isWeekendBlocked ||
@@ -402,7 +401,7 @@ export const ApplyLeaveModal: React.FC = () => {
     setSaving(true);
     const saved = await addRecord({
       type,
-      title: type==='CO'&&candidate.compOffCredits?.length===1 ? candidate.compOffCredits[0].holidayName+' Comp-Off' : defaultTitle,
+      title: type==='CO'&&candidate.compOffCredits?.length===1 ? candidate.compOffCredits[0].holidayName+' Comp-off' : defaultTitle,
       compOffCredits: candidate.compOffCredits,
       startDate,
       endDate,
@@ -522,11 +521,11 @@ export const ApplyLeaveModal: React.FC = () => {
 
           {(type==='CO'||type==='CL')&&<fieldset className="rounded-xl border border-surface-outline p-3 flex flex-col gap-3">
             <legend className="px-1 text-sm font-semibold text-on-surface">Comp-Off Holiday Credit</legend>
-            <p className="text-xs text-on-surface-variant">Choose one credit for each leave date. Each credit is used once. Comp-Off is available for full days only.</p>
+            <p className="text-xs text-on-surface-variant">Choose one credit for each leave date. A holiday credit covers 1 day, or two half days. Choose AM or PM for half-day leave.</p>
             {workingDates.map(date=><label key={date} className="text-sm text-on-surface flex flex-col gap-1">For {formatDateDDMMYYYY(date)}
               <select aria-label={'Comp-Off Credit for '+date} value={creditChoices[date]||''} required onChange={e=>setCreditChoices(prev=>({...prev,[date]:e.target.value}))} className="w-full h-11 min-w-0 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface px-2 text-sm">
                 <option value="">Select a holiday credit</option>
-                {availableCompOffCredits.filter(c=>c.date<=date&&c.end>=date).map(c=><option key={c.date} value={c.date} disabled={workingDates.some(d=>d!==date&&creditChoices[d]===c.date)}>{c.name} · {formatDateDDMMYYYY(c.date)}</option>)}
+                {availableCompOffCredits.filter(c=>c.date<=date&&c.end>=date).map(c=><option key={c.date} value={c.date} disabled={workingDates.filter(d=>d!==date&&creditChoices[d]===c.date).reduce((s,d)=>s+(halfDayOnDate(candidate,d)?0.5:1),0)+(halfDayOnDate(candidate,date)?0.5:1)>c.left}>{c.name} · {formatDateDDMMYYYY(c.date)} · {c.left} day{c.left===1?'':'s'} left</option>)}
               </select>
             </label>)}
             {workingDates.length>0&&!availableCompOffCredits.some(c=>workingDates.some(d=>c.date<=d&&c.end>=d))&&<p className="text-xs text-error">No unused holiday credits cover these leave dates.</p>}
@@ -545,7 +544,7 @@ export const ApplyLeaveModal: React.FC = () => {
               </span>
             </div>
 
-            {isCompOff ? <p className="rounded-xl bg-surface-container-low p-3 text-sm text-on-surface">Full days only · {workingDays} working day{workingDays===1?'':'s'}</p> : isMultiDay ? (
+            {isMultiDay ? (
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"

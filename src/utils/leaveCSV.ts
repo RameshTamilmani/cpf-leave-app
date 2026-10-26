@@ -1,4 +1,4 @@
-import { fullDayCompOffError, compOffReason } from './compOff';
+import { compOffDurationError, compOffReason } from './compOff';
 import type { LeaveRecord, PublicHoliday } from '../types/leave';
 import { parseDDMMYYYYToISO } from '../data/singaporeHolidays2026';
 import { workingLeaveDates, halfDaySelectionError, leavePeriodsOverlap } from './leaveDuration';
@@ -47,7 +47,7 @@ export function parseLeaveCSV(text:string,holidays:PublicHoliday[]):LeaveRecord[
       if(!['CO','CL'].includes(type)||!Array.isArray(compOffCredits)||!compOffCredits.length||compOffCredits.length>366||compOffCredits.some(c=>!c||typeof c.holidayDate!=='string'||!parseDDMMYYYYToISO(c.holidayDate)||typeof c.leaveDate!=='string'||!dates.includes(c.leaveDate)||typeof c.holidayName!=='string'||!c.holidayName.trim()||c.holidayName.length>150))fail('Invalid Comp-Off credit details.');
     }
     const record:LeaveRecord={id:`restore_${i}`,createdAt:new Date().toISOString(),type:type as LeaveRecord['type'],title:cells[indexes.title],startDate,endDate,days,status:status as LeaveRecord['status'],notes:indexes.notes>=0?cells[indexes.notes]:undefined,halfDay,halfDayDate,compOffCredits};
-    const policyError=fullDayCompOffError(record);if(policyError)fail(policyError);
+    const policyError=compOffDurationError(record);if(policyError)fail(policyError);
     if(record.compOffCredits)record.notes=compOffReason(record);
     if(records.some(r=>leavePeriodsOverlap(r,record,holidays)))fail('Overlapping leave sessions were found.');
     records.push(record);

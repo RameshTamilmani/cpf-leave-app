@@ -4,7 +4,7 @@ Reviewed 26 October 2026. This project builds an installable web PWA, not an APK
 
 ## Build Requirements
 
-Use npm, the committed package-lock.json, and Node.js >=22.12.0 and <25. CI checks Windows/Ubuntu on Node 22 and 24. Vercel configuration uses npm ci --include=dev, npm run build and dist output. The project root must contain package.json and vercel.json. Deploy the new commit containing all changes, not a retry of an older failing revision.
+Use npm, the committed package-lock.json, and Node.js >=22.12.0 and <25. CI checks Windows/Ubuntu on Node 22 and 24. The current vercel.json uses npm install, npm run build and dist output. The clean local verification below uses npm ci --include=dev to check the lockfile independently of existing node_modules. GitHub Actions uses npm ci. The project root must contain package.json and vercel.json. Deploy the new commit containing all changes, not a retry of an older failing revision.
 
 ~~~sh
 npm ci --include=dev
@@ -13,7 +13,7 @@ node --import tsx --test scripts/test-calendar.mjs scripts/test-holidays.mjs scr
 npm run build
 ~~~
 
-Unit suites also have individual npm scripts: test:calendar, test:holidays, test:profile, test:offline, test:updates, test:restore, test:release-notes, test:leave-duration test:logic and test:timesheet.
+Unit suites also have individual npm scripts: test:calendar, test:holidays, test:profile, test:offline, test:updates, test:restore, test:release-notes, test:leave-duration, test:logic and test:timesheet.
 
 api/holidays.ts is a Vercel function; plain npm run dev/preview serves the frontend without this function. Holiday sync may fall back to saved or bundled dates in that local environment. No Gemini API key or separate Express server is required.
 
@@ -38,6 +38,7 @@ An installed Google Chrome is required; set TEST_BROWSER_CHANNEL=msedge to use M
 
 ~~~sh
 npm run test:timesheet-browser
+npm run test:split-compoff-browser
 npm run test:logic-browser
 npm run test:profile-browser
 npm run test:ui
@@ -45,14 +46,15 @@ npm run test:modals
 npm run test:browser
 ~~~
 
-- test:timesheet-browser: one-click workbook download, profile contact migration/editing, full-day-only Comp-Off, disabled holiday reasons, selected/non-reusable credits, valid metadata round trips and rejection of half-day Comp-Off on CSV export/restore.
+- test:timesheet-browser: exact month/year download filename, profile contact migration/editing, disabled date-free holiday reasons, selected credits, valid AM/PM metadata round trips and rejection of missing half-day session details.
+- test:split-compoff-browser: two half-day bookings sharing one credit, elapsed-session overlap prevention, rejected overdrawn restore and concurrent half-day saving.
 - test:logic-browser: strict/confirmed CSV replacement, legacy types, per-cycle balances, half-day date/session round trips, Comp-Off funding, cycle boundaries, status consistency and concurrent windows including IndexedDB fallback. It starts a current-source Vite server.
 - test:profile-browser: mandatory setup, optional image, tenure accents and responsive profile behavior.
 - test:ui: department, balances, Calendar, validation and light/dark responsive layouts.
 - test:modals: background scroll locking, internal touch reversal, nested pickers, restored page position and Special Holiday sizing.
 - test:browser: production service worker, offline restart, delayed download, Later/manual checks, approval failure/retry and profile preservation. It builds a second release for update testing.
 
-Build before the static UI/modal/profile and production-worker checks. Screenshots under ui-screenshots are generated test artifacts and are ignored by Git. npm run clean removes only dist across supported operating systems.
+The timesheet, split-credit and logic browser suites start their own current-source Vite server. Build before the static UI/modal/profile and production-worker checks. Screenshots under ui-screenshots are generated test artifacts and are ignored by Git. npm run clean removes only dist across supported operating systems.
 
 ## Offline and Approval Behavior
 
@@ -70,10 +72,24 @@ For a first migration from an old automatically updating worker, open online, cl
 4. Check manually in Settings, approve Update Now and confirm the new release opens with records intact.
 5. Confirm the holiday endpoint works online and saved/bundled fallback works offline. An app update check and holiday refresh are separate operations.
 
+## Release Acceptance Checklist
+
+- Keep package.json, package-lock.json, public/version.json and generated version displays at 1.0.0 until a version change is requested.
+- Confirm both the clean npm install and the production build finish with exit code 0. Run the strict release:check locally; do not bypass the release-note guard or hand-edit review hashes.
+- Confirm Contact Number is required in Employee Profile/onboarding and absent from Home and the Timesheet controls.
+- Book two 0.5-day AM/PM sessions against one credit. Confirm remaining balance changes from 1 to 0.5 to 0, another date may use the same AM or PM session, and a third half day/duplicate elapsed session is blocked.
+- Export/restore those records. Confirm bindings and sessions survive, edited Comp-Off remarks are reconstructed, and duplicate/overdrawn files leave existing history unchanged.
+- Export the chosen month before month-end. Confirm future booked leave is respected, unbooked working dates use 9 hours, Singapore holidays/weekends follow the documented rules and HR's original formulas remain intact.
+- Confirm the exact filename, for example Optimum India_Timesheet Oct 2026.xlsx, with Jan–Dec capitalization and the selected year. Verify the full September heading fits without trimming.
+- Confirm the blank HR template is in the production assets/precache and offline Excel export works after successful installation.
+- Review and commit all intended source changes, new regression scripts, documentation and release metadata together. Include the blank template if it is not already tracked; exclude node_modules, dist and generated screenshots/workbook fixtures.
+
+Local checks validate the current checkout. CI runs its Node/OS matrix after push; the deployment log must show the new commit and the expected project root/build settings. Documentation-only changes do not require a new version or altered leave rules.
+
 ## Repository Hygiene
 
 Keep package-lock.json, regression scripts, icon generator, bundled fonts and real PWA icons. The blank src/assets/hr-timesheet-template.xlsx is an intentional runtime asset; keep it committed and included in the xlsx precache glob. Do not replace it with a filled personal workbook. Reference screenshots/videos and AI Studio temporary media are not runtime assets and must stay outside public and out of commits. Vite copies public files into dist even when a service-worker glob excludes them. Inspect dist before deployment; it should contain application assets, not reference attachments.
 
-The manifest declares supported standalone launch and icons only; unsupported import/share/widget/query shortcuts have been removed. metadata.json remains minimal authoring metadata without advertising a Gemini backend. Dormant OS notification/popup code is removed; Home banners remain.
+The manifest declares supported standalone launch and icons only; unsupported import/share/widget/query shortcuts have been removed. metadata.json remains minimal authoring metadata without advertising a Gemini backend. Unused notification helper modules and dormant popup UI have been removed; Home banners remain the supported wish flow. This app has no push delivery backend.
 
 Record persistence uses localStorage with Web Locks or an IndexedDB mutex fallback. Do not change stored keys or remove legacy settings/type compatibility as part of packaging cleanup. CSV exports cover leave records only, not complete profile/settings backups.

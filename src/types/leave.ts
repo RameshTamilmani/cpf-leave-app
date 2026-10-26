@@ -12,7 +12,7 @@ export interface LeaveRecord {
   endDate: string;   // YYYY-MM-DD
   days: number;
   halfDay?: 'full' | 'am' | 'pm';
-  compOffCredits?: CompOffCredit[]; // Explicit one-use holiday credits for this application
+  compOffCredits?: CompOffCredit[]; // Explicit holiday credits; each credit covers 1 day or two 0.5-day sessions
   halfDayDate?: string; // Working date with AM/PM leave, including within a multi-day period
   status: LeaveStatus;
   notes?: string;
