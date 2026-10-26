@@ -52,7 +52,7 @@ export const CalendarScreen: React.FC = () => {
 
       <section aria-label={monthTitle + ' calendar'} className="rounded-xl border border-surface-container bg-surface-container-lowest p-2 sm:p-3 shadow-xs">
         <div className="grid grid-cols-7 gap-1 text-center mb-2">
-          {weekdays.map((day, index) => <span key={day} className={`text-[11px] sm:text-xs font-semibold ${index > 4 ? 'text-holiday-public' : 'text-on-surface-variant'}`}>{day}</span>)}
+          {weekdays.map((day, index) => <span key={day} className={`text-[11px] sm:text-xs font-semibold ${index > 4 ? 'text-weekend-header font-bold' : 'text-on-surface-variant'}`}>{day}</span>)}
         </div>
         <div className="grid grid-cols-7 gap-1">
           {Array.from({ length: offset }, (_, i) => <div key={'blank-' + i} aria-hidden="true" />)}
@@ -69,10 +69,10 @@ export const CalendarScreen: React.FC = () => {
             const weekend = (offset + i) % 7 > 4;
             const selected = selectedCalendarDate === date;
             const isToday = date === todayDateStr;
-            const color = holiday ? 'bg-holiday-public-container text-holiday-public-on-container'
-              : leave ? leaveColors[leave.type]
-              : weekend ? 'bg-weekend-surface text-weekend-on-surface'
-              : 'bg-surface-container-low text-on-surface';
+            const color = holiday ? 'bg-holiday-public-container text-holiday-public-on-container border border-holiday-public/20'
+              : leave ? `${leaveColors[leave.type]} border border-current/20`
+              : weekend ? 'bg-weekend-surface text-weekend-on-surface border border-weekend-border font-semibold'
+              : 'bg-surface-container-low text-on-surface border border-transparent';
             return (
               <button type="button" key={date} onClick={() => setSelectedCalendarDate(date)}
                 aria-label={`${formatDateDDMMYYYY(date)}${holiday ? ', ' + holiday.title : leave ? ', ' + leaveSummary : ''}${isToday ? ', Today' : ''}`}
@@ -104,7 +104,7 @@ export const CalendarScreen: React.FC = () => {
                 <li key={entry.id} data-date={entry.date} className="flex items-start gap-3 p-3 sm:p-4">
                   <time dateTime={entry.date} aria-label={formatDateDDMMYYYY(entry.date)} className="w-11 shrink-0 rounded-lg bg-surface-container-low py-1.5 text-center tabular-nums">
                     <span className="block text-lg leading-6 font-bold text-on-surface">{date.getDate()}</span>
-                    <span className="block text-[10px] text-on-surface-variant">{weekdays[(date.getDay() + 6) % 7]}</span>
+                    <span className={`block text-[10px] ${date.getDay() === 0 || date.getDay() === 6 ? 'text-weekend-header font-semibold' : 'text-on-surface-variant'}`}>{weekdays[(date.getDay() + 6) % 7]}</span>
                   </time>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold leading-5 text-on-surface break-words">{entry.title}</p>

@@ -1,29 +1,29 @@
 {
-  "version": "1.0.0",
-  "releaseDate": "2026-10-25",
+  "version": "1.1.0",
+  "releaseDate": "2026-10-26",
   "highlights": [
     {
-      "title": "Safer backups and saving",
-      "description": "Invalid backups leave your records untouched. Restore asks before replacing records, and saving in two windows keeps both changes.",
-      "icon": "backup",
-      "color": "blue"
-    },
-    {
-      "title": "More accurate leave balances",
-      "description": "Balances follow the correct leave year. Comp-Off leave uses credits that are valid for the selected dates.",
-      "icon": "event_available",
-      "color": "emerald"
-    },
-    {
-      "title": "Clearer calendar and settings",
-      "description": "Both half-day sessions appear in Calendar, past bookings show Taken consistently, and custom cycle dates stay as saved.",
+      "title": "Clear weekend highlights in dark mode",
+      "description": "Saturday and Sunday calendar days and column headers now feature warm, high-contrast amber styling with crisp borders in both dark and light modes.",
       "icon": "calendar_month",
-      "color": "purple"
+      "color": "amber"
+    },
+    {
+      "title": "Weekend protection on special holidays",
+      "description": "Special holidays cannot be applied for weekends, keeping official non-working rest days properly excluded from leave applications.",
+      "icon": "event_busy",
+      "color": "rose"
+    },
+    {
+      "title": "Streamlined cloud deployments",
+      "description": "Removed package manager conflicts and configured robust npm installation for reliable Vercel builds.",
+      "icon": "cloud_done",
+      "color": "emerald"
     }
   ],
-  "releaseNotes": "Safer restore and saving, accurate leave-year balances and Comp-Off checks, and consistent calendar details. Older records keep their saved totals and leave types.",
+  "releaseNotes": "Clear amber highlights for weekend days in dark and light modes, weekend protection for special holidays, and zero-failure Vercel deployment setup.",
   "notesReview": {
-    "sourceHash": "f7312e004899ec334625d3e947784c0918b2f3142a210030730df6856b875b3c",
-    "notesHash": "c0bc624b908dc027d68eb7b97cd06b4bddc967c57f3172760758d08b94c4362a"
+    "sourceHash": "266d99152ab1bc6c46e2f40f249145fa34b9585de50990ae0d4efc4d463a0623",
+    "notesHash": "075701f1dc56574754cb7a8ca8fa079b696a6076be9ae35ac41867f9614a156f"
   }
 }

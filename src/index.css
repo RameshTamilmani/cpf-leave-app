@@ -75,8 +75,10 @@
   --color-holiday-public-container: #FCE8E6;
   --color-holiday-public-on-container: #B3261E;
 
-  --color-weekend-surface: #e5e7e9;
-  --color-weekend-on-surface: #70757A;
+  --color-weekend-surface: #fef3c7;
+  --color-weekend-on-surface: #92400e;
+  --color-weekend-border: #fcd34d;
+  --color-weekend-header: #b45309;
 
   --color-alert-warning: #E65100;
   --color-alert-warning-container: #FFF3E0;
@@ -165,8 +167,10 @@
   --color-holiday-public-container: #471515;
   --color-holiday-public-on-container: #ffd2d2;
 
-  --color-weekend-surface: #101315;
-  --color-weekend-on-surface: #98a2ad;
+  --color-weekend-surface: #2b1d0c;
+  --color-weekend-on-surface: #fde68a;
+  --color-weekend-border: #78350f;
+  --color-weekend-header: #fbbf24;
 
   --color-alert-warning: #ffa726;
   --color-alert-warning-container: #402300;

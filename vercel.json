@@ -30,5 +30,5 @@
       ]
     }
   ],
-  "installCommand": "npm ci --include=dev"
+  "installCommand": "npm install"
 }
