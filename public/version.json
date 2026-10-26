@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.0.0",
   "releaseDate": "2026-10-26",
   "highlights": [
     {
@@ -21,9 +21,9 @@
       "color": "emerald"
     }
   ],
-  "releaseNotes": "Clear amber highlights for weekend days in dark and light modes, weekend protection for special holidays, and zero-failure Vercel deployment setup.",
+  "releaseNotes": "Clear amber weekend highlights in dark and light modes, weekend protection for special holidays, and streamlined cloud deployments.",
   "notesReview": {
-    "sourceHash": "266d99152ab1bc6c46e2f40f249145fa34b9585de50990ae0d4efc4d463a0623",
-    "notesHash": "075701f1dc56574754cb7a8ca8fa079b696a6076be9ae35ac41867f9614a156f"
+    "sourceHash": "0124fad404e59d94cdbc1ff4e93bfbe847670b69a400a0cecddae8c259fddf7e",
+    "notesHash": "dd9e4318d41367bc24f87a970781d6a48c37c680df7a7902fa1988d30a62b075"
   }
 }
