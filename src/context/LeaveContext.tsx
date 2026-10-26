@@ -6,10 +6,8 @@ import { restoreContentError } from '../utils/restoreValidation';
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { LeaveRecord, UserSettings, LeaveType, LeaveStatus, PublicHoliday, SpecialHoliday } from '../types/leave';
 import { ALL_GAZETTED_HOLIDAYS, addDaysToDate, formatDateDDMMYYYY, parseDDMMYYYYToISO, isWeekend } from '../data/singaporeHolidays2026';
-import { AppNotification, generateNotifications } from '../utils/notifications';
 import { useOfficialHolidays } from '../hooks/useOfficialHolidays';
 import { mergeHolidaySources } from '../utils/officialHolidays';
-import { playCelebrationChime } from '../utils/sound';
 
 interface ToastState {
   show: boolean;
@@ -98,8 +96,6 @@ interface LeaveContextType {
   isCompOffModalOpen: boolean;
   setIsCompOffModalOpen: (open: boolean) => void;
   
-  isNotificationsOpen: boolean;
-  setIsNotificationsOpen: (open: boolean) => void;
 
   isAddSpecialHolidayOpen: boolean;
   setIsAddSpecialHolidayOpen: (open: boolean) => void;
@@ -115,17 +111,7 @@ interface LeaveContextType {
   showToast: (msg: string) => void;
   dismissToast: () => void;
   
-  // Notifications state
-  hasNewNotification: boolean;
-  markNotificationsAsViewed: () => void;
-  triggerNewNotification: () => void;
-  activeWishPopup: AppNotification | null;
-  setActiveWishPopup: (wish: AppNotification | null) => void;
-  openWishWithChime: (wish: AppNotification) => void;
-
   // Actions
-  triggerSync: () => Promise<void>;
-  isSyncing: boolean;
   exportCSV: () => void;
   restoreCSV: (csvStr: string, expected?: string) => Promise<boolean>;
   resetAllData: () => Promise<boolean>;
@@ -174,7 +160,6 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<string>(todayDateStr);
-  const [isSyncing, setIsSyncing] = useState<boolean>(false);
   
   const [toast, setToast] = useState<ToastState>({ show: false, message: '' });
   
@@ -187,37 +172,8 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [isHolidaysModalOpen, setIsHolidaysModalOpen] = useState(false);
   const [isCompOffModalOpen, setIsCompOffModalOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAddSpecialHolidayOpen, setIsAddSpecialHolidayOpen] = useState(false);
   const [isEditCycleModalOpen, setIsEditCycleModalOpen] = useState(false);
-
-  // New notification tracking (blinks only on new notification until acknowledged/viewed)
-  const [hasNewNotification, setHasNewNotification] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('cutisg_has_new_notification');
-      return saved !== null ? saved === 'true' : false;
-    } catch {
-      return false;
-    }
-  });
-
-  const markNotificationsAsViewed = () => {
-    setHasNewNotification(false);
-    try {
-      localStorage.setItem('cutisg_has_new_notification', 'false');
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const triggerNewNotification = () => {
-    setHasNewNotification(true);
-    try {
-      localStorage.setItem('cutisg_has_new_notification', 'true');
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
   // Persistence in localStorage
   const [settings, setSettings] = useState<UserSettings>(() => {
@@ -378,15 +334,6 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error(e);
     }
   }, [manualCompOffCredits]);
-
-  const [activeWishPopup, setActiveWishPopup] = useState<AppNotification | null>(null);
-
-  const openWishWithChime = (wish: AppNotification) => {
-    setActiveWishPopup(wish);
-    if (settings.wishSoundEnabled !== false) {
-      playCelebrationChime();
-    }
-  };
 
   // Celebration wishes are displayed in the Home banner only.
 
@@ -645,21 +592,8 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return quotaImpact(record,records,settings,allHolidays);
   };
 
-  const triggerSync = async () => {
-    setIsSyncing(true);
-    await new Promise((resolve) => setTimeout(resolve, 1100));
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setSettings((prev) => ({
-      ...prev,
-      lastSynced: `Today, ${timeStr} (Just now)`
-    }));
-    setIsSyncing(false);
-    triggerNewNotification();
-    showToast('Updated gazetted public holidays from data.gov.sg!');
-  };
 
-  // Export CSV with ONLY mandatory data: Type, Title, Start Date, End Date, Days, Status
+  // Export leave records with remarks and explicit half-day metadata (ISO dates).
   // Only executed when records exist (no false download popup)
   // While exporting, it should be based on ascending dates
   const exportCSV = () => {
@@ -691,7 +625,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     link.click();
     document.body.removeChild(link);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast(`Exported ${records.length} leave record${records.length !== 1 ? 's' : ''} to CSV (DD/MM/YYYY)`);
+    showToast(`Exported ${records.length} leave record${records.length !== 1 ? 's' : ''} to CSV`);
   };
 
   // Restore CSV containing mandatory data with strict duplicate validation and DD/MM/YYYY support
@@ -835,29 +769,19 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setIsHolidaysModalOpen,
         isCompOffModalOpen,
         setIsCompOffModalOpen,
-        isNotificationsOpen,
-        setIsNotificationsOpen,
         isAddSpecialHolidayOpen,
         setIsAddSpecialHolidayOpen,
         isEditCycleModalOpen,
         setIsEditCycleModalOpen,
         selectedCalendarDate,
         setSelectedCalendarDate,
-        hasNewNotification,
-        markNotificationsAsViewed,
-        triggerNewNotification,
         toast,
         showToast,
         dismissToast,
-        triggerSync,
-        isSyncing,
         exportCSV,
         restoreCSV,
         resetAllData,
         resetCycleWithWarningConfirm,
-        activeWishPopup,
-        setActiveWishPopup,
-        openWishWithChime
       }}
     >
       {children}

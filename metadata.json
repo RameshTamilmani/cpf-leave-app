@@ -1,6 +1,6 @@
 {
   "name": "CutiSG - Singapore Leave & Public Holiday Tracker",
-  "description": "Singapore MOM compliant personal leave planner, gazetted public holiday tracker, and comp-off ledger for FY 2026.",
+  "description": "Personal Singapore leave tracker, public holiday calendar and Comp-Off ledger.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }

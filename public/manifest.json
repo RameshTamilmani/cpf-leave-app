@@ -2,7 +2,7 @@
   "id": "/",
   "name": "CutiSG - Singapore Leave & Public Holiday Tracker",
   "short_name": "CutiSG",
-  "description": "Singapore MOM compliant personal leave planner, gazetted public holiday tracker, and comp-off ledger for FY 2026.",
+  "description": "Personal Singapore leave tracker, public holiday calendar and Comp-Off ledger.",
   "lang": "en",
   "dir": "ltr",
   "start_url": "/",
@@ -15,43 +15,22 @@
   "orientation": "portrait-primary",
   "background_color": "#FFFFFF",
   "theme_color": "#EE2C38",
-  "categories": ["productivity", "business", "lifestyle", "utilities"],
-  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+  "categories": [
+    "productivity",
+    "business",
+    "lifestyle",
+    "utilities"
+  ],
   "prefer_related_applications": false,
   "related_applications": [],
   "launch_handler": {
-    "client_mode": ["navigate-existing", "auto"]
+    "client_mode": [
+      "navigate-existing",
+      "auto"
+    ]
   },
   "edge_side_panel": {
     "preferred_width": 400
-  },
-  "share_target": {
-    "action": "/?action=share",
-    "method": "GET",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url"
-    }
-  },
-  "protocol_handlers": [
-    {
-      "protocol": "web+cutisg",
-      "url": "/?url=%s"
-    }
-  ],
-  "file_handlers": [
-    {
-      "action": "/?action=import",
-      "name": "Leave Backup Files",
-      "accept": {
-        "text/csv": [".csv"],
-        "application/json": [".json"]
-      }
-    }
-  ],
-  "note_taking": {
-    "new_note_url": "/?action=apply"
   },
   "icons": [
     {
@@ -71,64 +50,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/pwa-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "CutiSG Desktop Dashboard"
-    },
-    {
-      "src": "/pwa-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "CutiSG Mobile App"
-    }
-  ],
-  "widgets": [
-    {
-      "name": "Leave Balances",
-      "short_name": "Leaves",
-      "description": "Quick view of remaining leave balance",
-      "tag": "leave-balance",
-      "template": "widget",
-      "ms_ac_template": "widget.json",
-      "data": "widget-data.json",
-      "type": "application/json",
-      "screenshots": [
-        {
-          "src": "/pwa-512x512.png",
-          "sizes": "512x512",
-          "label": "Leave Balance Widget"
-        }
-      ]
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Apply Leave",
-      "short_name": "Apply",
-      "description": "Apply for annual, sick, or comp-off leave",
-      "url": "/?action=apply",
-      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Leave Calendar",
-      "short_name": "Calendar",
-      "description": "View Singapore MOM gazetted holidays and leave calendar",
-      "url": "/?tab=calendar",
-      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Comp-Off Ledger",
-      "short_name": "Comp-Off",
-      "description": "View Saturday public holiday comp-off days and credits",
-      "url": "/?tab=compoff",
-      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
     }
   ]
 }

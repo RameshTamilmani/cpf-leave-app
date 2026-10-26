@@ -73,7 +73,7 @@ export function getCurrentISTTime(): {
 
 /**
  * Generates contextual notifications respecting:
- * 1. User preferences (can be toggled off in settings tab)
+ * 1. Home banners remain available without a notification toggle
  * 2. Weekend wishes: Arrive on Previous Day Evening 3.00 PM IST (Friday 15:00 IST) and remain through weekend
  * 3. Special Days & Anniversaries: Arrive on Same Day Morning 8.00 AM IST (hours >= 8)
  * 4. Indian Holidays: Arrive on Same Day Morning 8.00 AM IST (hours >= 8)

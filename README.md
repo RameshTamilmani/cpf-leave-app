@@ -1,110 +1,48 @@
-# CutiSG - Singapore MOM Leave & Public Holiday Management System (v1.0.0)
+# CutiSG — Singapore Leave Tracker (v1.0.0)
 
-**CutiSG** is a comprehensive, production-grade Singapore personal leave management Progressive Web Application (PWA) built strictly in accordance with the **Singapore Ministry of Manpower (MOM) Employment Act (Cap. 91)**.
+CutiSG (“Cuti” means leave) is a personal leave and Singapore public holiday tracker. It is an installable Progressive Web App (PWA), not an Android APK/AAB. Its fixed allocations and Comp-Off rules are app defaults; confirm your employer's policy. It does not approve leave requests or certify legal entitlement.
 
----
+Documentation reviewed against the implementation on 26 October 2026. See [Policy and Validation Guide](POLICY_AND_VALIDATION_GUIDE.md) for calculation and backup rules, and [Deployment Guide](DEPLOYMENT.md) for release checks.
 
-## 🔒 Where is Your Data Stored?
+## Current Features
 
-**100% Client-Side & Private Storage**:
-- All employee data, leave records, special holidays, and custom preferences are stored **exclusively in your browser's local storage (`localStorage`)** under the `cutisg_*` namespaces (`cutisg_records`, `cutisg_settings`, `cutisg_special_holidays`, `cutisg_manual_compoff`).
-- **Zero external cloud transmission**: Your personal records, employee ID, joining date, and leave history remain entirely on your device.
-- **Offline Reliability**: After one successful online load, the complete production app, fonts, and icons are cached by the Service Worker for offline use.
-- **Portability & Backups**: You can export and restore all leave records anytime in standard **CSV format** formatted with Singapore standard `DD/MM/YYYY`.
+- Mandatory profile setup: full name (40 characters), numeric Employee ID (12 digits), uppercase department (25 characters) and a valid non-future joining date. A locally uploaded/cropped photo is optional (8 MiB file limit).
+- Profile photo ring, verification tick and Employee ID badge use green under one year, blue from the first through the second anniversary, and gold afterward. Joined and Experience labels use teal.
+- Annual and Sick Leave default to 12 days each per configured leave year. Home balance cards open details; Apply Leave creates a record. Annual, Sick and Comp-Off category colors are blue, purple and green; Loss of Pay uses a crossed-rupee icon, and Special Holidays uses purple.
+- Full-day or half-day leave, including a selected working date and AM/PM for a multi-day half-day adjustment. Complementary AM and PM bookings on one date are allowed; overlapping sessions are blocked.
+- Monthly Calendar shows all sessions and a month summary of holidays and leave. Ordinary weekend leave is omitted from the summary, while weekend public holidays remain visible. Weekend cells have a muted distinction. History and Calendar use the same effective Planned/Taken status.
+- Comp-Off Ledger distinguishes earned credits from upcoming holidays. Individual eligible credits fund leave within their own 90-day windows. Upcoming credits do not fund earlier leave. See the policy guide for carry-over and legacy-record caveats.
+- Singapore holidays refresh automatically through the official data.gov.sg feed. Saved or bundled dates remain available offline. Special declarations in the feed appear automatically; add a manual weekday holiday only if it is missing. Dates are deduplicated; substitute holidays are labelled “Substitute”.
+- Wishes appear as Home banners. There is no push delivery service or notification preference screen.
+- Light, Dark and System themes; modal background scroll locking with internal scrolling; CSV export and confirmed replacement restore; separate leave-record and factory resets.
 
----
+## Data, Backups and Offline Use
 
-## 🇸🇬 Why the Application is Named "CutiSG"
+Profile, settings, custom holidays and leave records are stored locally in browser localStorage under cutisg_* keys. Personal leave/profile data is not sent by application code to the holiday API. The holiday refresh and app updates still require network requests; hosting can log those requests.
 
-- **"Cuti"** (pronounced *choo-tee*): The Malay word for **leave**, **holiday**, or **vacation**. Malay is the designated **National Language of Singapore** under Article 153A of the Constitution of the Republic of Singapore and is universally used in colloquial and workplace vocabulary (e.g., *"ambil cuti"* = taking leave).
-- **"SG"**: The international country code abbreviation for **Singapore**.
-- Together, **CutiSG** translates directly to **"Singapore Leave Tracker"** — a localized, culturally resonant, and statutory-compliant leave planner designed specifically for employees and professionals working in Singapore.
+Record writes use an origin-wide Web Lock, with an IndexedDB transaction mutex as fallback. Records themselves stay in localStorage. Multiple windows synchronize changes; a stale restore preview cannot overwrite newer history. Failed safe-saving operations show an error.
 
----
+CSV exports contain leave records only, including remarks and half-day details. They do not back up profile, photos, settings or custom holidays. Exported dates use YYYY-MM-DD; UI dates usually use DD/MM/YYYY. Restore validates the entire incoming file, then asks before replacing existing history. An invalid row rejects the file without partial replacement.
 
-## 🌟 Key Highlights & Current Features (v1.0.0)
+The complete production app, local fonts and icons become available offline after a successful online service-worker installation. Use the installed home-screen app for a standalone window. Opening its URL opens a browser tab. Clearing browser/site storage or browser storage eviction can remove saved records and offline assets; export backups regularly.
 
-### 1. Executive Employee Profile & Tenure Styling
-- **Mandatory Profile Setup**: Name (up to 40 characters), numeric Employee ID (up to 12 digits), Department (up to 25 characters), and Date of Joining (non-future date). Photo upload is optional and supports square cropping up to 8MB.
-- **Theme-Adaptive Department Badge**: Styled in a distinctive violet/indigo badge that dynamically adapts across light and dark modes.
-- **Tenure Tier Accents**: Dynamic color based on length of service applies strictly to the **photo circle ring**, **verification tick mark**, and **EMP ID badge** (no red outline):
-  - *Tier 1 (Green)*: Under 1 year of service.
-  - *Tier 2 (Blue)*: 1 to 2 years of service.
-  - *Tier 3 (Gold)*: Over 2 years of service.
-- **Unified Joined & Experience Styling**: Both Joined and Experience labels share an elegant teal color (`text-teal-700 dark:text-teal-400`), while their values are rendered in high-legibility bold text (`text-on-surface font-semibold`).
+## Updates and Version
 
-### 2. Clean Home Screen & Uniform Leave Balances
-- **Uniform Balance Typography**: All 5 leave cards (**Annual Leave**, **Sick Leave**, **Comp-off Leave**, **Loss of Pay (LOP)**, and **Special Holidays**) maintain the exact same `text-lg font-bold` font size and vertical baseline across numerators and denominators (`11/12`, `12/12`, `0/1`, `0`, `0`).
-- **Static Celebration Greetings**: Celebrations and work anniversaries appear as a non-intrusive, warm greeting ribbon directly on the Home Screen without disruptive pop-up windows.
-- **Distinct Category Colors**:
-  - Annual Leave: Warm Amber / Gold
-  - Sick Leave: Emerald Green (standardized as Sick Leave across all screens)
-  - Comp-off Leave: Deep Teal
-  - Loss of Pay (LOP): Rose / Crimson
-  - Special Holidays: Royal Purple
-- **Direct Shortcuts**: Quick actions include **Leave History** and **Comp-off Ledger**.
+Version remains **1.0.0**. package.json is canonical; shared build metadata supplies Settings, About, update dialogs and the worker. Each production build also has a unique build ID, so deployments with the same version label remain detectable.
 
-### 3. Streamlined Monthly Calendar
-- **Uncluttered Grid**: Removed redundant color legend strips and single-day employment rule boxes.
-- **Monthly Holidays & Leave History**: Displays a dedicated breakdown below the calendar for the viewed month, showcasing all public holidays, special declarations, and leaves taken (strictly excluding non-working weekend days).
+The complete update downloads before it is offered. Update Now approves it; Later postpones the prompt for six hours and retains the approved offline release. Settings → App Updates → Check for updates bypasses that snooze. Release notes come from public/version.json and must be rewritten in plain language for each change; they are not generated from code.
 
-### 4. Device-Smart PWA Installation
-- **Google Chrome on Android**: Early `beforeinstallprompt` capture triggers 1-tap direct automatic installation with zero intermediary modals.
-- **Samsung Browser & Non-Chrome Android**: Intelligent detection provides a 1-tap **"Open in Google Chrome"** intent button for direct installation, a **"Copy Link"** button, and native Samsung Internet steps (Menu ☰ → Add page to → Home screen).
-- **iPhone / iOS Safari**: Tailored 3-step guide detailing the Apple Share button `[⎋]` → **Add to Home Screen** action.
-- **Overscroll Lock**: Suppressed browser pull-to-refresh gestures to ensure a native mobile app feel.
+## Development
 
-### 5. Reliable App Updates (v1.0.0)
-- **Positioning**: The **App Updates** card is positioned directly above the **About CutiSG** button in Settings.
-- **Clear Status Modals**:
-  - Clicking **"Check for updates"** when already up-to-date opens a dedicated, prominent **"You're Up to Date"** confirmation dialog (`UpToDateModal`) with a green verified badge.
-  - When a new version is detected, `UpdateAvailableModal` displays what's new, offering **Update Now** and a 6-hour **Later** snooze option.
+Requires npm and Node.js >=22.12.0 and <25 (CI uses Node 22 and 24).
 
-### 6. Statutory MOM Leave Entitlements & Section 88 Comp-Off
-- **Standard Entitlements**: 12 days Annual Leave and 12 days Sick Leave per leave year cycle.
-- **Automatic Saturday Comp-Off (Section 88)**: Gazetted public holidays falling on a non-working Saturday automatically credit +1 day comp-off to the active cycle with 90-day validity tracking.
-- **Streamlined Special Holidays Dialog**: Minimalist form requiring only Holiday Name and Date Picker. Strictly prohibits applying special holidays for weekends (Saturday or Sunday) as weekends are already statutory non-working rest days.
-- **MOM Dataset Synchronization**: Background dataset sync details and official data.gov.sg source links are organized cleanly inside the **About CutiSG** dialog.
-
----
-
-## 🛠️ Tech Stack
-
-- **Framework**: React 19 + TypeScript
-- **Styling**: Tailwind CSS
-- **Build Tool**: Vite + `vite-plugin-pwa`
-- **Icons**: Google Material Symbols Outlined
-- **Service Worker**: Custom offline service worker with precached application shell
-- **Storage**: Client-side browser `localStorage`
-
----
-
-## 🚀 Development & Build
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
+~~~sh
+npm ci --include=dev
 npm run dev
-
-# Lint & type check
 npm run lint
-
-# Build for production
 npm run build
-```
+~~~
 
-## Reproducible deployment and updates
+React 19, TypeScript, Vite, Tailwind CSS, local Inter/Material Symbols fonts and a custom service worker provide the application. api/holidays.ts is the Vercel holiday endpoint. The local Vite server alone does not provide that endpoint; offline/bundled holiday fallback remains available.
 
-Use npm ci --include=dev with the committed package-lock.json. Deploy a new commit containing the repaired lockfile; retrying an old failed commit cannot pick up local changes. See DEPLOYMENT.md for clean-install validation and Vercel settings. Updates are downloaded completely before they are offered, require Update Now approval, and preserve the approved offline release when postponed or when a check fails.
-
-Modal dialogs lock background scrolling while keeping their own content scrollable. The Comp-Off Ledger separates credited credits from upcoming holidays. Use npm run test:modals after a build to check these interactions.
-
-
-
-## App version
-
-The app version is defined in package.json. Settings, About CutiSG, update dialogs, the service worker, and generated version.json use the same bundled release metadata. Run npm version patch --no-git-tag-version (or minor/major) to update the package and lockfile; the version lifecycle script synchronizes public/version.json and README version labels. Edit release notes in public/version.json. Rebuild and deploy to publish a version change.
-
-Update notes are written for each release in public/version.json. After changing the app and its plain-language highlights, run npm run release:notes before building. See DEPLOYMENT.md for the release checklist.
+Use the test commands and release checklist in [Deployment Guide](DEPLOYMENT.md). npm run clean removes generated dist output across Windows, Linux and macOS. scripts/generate-icons.js uses sharp to regenerate PWA icon files; keep the source and generated icons together when deliberately changing branding.

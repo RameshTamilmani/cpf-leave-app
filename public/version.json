@@ -3,15 +3,21 @@
   "releaseDate": "2026-10-26",
   "highlights": [
     {
-      "title": "Reliable CI builds",
-      "description": "Restored full cross-platform dependency lockfile to ensure consistent, zero-failure GitHub Actions builds and automated tests.",
-      "icon": "verified",
+      "title": "A lighter app",
+      "description": "Removed unused files and outdated features while keeping your leave records and settings.",
+      "icon": "cleaning_services",
+      "color": "teal"
+    },
+    {
+      "title": "Clearer app guide",
+      "description": "Updated the instructions for backups, half-day leave, balances and app updates.",
+      "icon": "description",
       "color": "emerald"
     }
   ],
-  "releaseNotes": "Restored full cross-platform dependency lockfile to ensure consistent, zero-failure GitHub Actions CI builds and automated tests.",
+  "releaseNotes": "Removed unused files and outdated features. Updated the guides to explain backups, half-day leave, balances and app updates more clearly.",
   "notesReview": {
-    "sourceHash": "37679f9f3348d242faffeb2100f08d54431279cebedb300f6ce757417fdd1eea",
-    "notesHash": "1ba8fb4448bbaf32e90baf9312a2d0ea8e666463d0e2a602dc40b7627fa73e41"
+    "sourceHash": "9c5c8a845978b409a2c086328e0d1c903026c1c21d3850f7cd70b58b05673385",
+    "notesHash": "c528dda0e2d96ebb716108f52b38217f7b086700d17300728a306ca1c2dc8ca2"
   }
 }
