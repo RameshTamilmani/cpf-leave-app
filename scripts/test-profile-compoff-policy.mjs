@@ -42,7 +42,7 @@ test('same-day AM plus PM is valid, while the same elapsed AM session cannot be 
 test('Excel half-day Comp-Off uses 4.5 hours and reason suffix only; HR leave formula is preserved',()=>{
  const a=half('a'),b=half('b','2026-04-27','pm');const result=buildTimesheet('2026-04',[a,b],holidays);
  assert.equal(result.rows[23].hours,4.5);assert.equal(result.rows[26].hours,4.5);assert.equal(result.rows[23].remarks,'Hari Raya Puasa Comp-off');assert.equal(result.totalLeave,1);
- const both=buildTimesheet('2026-04',[a,half('b','2026-04-24','pm')],holidays);assert.equal(both.rows[23].hours,'CO');assert.equal(both.totalLeave,0);assert.equal(both.rows[23].remarks,'Hari Raya Puasa Comp-off');
+ const both=buildTimesheet('2026-04',[a,half('b','2026-04-24','pm')],holidays);assert.equal(both.rows[23].hours,'L');assert.equal(both.totalLeave,1);assert.equal(both.rows[23].remarks,'Hari Raya Puasa Comp-off');
  assert.equal(compOffReason(a),'Hari Raya Puasa Comp-off');assert.equal(compOffReason({...a,compOffCredits:[...a.compOffCredits,...a.compOffCredits]}),'Hari Raya Puasa Comp-off');
 });
 test('phone remains required in profile and legacy phone stays compatible',()=>{

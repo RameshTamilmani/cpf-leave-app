@@ -2,7 +2,7 @@
 
 CutiSG (“Cuti” means leave) is a personal leave and Singapore public holiday tracker. It is an installable Progressive Web App (PWA), not an Android APK/AAB. Its fixed allocations and Comp-Off rules are app defaults; confirm your employer's policy. It does not approve leave requests or certify legal entitlement.
 
-Documentation reviewed against the implementation on 26 October 2026. See [Policy and Validation Guide](POLICY_AND_VALIDATION_GUIDE.md) for calculation and backup rules, and [Deployment Guide](DEPLOYMENT.md) for release checks.
+Documentation reviewed against the implementation on 27 October 2026. See [Policy and Validation Guide](POLICY_AND_VALIDATION_GUIDE.md) for calculation and backup rules, and [Deployment Guide](DEPLOYMENT.md) for release checks.
 
 ## Current Features
 
@@ -26,7 +26,7 @@ Documentation reviewed against the implementation on 26 October 2026. See [Polic
 
 The filename is **Optimum India_Timesheet XXX YYYY.xlsx**. XXX uses the English month abbreviations Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov and Dec. YYYY is the chosen year. Examples: **Optimum India_Timesheet Oct 2026.xlsx** and **Optimum India_Timesheet Jan 2027.xlsx**. The employee ID is not part of the filename.
 
-The whole selected month is filled, even when exported before month-end. Ordinary weekdays without recorded leave use 9 hours; Singapore weekday holidays use PH; weekends remain blank. Half-day leave uses 4.5 working hours. HR's original total formulas remain in place: full-day CO and PH codes are excluded from the leave-day total, while numeric half-day entries contribute 0.5. Remarks use the holiday name followed by “Comp-off”, such as **Hari Raya Puasa Comp-off**, without the holiday date. The disabled Comp-Off reason field is generated from the selected credit.
+The whole selected month is filled, even when exported before month-end. Ordinary weekdays without recorded leave use 9 hours; Singapore weekday holidays use L with a holiday-name-plus-Holiday remark (for example Deepavali Holiday, without “Substitute”); weekends remain blank. Half-day leave uses 4.5 working hours. HR's original total formulas remain in place: all full-day leave, including Comp-Off and public holidays, counts through the L code, and numeric half-day entries contribute 0.5. This changes the HR report total only; public holidays do not deduct app leave balances. Remarks use the holiday name followed by “Comp-off”, such as **Hari Raya Puasa Comp-off**, without the holiday date. The disabled Comp-Off reason field is generated from the selected credit.
 
 ## Split Comp-Off Example
 

@@ -1,29 +1,23 @@
 {
   "version": "1.0.0",
-  "releaseDate": "2026-10-26",
+  "releaseDate": "2026-10-27",
   "highlights": [
     {
-      "title": "Split your Comp-Off into half days",
-      "description": "Use one holiday credit as two half days. Choose AM or PM and keep track of the remaining balance.",
+      "title": "Clearer public holidays in timesheets",
+      "description": "Public holidays now use L with remarks such as Deepavali Holiday. Substitute labels are removed, and weekends stay blank.",
+      "icon": "event",
+      "color": "teal"
+    },
+    {
+      "title": "Consistent Comp-Off timesheets",
+      "description": "Full-day Comp-Off now uses L, with the selected holiday name followed by Comp-off in Remarks. Half days stay at 4.5 hours.",
       "icon": "event_available",
-      "color": "teal"
-    },
-    {
-      "title": "Clearer timesheet text",
-      "description": "Comp-Off reasons omit dates, headings resize to fit, and downloads use a clear month-and-year filename such as Optimum India_Timesheet Oct 2026.xlsx.",
-      "icon": "table_view",
       "color": "emerald"
-    },
-    {
-      "title": "Simpler timesheet controls",
-      "description": "Removed extra text from the Timesheet card and made its calendar button clearer in light and dark themes.",
-      "icon": "calendar_month",
-      "color": "teal"
     }
   ],
-  "releaseNotes": "Split a Comp-Off credit into two half-day bookings with AM/PM. Backups preserve and validate the remaining credit and sessions. Comp-Off reasons omit dates, and Excel headings resize to fit. Timesheet filenames now use the selected three-letter month and year without an employee ID. The Timesheet card now has less text and a clearer calendar button.",
+  "releaseNotes": "Timesheets now mark weekday public holidays as L and use the holiday name followed by Holiday, without Substitute or Observed labels. HR leave totals include these L entries; app leave balances are unchanged. Full-day Comp-Off also uses L with the corresponding holiday name plus Comp-off; half-day working hours remain 4.5.",
   "notesReview": {
-    "sourceHash": "1193ac1b235506e7000f0035635cc4829cbcbb9d07dc1e66a1ebe280a54d5602",
-    "notesHash": "22defb6d079ad2056a1dd4915816024a751483567acc329307c5135344b8948b"
+    "sourceHash": "7d68513d0f2155d3b53c20829d6668855b5815d441bf9ed86ccc5490ef125fb3",
+    "notesHash": "8dc09622c1c35d9e771b9d2b0dac4eb1f9f22adff7dc3597390d1e73746b468c"
   }
 }

@@ -5,7 +5,7 @@ import { compOffReason, compOffDurationError } from './compOff';
 
 export const TIMESHEET_DEFAULTS = { businessUnit: 'CPF', location: 'Chennai', manager: 'Sujatha Sambavamurthy', dailyHours: 9 } as const;
 export { validContact } from './profile';
-export interface TimesheetRow { date: string; day: string; hours: number | 'L' | 'CO' | 'PH' | ''; remarks: string; style: 'work' | 'leave' | 'blank'; }
+export interface TimesheetRow { date: string; day: string; hours: number | 'L' | ''; remarks: string; style: 'work' | 'leave' | 'blank'; }
 
 export function buildTimesheet(month: string, records: LeaveRecord[], holidays: PublicHoliday[]) {
   if (!/^\d{4}-\d{2}$/.test(month) || !isValidISODate(month + '-01') || Number(month.slice(0,4)) < 1901 || Number(month.slice(0,4)) > 9998) throw Error('Choose a valid timesheet month.');
@@ -20,12 +20,15 @@ export function buildTimesheet(month: string, records: LeaveRecord[], holidays: 
     const row: TimesheetRow = { date, day: d.toLocaleDateString('en-US', { weekday: 'long' }), hours: '', remarks: '', style: 'blank' };
     if (d.getDay() === 0 || d.getDay() === 6) { rows.push(row); continue; }
     const holiday = holidays.find(h => h.date === date || h.observedDate === date);
-    if (holiday) { row.hours = 'PH'; row.remarks = holiday.name; row.style = 'leave'; rows.push(row); continue; }
+    if (holiday) {
+      const name=holiday.name.replace(/\s*\((?:Substitute|Observed)\)/gi,'').trim().replace(/(?:\s+)?Holiday$/i,'').trim();
+      row.hours = 'L'; row.remarks = name ? name+' Holiday' : 'Holiday'; row.style = 'leave'; rows.push(row); continue;
+    }
     const leaves = relevant.filter(r => r.startDate <= date && r.endDate >= date);
     const portions = leaves.map(r => ({ r, half: halfDayOnDate(r, date), amount: r.startDate === r.endDate ? r.days : halfDayOnDate(r, date) ? 0.5 : 1 }));
     const total = portions.reduce((s, p) => s + p.amount, 0);
     if (total > 1 || portions.some(p => p.amount !== 0.5 && p.amount !== 1) || (portions.length === 2 && (!portions[0].half || !portions[1].half || portions[0].half === portions[1].half))) throw Error(`Conflicting leave records on ${formatDateDDMMYYYY(date)}. Review History before exporting.`);
-    row.hours = total === 0 ? 9 : total === 0.5 ? 4.5 : portions.every(p => p.r.type === 'CO' || p.r.type === 'CL') ? 'CO' : 'L';
+    row.hours = total === 0 ? 9 : total === 0.5 ? 4.5 : 'L';
     row.style = typeof row.hours === 'number' ? 'work' : 'leave';
     row.remarks = [...new Set(portions.map(({r, half}) => {
       const co = r.type === 'CO' || r.type === 'CL';
