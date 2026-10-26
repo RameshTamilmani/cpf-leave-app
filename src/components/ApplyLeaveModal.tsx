@@ -1,3 +1,4 @@
+import { compOffReason, fullDayCompOffError } from '../utils/compOff';
 import { workingLeaveDates, halfDaySelectionError, leavePeriodsOverlap } from '../utils/leaveDuration';
 import { LopIcon } from './LopIcon';
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
@@ -14,6 +15,7 @@ export const ApplyLeaveModal: React.FC = () => {
     closeApplyModal,
     addRecord,
     compOffError,
+    availableCompOffCredits,
     getQuotaImpact,
     records,
     allHolidays,
@@ -25,8 +27,10 @@ export const ApplyLeaveModal: React.FC = () => {
   } = useLeave();
 
   const [type, setType] = useState<LeaveType>('AL');
+  const isCompOff=type==='CO'||type==='CL';
   const [saving, setSaving] = useState(false);
   const [remarks, setRemarks] = useState('');
+  const [creditChoices,setCreditChoices]=useState<Record<string,string>>({});
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [durationMode, setDurationMode] = useState<'full' | 'half-am' | 'half-pm'>('full');
@@ -65,6 +69,7 @@ export const ApplyLeaveModal: React.FC = () => {
       setDaysToDeduct(1.0);
       setValidationError(null);
       setRemarks('');
+      setCreditChoices({});
     }
   }, [applyModalConfig]);
 
@@ -99,19 +104,19 @@ export const ApplyLeaveModal: React.FC = () => {
   //   If workingDays >= 1: allowed deduction is STRICTLY workingDays or workingDays - 0.5 (for half-day adjustments).
   //   Any other value (< workingDays - 0.5 or > workingDays) is completely blocked!
   //   Selecting 0.5 days is allowed ONLY if startDate === endDate.
-  const allowedDeductionValues: number[] = isMultiDay
+  const allowedDeductionValues: number[] = isCompOff ? [workingDays] : isMultiDay
     ? workingDays > 0
       ? [workingDays, Number((workingDays - 0.5).toFixed(1))]
       : []
     : [1.0, 0.5];
 
-  const maxAllowedDays = isMultiDay
+  const maxAllowedDays = isCompOff ? workingDays : isMultiDay
     ? workingDays
     : durationMode === 'half-am' || durationMode === 'half-pm'
     ? 0.5
     : 1.0;
 
-  const minAllowedDays = isMultiDay
+  const minAllowedDays = isCompOff ? workingDays : isMultiDay
     ? workingDays > 0 ? Number((workingDays - 0.5).toFixed(1)) : 0
     : 0.5;
 
@@ -119,7 +124,8 @@ export const ApplyLeaveModal: React.FC = () => {
   const candidate = {
     type, startDate, endDate, days: daysToDeduct,
     halfDay: needsHalfDayChoice ? (halfDaySession || 'full') : durationMode === 'half-am' ? 'am' : durationMode === 'half-pm' ? 'pm' : 'full',
-    halfDayDate: needsHalfDayChoice ? halfDayDate : startDate,
+    halfDayDate: needsHalfDayChoice ? halfDayDate : durationMode==='full' ? undefined : startDate,
+    compOffCredits: type==='CO'||type==='CL' ? workingDates.filter(d=>creditChoices[d]).map(d=>({leaveDate:d,holidayDate:creditChoices[d],holidayName:availableCompOffCredits.find(c=>c.date===creditChoices[d])?.name||''})) : undefined,
   } as const;
   const requestRecord = {...candidate,id:'candidate',title:'Leave',status:'planned' as const,createdAt:''};
   const creditError = halfDayChoiceError ? null : compOffError(requestRecord);
@@ -130,6 +136,7 @@ export const ApplyLeaveModal: React.FC = () => {
   // Automatically recalculate recommended days whenever dates, type, or duration change
   useEffect(() => {
     if (!startDate || !endDate) return;
+    if(isCompOff){setDurationMode('full');setDaysToDeduct(workingDays);setHalfDayDate('');setHalfDaySession('');return;}
 
     if (isMultiDay) {
       if (durationMode === 'half-am' || durationMode === 'half-pm') {
@@ -153,7 +160,7 @@ export const ApplyLeaveModal: React.FC = () => {
     } else {
       setDaysToDeduct(1.0);
     }
-  }, [startDate, endDate, durationMode, isMultiDay, workingDays]);
+  }, [startDate, endDate, durationMode, isMultiDay, workingDays, isCompOff]);
 
   // Whenever daysToDeduct or dates change, enforce strict validation
   useEffect(() => {
@@ -286,6 +293,7 @@ export const ApplyLeaveModal: React.FC = () => {
   const isHalfDayMultiDay = Boolean(isMultiDay && daysToDeduct === 0.5);
   const isFormInvalid = Boolean(
     saving ||
+    !!fullDayCompOffError(requestRecord) ||
     quota.outsideCycle ||
     isDuplicate ||
     isWeekendBlocked ||
@@ -394,14 +402,15 @@ export const ApplyLeaveModal: React.FC = () => {
     setSaving(true);
     const saved = await addRecord({
       type,
-      title: defaultTitle,
+      title: type==='CO'&&candidate.compOffCredits?.length===1 ? candidate.compOffCredits[0].holidayName+' Comp-Off' : defaultTitle,
+      compOffCredits: candidate.compOffCredits,
       startDate,
       endDate,
       days: finalDays,
       halfDay,
       halfDayDate: halfDay === 'full' ? undefined : needsHalfDayChoice ? halfDayDate : startDate,
       status,
-      notes: remarks.trim() || undefined
+      notes: isCompOff ? compOffReason(candidate) : remarks.trim() || undefined
     });
 
     setSaving(false);
@@ -511,6 +520,18 @@ export const ApplyLeaveModal: React.FC = () => {
             </div>
           </div>
 
+          {(type==='CO'||type==='CL')&&<fieldset className="rounded-xl border border-surface-outline p-3 flex flex-col gap-3">
+            <legend className="px-1 text-sm font-semibold text-on-surface">Comp-Off Holiday Credit</legend>
+            <p className="text-xs text-on-surface-variant">Choose one credit for each leave date. Each credit is used once. Comp-Off is available for full days only.</p>
+            {workingDates.map(date=><label key={date} className="text-sm text-on-surface flex flex-col gap-1">For {formatDateDDMMYYYY(date)}
+              <select aria-label={'Comp-Off Credit for '+date} value={creditChoices[date]||''} required onChange={e=>setCreditChoices(prev=>({...prev,[date]:e.target.value}))} className="w-full h-11 min-w-0 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface px-2 text-sm">
+                <option value="">Select a holiday credit</option>
+                {availableCompOffCredits.filter(c=>c.date<=date&&c.end>=date).map(c=><option key={c.date} value={c.date} disabled={workingDates.some(d=>d!==date&&creditChoices[d]===c.date)}>{c.name} · {formatDateDDMMYYYY(c.date)}</option>)}
+              </select>
+            </label>)}
+            {workingDates.length>0&&!availableCompOffCredits.some(c=>workingDates.some(d=>c.date<=d&&c.end>=d))&&<p className="text-xs text-error">No unused holiday credits cover these leave dates.</p>}
+          </fieldset>}
+
           {/* Duration Mode Selector */}
           <div>
             <div className="flex items-center justify-between mb-1">
@@ -524,7 +545,7 @@ export const ApplyLeaveModal: React.FC = () => {
               </span>
             </div>
 
-            {isMultiDay ? (
+            {isCompOff ? <p className="rounded-xl bg-surface-container-low p-3 text-sm text-on-surface">Full days only · {workingDays} working day{workingDays===1?'':'s'}</p> : isMultiDay ? (
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -716,16 +737,18 @@ export const ApplyLeaveModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Remarks (Optional) - placed at the last */}
+          {/* Comp-Off reason is generated from the selected credits. */}
           <div>
             <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">
-              Remarks (Optional)
+              {isCompOff?'Comp-Off Reason':'Remarks (Optional)'}
             </label>
             <input
+              aria-label={isCompOff?'Comp-Off Reason':'Remarks'}
               type="text"
-              value={remarks}
+              value={isCompOff ? compOffReason(candidate) : remarks}
+              disabled={isCompOff}
               onChange={(e) => setRemarks(e.target.value)}
-              placeholder="Add optional remarks..."
+              placeholder={isCompOff?'Select a holiday credit above':'Add optional remarks...'}
               className="w-full px-3.5 py-2 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary text-body-md"
             />
           </div>

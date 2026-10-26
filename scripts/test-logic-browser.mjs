@@ -12,7 +12,7 @@ async function setup(records=[],settings={},rows=[],date='2026-10-25',fallback=f
  await context.addInitScript(({records,settings,fallback})=>{
   if(fallback)Object.defineProperty(navigator,'locks',{value:undefined});
   if(localStorage.getItem('audit_initialized'))return;
-  localStorage.setItem('audit_initialized','1');localStorage.setItem('cutisg_settings',JSON.stringify({userName:'Regression Check',employeeId:'6509',department:'HIS',dateOfJoining:'2022-11-18',theme:'dark',...settings}));
+  localStorage.setItem('audit_initialized','1');localStorage.setItem('cutisg_settings',JSON.stringify({userName:'Regression Check',contactNumber:'9000000000', employeeId:'6509',department:'HIS',dateOfJoining:'2022-11-18',theme:'dark',...settings}));
   localStorage.setItem('cutisg_records',JSON.stringify(records));localStorage.setItem('cutisg_pwa_banner_snooze',String(Date.now()+86400000));
  },{records,settings,fallback});
  await context.route('**/api/holidays',route=>route.fulfill({json:{rows}}));
@@ -50,7 +50,7 @@ try {
  await check('Comp-Off cannot spend a future credit on earlier leave dates; eligible retrospective leave saves',async()=>{
   const {context,page}=await setup([],{},[{date:'2026-06-20',holiday:'Synthetic Credit A'},{date:'2026-10-10',holiday:'Synthetic Credit B'}]);await page.waitForFunction(()=>localStorage.getItem('cutisg_official_holidays'));
   await prepare(page,'2026-06-22','2026-06-23','CO');assert.equal(await page.locator('form button[type="submit"]').isDisabled(),true);
-  await page.getByRole('textbox',{name:'End Date',exact:true}).fill('22/06/2026');assert.equal(await page.locator('form button[type="submit"]').isEnabled(),true);await page.locator('form button[type="submit"]').click();await page.waitForFunction(()=>JSON.parse(localStorage.getItem('cutisg_records')).length===1);await context.close();
+  await page.getByRole('textbox',{name:'End Date',exact:true}).fill('22/06/2026');await page.getByLabel('Comp-Off Credit for 2026-06-22',{exact:true}).selectOption('2026-06-20');assert.equal(await page.locator('form button[type="submit"]').isEnabled(),true);await page.locator('form button[type="submit"]').click();await page.waitForFunction(()=>JSON.parse(localStorage.getItem('cutisg_records')).length===1);await context.close();
  });
  await check('custom cycle end date is retained; February 31 cannot be saved',async()=>{
   const {context,page}=await setup([],{cycle:'13 Jun – 31 May',cycleStartMonth:6,cycleStartDay:13,cycleEndMonth:5,cycleEndDay:31});await nav(page,'Settings');await page.getByRole('button',{name:/Change/}).click();

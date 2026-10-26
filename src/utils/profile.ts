@@ -1,11 +1,14 @@
 import type { UserSettings } from '../types/leave';
 import { isValidISODate } from '../data/singaporeHolidays2026';
 
+export function validContact(value: string) { return /^\+?[\d ()-]{7,24}$/.test(value.trim()) && value.replace(/\D/g, '').length >= 7 && value.replace(/\D/g, '').length <= 15; }
+
 export function profileError(profile: Partial<UserSettings>, today: string): string {
   if (!profile.userName?.trim() || profile.userName.trim().length > 40) return 'Enter your full name (up to 40 characters).';
   if (!/^\d{1,12}$/.test(profile.employeeId?.trim() || '')) return 'Enter your numeric Employee ID (up to 12 digits).';
   if (!profile.department?.trim() || profile.department.trim().length > 25) return 'Enter your department (up to 25 characters).';
   if (!profile.dateOfJoining || !isValidISODate(profile.dateOfJoining) || profile.dateOfJoining > today) return 'Enter a valid joining date that is today or earlier.';
+  if (!validContact(profile.contactNumber ?? profile.timesheetContact ?? '')) return 'Enter a valid contact number (7–15 digits).';
   return '';
 }
 

@@ -1,3 +1,4 @@
+import { compOffReason, fullDayCompOffError } from '../utils/compOff';
 import { cycleView, compOffAllocation, quotaImpact, validCycle, cycleFor } from '../utils/leaveAccounting';
 import { parseLeaveCSV } from '../utils/leaveCSV';
 import { readRecords, transactRecords } from '../utils/recordStorage';
@@ -22,6 +23,8 @@ interface LeaveContextType {
   addRecord: (record: Omit<LeaveRecord, 'id' | 'createdAt'>) => Promise<boolean>;
   cycleRecords: LeaveRecord[];
   accountingWarning: string;
+  compOffCreditUsage: ReturnType<typeof compOffAllocation>['reserved'];
+  availableCompOffCredits: ReturnType<typeof compOffAllocation>['credits'];
   compOffError: (record: LeaveRecord, existing?: LeaveRecord[]) => string | null;
   getQuotaImpact: (record: LeaveRecord) => ReturnType<typeof quotaImpact>;
   deleteRecord: (id: string) => void;
@@ -184,7 +187,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (parsed.userName === 'Employee') parsed.userName = '';
         if (parsed.employeeId === 'EMP-1103118') parsed.employeeId = '';
         if (parsed.dateOfJoining === '2023-08-15') parsed.dateOfJoining = '';
-        return { ...defaultSettings, ...parsed, department: typeof parsed.department === 'string' ? parsed.department.toUpperCase().slice(0, 25) : '', alEntitlement: 12, slEntitlement: 12 };
+        return { ...defaultSettings, ...parsed, contactNumber: parsed.contactNumber ?? parsed.timesheetContact ?? '', department: typeof parsed.department === 'string' ? parsed.department.toUpperCase().slice(0, 25) : '', alEntitlement: 12, slEntitlement: 12 };
       }
       return defaultSettings;
     } catch {
@@ -351,6 +354,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const updateSettings = (newSettings: Partial<UserSettings>) => {
     const normalized = { ...newSettings };
     if (normalized.department !== undefined) normalized.department = normalized.department.trim().toUpperCase().slice(0, 25);
+    if(normalized.contactNumber!==undefined)normalized.contactNumber=normalized.contactNumber.trim();
     setSettings((prev) => ({ ...prev, ...normalized }));
   };
 
@@ -373,6 +377,8 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
   const addRecord = async (record: Omit<LeaveRecord, 'id' | 'createdAt'>) => {
     const newRecord: LeaveRecord = {...record,id:crypto.randomUUID(),createdAt:new Date().toISOString()};
+    if(newRecord.compOffCredits)newRecord.compOffCredits=newRecord.compOffCredits.map(c=>({...c,holidayName:allHolidays.find(h=>h.date===c.holidayDate)?.name || c.holidayName}));
+    if(newRecord.type==='CO'||newRecord.type==='CL')newRecord.notes=compOffReason(newRecord);
     const saved = await commitRecords(latest => {
       if(latest.some(r=>leavePeriodsOverlap(r,newRecord,allHolidays)))throw Error('This leave overlaps a saved record. Check History and try again.');
       if(newRecord.type==='AL'||newRecord.type==='SL'){if(quotaImpact(newRecord,latest,settings,allHolidays).outsideCycle)throw Error('Some selected dates fall outside your configured leave-year window. Check the cycle dates in Settings.');}
@@ -385,7 +391,14 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if(await commitRecords(latest=>latest.filter(r=>r.id!==id)))showToast('Leave record removed.');
   };
   const updateRecord = async (id:string, updated:Partial<LeaveRecord>) => {
-    if(await commitRecords(latest=>latest.map(r=>r.id===id?{...r,...updated}:r)))showToast('Leave details updated.');
+    if(await commitRecords(latest=>{
+      const old=latest.find(r=>r.id===id);if(!old)throw Error('This leave record no longer exists.');
+      const next={...old,...updated,id:old.id,createdAt:old.createdAt},others=latest.filter(r=>r.id!==id);
+      if(others.some(r=>leavePeriodsOverlap(r,next,allHolidays)))throw Error('This leave overlaps a saved record.');
+      const error=compOffError(next,others);if(error)throw Error(error);
+      if(next.type==='CO'||next.type==='CL')next.notes=compOffReason(next);
+      return latest.map(r=>r.id===id?next:r);
+    }))showToast('Leave details updated.');
   };
 
   const holidaySync = useOfficialHolidays();
@@ -575,19 +588,22 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const currentCreditDates=new Set(crossedSaturdayHolidays.filter(h=>!excludedHolidayDates.includes(h.date)).map(h=>h.date));
   const coUsed=[...allocation.used].filter(([date])=>currentCreditDates.has(date)).reduce((s,[,days])=>s+days,0);
   const alAvailable=Math.max(0,settings.alEntitlement-alUsed),slAvailable=Math.max(0,settings.slEntitlement-slUsed);
-  const coAvailable=Math.max(0,totalCompOffPool-coUsed);
+  const availableCompOffCredits=allocation.credits.filter(c=>c.left===1&&!allocation.reserved.has(c.date));
+  const coAvailable=availableCompOffCredits.filter(c=>currentCreditDates.has(c.date)).length;
   const alLOP=Math.max(0,alUsed-settings.alEntitlement),slLOP=Math.max(0,slUsed-settings.slEntitlement),totalLOP=alLOP+slLOP;
   const compOffError = (record:LeaveRecord, existing:LeaveRecord[]=records):string|null => {
     if(record.type!=='CO'&&record.type!=='CL')return null;
+    const policyError=fullDayCompOffError(record);if(policyError)return policyError;
+    if(!record.compOffCredits?.length)return 'Select a Comp-Off holiday credit for every working leave date.';
     const result=compOffAllocation([...existing,record],settings.saturdayCompOffEnabled?allHolidays:[],todayDateStr,excludedHolidayDates);
-    return result.unfunded.length ? 'Not enough eligible Comp-Off credit for these leave dates. Each credit can cover one day within its own 90-day period. Check earlier Comp-Off records too.' : null;
+    return result.unfunded.length ? 'Select different unused Comp-Off credits within their 90-day periods. Each holiday credit can be used for one application only. Check earlier Comp-Off records too.' : null;
   };
   const ambiguousSpans=records.filter(r=>r.startDate!==r.endDate&&r.days%1===0.5&&!r.halfDayDate&&cycleFor(r.startDate,settings).start!==cycleFor(r.endDate,settings).start);
-  const accountingWarning=ambiguousSpans.length?'An older half-day record spans two leave years without a half-day date. Its balance is reserved conservatively. Export a backup, then re-enter it with the correct date.':allocation.unfunded.length?'Some older Comp-Off records need credit or half-day details reviewed before more Comp-Off leave can be added.':'';
+  const accountingWarning=records.some(r=>fullDayCompOffError(r))?'An older half-day Comp-Off record needs review. Comp-Off now supports full days only; export and restore will not change it automatically.':ambiguousSpans.length?'An older half-day record spans two leave years without a half-day date. Its balance is reserved conservatively. Export a backup, then re-enter it with the correct date.':allocation.unfunded.length?'Some older Comp-Off records need credit or half-day details reviewed before more Comp-Off leave can be added.':'';
   const getQuotaImpact=(record:LeaveRecord)=>{
     if(record.type==='CO'||record.type==='CL'){
-      const available=allocation.credits.filter(c=>c.date<=record.endDate&&c.end>=record.startDate).reduce((s,c)=>s+c.left,0);
-      return {available,remaining:Math.max(0,available-record.days),lop:0,outsideCycle:false};
+      const available=availableCompOffCredits.filter(c=>c.date<=record.endDate&&c.end>=record.startDate).length;
+      return {available,remaining:Math.max(0,available-workingLeaveDates(record.startDate,record.endDate,allHolidays).length),lop:0,outsideCycle:false};
     }
     return quotaImpact(record,records,settings,allHolidays);
   };
@@ -600,8 +616,15 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!records || records.length === 0) {
       return;
     }
-    const sortedForExport = [...records].sort((a, b) => a.startDate.localeCompare(b.startDate));
-    const headers = ['Type', 'Title', 'Start Date', 'End Date', 'Days', 'Status', 'Remarks', 'Half Day Date', 'Half Day Session'];
+    const policyError=records.map(fullDayCompOffError).find(Boolean);if(policyError){showToast(policyError);return;}
+    const credits=compOffAllocation(records,settings.saturdayCompOffEnabled?allHolidays:[],todayDateStr,excludedHolidayDates);
+    if(credits.unfunded.length){showToast('Review Comp-Off credits in History before exporting. No records were changed.');return;}
+    const sortedForExport = records.map(r=>{
+      if(r.type!=='CO'&&r.type!=='CL')return r;
+      const linked={...r,compOffCredits:r.compOffCredits||credits.assignments.get(r.id)};
+      return {...linked,notes:compOffReason(linked)};
+    }).sort((a, b) => a.startDate.localeCompare(b.startDate));
+    const headers = ['Type', 'Title', 'Start Date', 'End Date', 'Days', 'Status', 'Remarks', 'Half Day Date', 'Half Day Session', 'Comp Off Credits'];
     const rows = sortedForExport.map((r) => [
       `"${r.type}"`,
       `"${r.title.replace(/"/g, '""')}"`,
@@ -611,7 +634,8 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       `"${r.status}"`,
       `"${(r.notes || '').replace(/"/g, '""')}"`,
       `"${r.halfDayDate || (r.startDate === r.endDate && (r.halfDay === 'am' || r.halfDay === 'pm') ? r.startDate : '')}"`,
-      `"${r.halfDay || ''}"`
+      `"${r.halfDay || ''}"`,
+      `"${r.compOffCredits ? JSON.stringify(r.compOffCredits).replace(/"/g, '""') : ''}"`
     ]);
 
     const csvContent = [headers.join(','), ...rows.map((e) => e.join(','))].join('\r\n');
@@ -636,7 +660,11 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if(parsed.some(r=>r.startDate!==r.endDate&&r.days%1===0.5&&!r.halfDayDate&&cycleFor(r.startDate,settings).start!==cycleFor(r.endDate,settings).start))throw Error('A half-day record spans two leave years without its exact half-day date. Add that detail to the backup before restoring. No records were changed.');
       const allocation=compOffAllocation(parsed,settings.saturdayCompOffEnabled?allHolidays:[],todayDateStr,excludedHolidayDates);
       if(allocation.unfunded.length)throw Error('The backup contains Comp-Off leave without enough eligible credit, or an unspecified half-day date. No records were changed.');
-      const imported=parsed.map(r=>({...r,id:crypto.randomUUID()}));
+      const imported=parsed.map(r=>{
+        if(r.type!=='CO'&&r.type!=='CL')return {...r,id:crypto.randomUUID()};
+        const linked={...r,compOffCredits:(r.compOffCredits||allocation.assignments.get(r.id)||[]).map(c=>({...c,holidayName:allHolidays.find(h=>h.date===c.holidayDate)?.name||c.holidayName}))};
+        return {...linked,notes:compOffReason(linked),id:crypto.randomUUID()};
+      });
       const saved=await commitRecords(()=>imported,expected);
       if(saved)showToast('All '+imported.length+' leave records restored.');return saved;
     } catch(error) {showToast(error instanceof Error?error.message:'The backup could not be restored.');return false;}
@@ -712,6 +740,8 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         records,
         cycleRecords,
         accountingWarning,
+        compOffCreditUsage: allocation.reserved,
+        availableCompOffCredits,
         compOffError,
         getQuotaImpact,
         addRecord,

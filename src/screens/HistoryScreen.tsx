@@ -1,6 +1,7 @@
 import { effectiveStatus } from '../utils/leaveAccounting';
 import { halfDaySummary } from '../utils/leaveDuration';
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
+import { compOffReason } from '../utils/compOff';
 import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { LeaveType, LeaveRecord } from '../types/leave';
@@ -231,6 +232,7 @@ export const HistoryScreen: React.FC = () => {
                       <span className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
                         {formatDateDDMMYYYY(record.startDate)}
                         {record.startDate !== record.endDate ? ` – ${formatDateDDMMYYYY(record.endDate)}` : ''} • {Number(record.days).toFixed(1)} day{Number(record.days) !== 1 ? 's' : ''}
+                        {compOffReason(record)&&<span className="block mt-1 text-xs text-on-surface-variant">Comp-Off: {compOffReason(record)}</span>}
                         {halfDaySummary(record) && <span className="block mt-1 text-xs text-primary">{halfDaySummary(record)}</span>}
                       </span>
                     </div>

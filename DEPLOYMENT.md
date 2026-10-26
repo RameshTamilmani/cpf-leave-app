@@ -9,11 +9,11 @@ Use npm, the committed package-lock.json, and Node.js >=22.12.0 and <25. CI chec
 ~~~sh
 npm ci --include=dev
 npm run lint
-node --import tsx --test scripts/test-calendar.mjs scripts/test-holidays.mjs scripts/test-profile.mjs scripts/test-offline.mjs scripts/test-updates.mjs scripts/test-restore.mjs scripts/test-release-notes.mjs scripts/test-leave-duration.mjs scripts/test-logic-fixes.mjs
+node --import tsx --test scripts/test-calendar.mjs scripts/test-holidays.mjs scripts/test-profile.mjs scripts/test-offline.mjs scripts/test-updates.mjs scripts/test-restore.mjs scripts/test-release-notes.mjs scripts/test-leave-duration.mjs scripts/test-logic-fixes.mjs scripts/test-timesheet.mjs scripts/test-profile-compoff-policy.mjs
 npm run build
 ~~~
 
-Unit suites also have individual npm scripts: test:calendar, test:holidays, test:profile, test:offline, test:updates, test:restore, test:release-notes, test:leave-duration and test:logic.
+Unit suites also have individual npm scripts: test:calendar, test:holidays, test:profile, test:offline, test:updates, test:restore, test:release-notes, test:leave-duration test:logic and test:timesheet.
 
 api/holidays.ts is a Vercel function; plain npm run dev/preview serves the frontend without this function. Holiday sync may fall back to saved or bundled dates in that local environment. No Gemini API key or separate Express server is required.
 
@@ -37,6 +37,7 @@ Only when a version bump is requested, npm version patch --no-git-tag-version (o
 An installed Google Chrome is required; set TEST_BROWSER_CHANNEL=msedge to use Microsoft Edge. These checks use synthetic isolated browser data rather than personal records.
 
 ~~~sh
+npm run test:timesheet-browser
 npm run test:logic-browser
 npm run test:profile-browser
 npm run test:ui
@@ -44,6 +45,7 @@ npm run test:modals
 npm run test:browser
 ~~~
 
+- test:timesheet-browser: one-click workbook download, profile contact migration/editing, full-day-only Comp-Off, disabled holiday reasons, selected/non-reusable credits, valid metadata round trips and rejection of half-day Comp-Off on CSV export/restore.
 - test:logic-browser: strict/confirmed CSV replacement, legacy types, per-cycle balances, half-day date/session round trips, Comp-Off funding, cycle boundaries, status consistency and concurrent windows including IndexedDB fallback. It starts a current-source Vite server.
 - test:profile-browser: mandatory setup, optional image, tenure accents and responsive profile behavior.
 - test:ui: department, balances, Calendar, validation and light/dark responsive layouts.
@@ -70,7 +72,7 @@ For a first migration from an old automatically updating worker, open online, cl
 
 ## Repository Hygiene
 
-Keep package-lock.json, regression scripts, icon generator, bundled fonts and real PWA icons. Reference screenshots/videos and AI Studio temporary media are not runtime assets and must stay outside public and out of commits. Vite copies public files into dist even when a service-worker glob excludes them. Inspect dist before deployment; it should contain application assets, not reference attachments.
+Keep package-lock.json, regression scripts, icon generator, bundled fonts and real PWA icons. The blank src/assets/hr-timesheet-template.xlsx is an intentional runtime asset; keep it committed and included in the xlsx precache glob. Do not replace it with a filled personal workbook. Reference screenshots/videos and AI Studio temporary media are not runtime assets and must stay outside public and out of commits. Vite copies public files into dist even when a service-worker glob excludes them. Inspect dist before deployment; it should contain application assets, not reference attachments.
 
 The manifest declares supported standalone launch and icons only; unsupported import/share/widget/query shortcuts have been removed. metadata.json remains minimal authoring metadata without advertising a Gemini backend. Dormant OS notification/popup code is removed; Home banners remain.
 

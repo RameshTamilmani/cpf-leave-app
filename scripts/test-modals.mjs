@@ -24,7 +24,7 @@ try {
   for (const [width, height] of [[320, 740], [390, 844], [900, 844], [390, 500]]) {
     const context = await browser.newContext({ viewport: { width, height }, timezoneId: 'Asia/Kolkata', serviceWorkers: 'block', hasTouch: true });
     await context.addInitScript(() => {
-      localStorage.setItem('cutisg_settings', JSON.stringify({ userName: 'Ramesh Tamilmani', employeeId: '6509', department: 'HIS', dateOfJoining: '2022-11-18', theme: 'dark' }));
+      localStorage.setItem('cutisg_settings', JSON.stringify({ userName: 'Ramesh Tamilmani', contactNumber:'9000000000', employeeId:'6509', department: 'HIS', dateOfJoining: '2022-11-18', theme: 'dark' }));
       localStorage.setItem('cutisg_records', JSON.stringify([{ id: 'co-used', type: 'CO', title: 'Comp-off half day', startDate: '2026-04-06', endDate: '2026-04-06', days: 0.5, status: 'taken', halfDay: 'am', createdAt: '2026-04-06' }]));
       localStorage.setItem('cutisg_pwa_banner_snooze', String(Date.now() + 86400000));
     });

@@ -12,6 +12,7 @@ export const OnboardingModal: React.FC = () => {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [dateOfJoining, setDateOfJoining] = useState('');
   const [department, setDepartment] = useState('');
+  const [contactNumber,setContactNumber]=useState('');
   const modalRef = useRef<HTMLDivElement>(null);
   const required = !!profileError(settings, todayDateStr);
   useModalScrollLock(required);
@@ -26,9 +27,10 @@ export const OnboardingModal: React.FC = () => {
     setName(settings.userName || '');
     setEmployeeId(settings.employeeId || '');
     setDepartment(settings.department || '');
+    setContactNumber(settings.contactNumber ?? settings.timesheetContact ?? '');
     setAvatarUrl(settings.avatarUrl || '');
     setDateOfJoining(settings.dateOfJoining || '');
-  }, [required, settings.userName, settings.employeeId, settings.department, settings.avatarUrl, settings.dateOfJoining]);
+  }, [required, settings.contactNumber, settings.timesheetContact, settings.userName, settings.employeeId, settings.department, settings.avatarUrl, settings.dateOfJoining]);
 
   useEffect(() => {
     if (!required) return;
@@ -75,10 +77,11 @@ export const OnboardingModal: React.FC = () => {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    const error = profileError({ userName: name, employeeId, department, dateOfJoining }, todayDateStr);
+    const error = profileError({ userName: name, employeeId, department, dateOfJoining, contactNumber }, todayDateStr);
     if (error) { setErrorMsg(error); return; }
 
     updateSettings({
+      contactNumber: contactNumber.trim(),
       userName: name.trim(),
       employeeId: employeeId.trim(),
       department: department.trim(),
@@ -243,6 +246,10 @@ export const OnboardingModal: React.FC = () => {
                 placeholder="Enter department" className="w-full px-3.5 h-11 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
 
+            <div>
+              <label htmlFor="onboarding-contact" className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">Contact Number *</label>
+              <input id="onboarding-contact" type="tel" autoComplete="tel" required maxLength={24} value={contactNumber} onChange={e=>{setContactNumber(e.target.value.replace(/[^\d+ ()-]/g,''));setErrorMsg('');}} placeholder="Enter contact number" className="w-full px-3.5 h-11 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
             <DatePickerField
               required
               label="Date of Joining *"

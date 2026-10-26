@@ -42,7 +42,7 @@ try {
   const aScript = await script(page);
   await page.evaluate(() => {
     const settings = JSON.parse(localStorage.getItem('cutisg_settings') || '{}');
-    localStorage.setItem('cutisg_settings', JSON.stringify({ ...settings, userName: 'Offline Verification', employeeId: '6509', department: 'HIS', dateOfJoining: '2022-11-18' }));
+    localStorage.setItem('cutisg_settings', JSON.stringify({ ...settings, userName: 'Offline Verification', contactNumber:'9000000000', employeeId:'6509', department: 'HIS', dateOfJoining: '2022-11-18' }));
     localStorage.setItem('cutisg_profile_setup_prompted', 'true');
   });
   await context.setOffline(true);
@@ -128,8 +128,14 @@ try {
   await page.getByRole('button', { name: 'Check for updates', exact: true }).click();
   await page.getByText('Connect to the internet to check for updates.', { exact: true }).waitFor();
   assert.equal(await page.getByText("You're Up to Date", { exact: true }).count(), 0, 'failed checks must not claim up to date');
+  assert.equal(await page.getByLabel('Contact Number',{exact:true}).inputValue(),'9000000000');
+  const downloadPromise=page.waitForEvent('download');
+  await page.getByRole('button',{name:'Export Timesheet',exact:true}).click();
+  const offlineDownload=await downloadPromise;
+  assert.match(offlineDownload.suggestedFilename(),/\.xlsx$/);
+  assert.equal(await offlineDownload.failure(),null,'bundled HR template must export while offline');
   assert.deepEqual(errors, []);
-  console.log('PASS: delayed download gating, install without auto-approval, Later, manual checks online/offline, failed approval without reload, retry, profile preservation and offline reopening.');
+  console.log('PASS: delayed download gating, install without auto-approval, Later, manual checks online/offline, failed approval without reload, retry, profile preservation, offline reopening and offline timesheet export.');
   await context.close();
 } finally {
   pauseAssets = false; releaseAssetRequests.forEach(resolve => resolve());

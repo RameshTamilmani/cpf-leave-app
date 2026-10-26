@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { profileError, tenureTier, experienceLabel } from '../src/utils/profile.ts';
 
-const complete = { userName: 'Ramesh Tamilmani', employeeId: '6509', department: 'HIS', dateOfJoining: '2022-11-18' };
-test('all four identity fields are required; image is optional and length/date constraints are enforced', () => {
+const complete = { userName: 'Ramesh Tamilmani', contactNumber:'9000000000', employeeId:'6509', department: 'HIS', dateOfJoining: '2022-11-18' };
+test('all five identity fields are required; image is optional and length/date constraints are enforced', () => {
   assert.equal(profileError(complete, '2026-10-24'), '');
   for (const field of Object.keys(complete)) assert.notEqual(profileError({ ...complete, [field]: ' ' }, '2026-10-24'), '');
   assert.notEqual(profileError({ ...complete, dateOfJoining: '2026-02-30' }, '2026-10-24'), '');

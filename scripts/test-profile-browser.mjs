@@ -25,7 +25,7 @@ try {
     const context = await browser.newContext({ viewport: { width, height: 740 }, timezoneId: 'Asia/Kolkata', serviceWorkers: 'block' });
     await context.addInitScript(() => {
       if (localStorage.getItem('profile-test-seeded')) return;
-      localStorage.setItem('cutisg_settings', JSON.stringify({ userName: 'Ramesh Tamilmani', employeeId: '6509', dateOfJoining: '2022-11-18', theme: 'dark' }));
+      localStorage.setItem('cutisg_settings', JSON.stringify({ userName: 'Ramesh Tamilmani', employeeId:'6509', dateOfJoining: '2022-11-18', theme: 'dark' }));
       localStorage.setItem('cutisg_profile_setup_prompted', 'true');
       localStorage.setItem('cutisg_pwa_banner_snooze', String(Date.now() + 86400000));
       localStorage.setItem('profile-test-seeded', 'true');
@@ -49,6 +49,9 @@ try {
     const department = dialog.getByLabel('Department *', { exact: true });
     const date = dialog.getByRole('textbox', { name: 'Date of Joining *', exact: true });
     const save = dialog.getByRole('button', { name: /Save & Continue/ });
+    const phone=dialog.getByLabel('Contact Number *',{exact:true});
+    assert.equal(await phone.inputValue(),'');assert.equal(await phone.evaluate(node=>node.checkValidity()),false);
+    await phone.fill('9000000000');
     await department.fill('HIS');
     await date.fill('25/10/2026');
     assert.equal(await date.evaluate(node => node.checkValidity()), false);
@@ -60,6 +63,9 @@ try {
     await save.click();
     await dialog.getByRole('alert').getByText(/department/).waitFor();
     await department.fill('HIS');
+    await dialog.getByLabel('Contact Number *',{exact:true}).fill('123');
+    await save.click();await dialog.getByRole('alert').getByText(/contact number/).waitFor();
+    await dialog.getByLabel('Contact Number *',{exact:true}).fill('9000000000');
     await dialog.screenshot({ path: path.join(screenshots, `required-profile-${width}.png`) });
     await save.click();
     await dialog.waitFor({ state: 'hidden' });

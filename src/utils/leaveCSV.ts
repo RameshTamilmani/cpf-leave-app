@@ -1,3 +1,4 @@
+import { fullDayCompOffError, compOffReason } from './compOff';
 import type { LeaveRecord, PublicHoliday } from '../types/leave';
 import { parseDDMMYYYYToISO } from '../data/singaporeHolidays2026';
 import { workingLeaveDates, halfDaySelectionError, leavePeriodsOverlap } from './leaveDuration';
@@ -17,7 +18,7 @@ export function parseCSV(text: string): string[][] {
 export function parseLeaveCSV(text:string,holidays:PublicHoliday[]):LeaveRecord[] {
   const rows=parseCSV(text);if(rows.length<2)throw Error('Choose a CSV export with leave records.');
   const headers=rows.shift()!.map(h=>h.trim().toLowerCase());
-  const indexes={type:headers.indexOf('type'),title:headers.findIndex(h=>h==='title'||h==='reason'),start:headers.findIndex(h=>h==='start date'||h==='start'),end:headers.findIndex(h=>h==='end date'||h==='end'),days:headers.findIndex(h=>h==='days'||h==='day'),status:headers.indexOf('status'),notes:headers.findIndex(h=>h==='remarks'||h==='notes'),halfDate:headers.indexOf('half day date'),half:headers.indexOf('half day session')};
+  const indexes={type:headers.indexOf('type'),title:headers.findIndex(h=>h==='title'||h==='reason'),start:headers.findIndex(h=>h==='start date'||h==='start'),end:headers.findIndex(h=>h==='end date'||h==='end'),days:headers.findIndex(h=>h==='days'||h==='day'),status:headers.indexOf('status'),notes:headers.findIndex(h=>h==='remarks'||h==='notes'),halfDate:headers.indexOf('half day date'),half:headers.indexOf('half day session'),credits:headers.indexOf('comp off credits')};
   if(['type','title','start','end','days','status'].some(k=>indexes[k as keyof typeof indexes]<0))throw Error('Unsupported CSV columns. Choose a CutiSG export.');
   const records:LeaveRecord[]=[];
   rows.forEach((cells,i)=>{
@@ -40,7 +41,14 @@ export function parseLeaveCSV(text:string,holidays:PublicHoliday[]):LeaveRecord[
     if(rawDate&&!halfDayDate)fail('Invalid half-day date.');
     if(halfDayDate&&halfDay!=='am'&&halfDay!=='pm')fail('Choose AM or PM for the half-day date.');
     if(halfDay==='am'||halfDay==='pm') {const error=halfDaySelectionError(dates,halfDayDate||'',halfDay);if(error||days!==dates.length-0.5)fail(error||'Half-day details do not match the deduction.');}
-    const record:LeaveRecord={id:`restore_${i}`,createdAt:new Date().toISOString(),type:type as LeaveRecord['type'],title:cells[indexes.title],startDate,endDate,days,status:status as LeaveRecord['status'],notes:indexes.notes>=0?cells[indexes.notes]:undefined,halfDay,halfDayDate};
+    let compOffCredits: LeaveRecord['compOffCredits'];
+    if(get('credits')) {
+      try {compOffCredits=JSON.parse(get('credits'));}catch{fail('Invalid Comp-Off credit details.');}
+      if(!['CO','CL'].includes(type)||!Array.isArray(compOffCredits)||!compOffCredits.length||compOffCredits.length>366||compOffCredits.some(c=>!c||typeof c.holidayDate!=='string'||!parseDDMMYYYYToISO(c.holidayDate)||typeof c.leaveDate!=='string'||!dates.includes(c.leaveDate)||typeof c.holidayName!=='string'||!c.holidayName.trim()||c.holidayName.length>150))fail('Invalid Comp-Off credit details.');
+    }
+    const record:LeaveRecord={id:`restore_${i}`,createdAt:new Date().toISOString(),type:type as LeaveRecord['type'],title:cells[indexes.title],startDate,endDate,days,status:status as LeaveRecord['status'],notes:indexes.notes>=0?cells[indexes.notes]:undefined,halfDay,halfDayDate,compOffCredits};
+    const policyError=fullDayCompOffError(record);if(policyError)fail(policyError);
+    if(record.compOffCredits)record.notes=compOffReason(record);
     if(records.some(r=>leavePeriodsOverlap(r,record,holidays)))fail('Overlapping leave sessions were found.');
     records.push(record);
   });

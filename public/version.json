@@ -3,21 +3,21 @@
   "releaseDate": "2026-10-26",
   "highlights": [
     {
-      "title": "A lighter app",
-      "description": "Removed unused files and outdated features while keeping your leave records and settings.",
-      "icon": "cleaning_services",
+      "title": "Contact number in your profile",
+      "description": "Save your phone number with your employee details. Timesheets use it automatically; Home keeps it private.",
+      "icon": "contact_phone",
       "color": "teal"
     },
     {
-      "title": "Clearer app guide",
-      "description": "Updated the instructions for backups, half-day leave, balances and app updates.",
-      "icon": "description",
+      "title": "Full-day Comp-Off with clear reasons",
+      "description": "Comp-Off uses full days and verified, unused holiday credits. Its reason fills automatically and cannot be edited; backups check the same rules.",
+      "icon": "event_available",
       "color": "emerald"
     }
   ],
-  "releaseNotes": "Removed unused files and outdated features. Updated the guides to explain backups, half-day leave, balances and app updates more clearly.",
+  "releaseNotes": "Contact Number is now part of Employee Profile. Comp-Off is full-day only with an automatic, locked holiday reason. CSV backups and HR Excel export validate the selected holiday credits.",
   "notesReview": {
-    "sourceHash": "9c5c8a845978b409a2c086328e0d1c903026c1c21d3850f7cd70b58b05673385",
-    "notesHash": "c528dda0e2d96ebb716108f52b38217f7b086700d17300728a306ca1c2dc8ca2"
+    "sourceHash": "3cf407c2d9039d907ffa961af5cc578b07da59c63ea9330d54558cfbe5a11935",
+    "notesHash": "1aad9917d29cf15926ab7e2035b7bd4506dbfbd6b584b815bc91c103f951c771"
   }
 }

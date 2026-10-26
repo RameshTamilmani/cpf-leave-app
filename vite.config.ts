@@ -41,7 +41,7 @@ export default defineConfig(() => {
           'pwa-maskable-512x512.png'
         ],
         injectManifest: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,json}'],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,json,xlsx}'],
           globIgnores: ['version.json'],
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         },

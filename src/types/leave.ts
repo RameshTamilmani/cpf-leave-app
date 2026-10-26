@@ -2,6 +2,8 @@ export type LeaveType = 'AL' | 'SL' | 'CO' | 'CL';
 
 export type LeaveStatus = 'planned' | 'taken' | 'retroactive';
 
+export interface CompOffCredit { holidayDate: string; holidayName: string; leaveDate: string; }
+
 export interface LeaveRecord {
   id: string;
   type: LeaveType;
@@ -10,6 +12,7 @@ export interface LeaveRecord {
   endDate: string;   // YYYY-MM-DD
   days: number;
   halfDay?: 'full' | 'am' | 'pm';
+  compOffCredits?: CompOffCredit[]; // Explicit one-use holiday credits for this application
   halfDayDate?: string; // Working date with AM/PM leave, including within a multi-day period
   status: LeaveStatus;
   notes?: string;
@@ -43,6 +46,8 @@ export interface SpecialHoliday extends PublicHoliday {
 }
 
 export interface UserSettings {
+  contactNumber?: string; // Employee profile/export only; never shown on Home
+  timesheetContact?: string; // Legacy key retained for migration
   userName?: string;
   employeeId?: string;
   department?: string; // Maximum 25 characters

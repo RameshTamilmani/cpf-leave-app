@@ -27,7 +27,7 @@ try {
       if (localStorage.getItem('ui-seeded')) return;
       const record = (id, type, startDate, endDate = startDate, days = 1) => ({ id, title: id, type, startDate, endDate, days, status: 'taken', createdAt: startDate });
       localStorage.setItem('cutisg_settings', JSON.stringify({
-        userName: 'Ramesh Tamilmani', employeeId: '6509', department: 'Engineering', dateOfJoining: '2022-11-18',
+        userName: 'Ramesh Tamilmani', contactNumber:'9000000000', employeeId:'6509', department: 'Engineering', dateOfJoining: '2022-11-18',
         theme: 'dark', notificationsEnabled: false, wishesEnabled: false, weekendWishesEnabled: false,
         anniversaryWishesEnabled: false, holidayWishesEnabled: false,
       }));
@@ -55,7 +55,7 @@ try {
     const cards = page.locator('article');
     assert.equal(await cards.count(), 5);
     for (const card of await cards.all()) assert.doesNotMatch(await card.innerText(), /Days/);
-    assert.match(await cards.nth(2).innerText(), /0\.5\s*\/1/);
+    assert.match(await cards.nth(2).innerText(), /0\s*\/1/);
     assert.match(await cards.nth(4).innerText(), /1/);
     const rectangles = await cards.evaluateAll(nodes => nodes.map(node => {
       const number = node.lastElementChild;
@@ -115,11 +115,11 @@ try {
     await page.getByRole('button', { name: /Comp-Off.*Available/ }).click();
     await page.getByLabel('Start Date', { exact: true }).fill('14/10/2026');
     await page.getByLabel('End Date', { exact: true }).fill('14/10/2026');
-    await page.getByRole('button', { name: 'Half Day (AM)', exact: true }).click();
+    assert.equal(await page.getByRole('button', { name: 'Half Day (AM)', exact: true }).count(),0);
     await page.getByText('Validation Error', { exact: true }).waitFor();
     assert.equal(await page.getByText(/Comp-Off 90-Day Expiry Restriction:/).count(), 0);
     const modalError = page.getByText('Validation Error', { exact: true }).locator('..');
-    assert.match(await modalError.innerText(), /90-day period/);
+    assert.match(await modalError.innerText(), /Select a Comp-Off holiday credit/);
     await page.screenshot({ path: path.join(screenshots, `compoff-${width}-dark.png`), fullPage: true });
     await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 

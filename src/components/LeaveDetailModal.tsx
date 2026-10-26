@@ -2,6 +2,7 @@ import { effectiveStatus } from '../utils/leaveAccounting';
 import { halfDaySummary } from '../utils/leaveDuration';
 import { LopIcon } from './LopIcon';
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
+import { compOffReason } from '../utils/compOff';
 import React from 'react';
 import { useLeave } from '../context/LeaveContext';
 import { LeaveRecord, SpecialHoliday } from '../types/leave';
@@ -293,6 +294,7 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
                             {formatDateDDMMYYYY(r.startDate)}
                             {r.startDate !== r.endDate ? ` to ${formatDateDDMMYYYY(r.endDate)}` : ''}
                             {' '}• {isAL ? 'Annual Leave' : 'Sick Leave'}
+                            {compOffReason(r)&&<span className="block mt-1 text-xs text-on-surface-variant">Comp-Off: {compOffReason(r)}</span>}
                             {halfDaySummary(r) && <span className="block mt-1 text-xs text-primary">{halfDaySummary(r)}</span>}
                           </p>
                         </div>
@@ -317,7 +319,7 @@ export const LeaveDetailModal: React.FC<LeaveDetailModalProps> = ({
                       <span className="font-semibold text-error">Unpaid</span>
                     </div>
 
-                    {r.notes && (
+                    {r.notes && !compOffReason(r) && (
                       <p className="text-[12px] text-on-surface-variant bg-surface-container-lowest px-2.5 py-1.5 rounded-lg border border-surface-container/60">
                         {r.notes}
                       </p>

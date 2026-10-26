@@ -3,6 +3,7 @@ import { restoreFileError, restoreContentError } from '../utils/restoreValidatio
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useRef, useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
+import { TimesheetSettings } from '../components/TimesheetSettings';
 import { AboutModal } from '../components/AboutModal';
 import { ImageCropModal } from '../components/ImageCropModal';
 import { calculateExperience, isValidISODate, formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
@@ -41,6 +42,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
   const [draftEmpId, setDraftEmpId] = useState(settings.employeeId || '');
   const [draftDepartment, setDraftDepartment] = useState(settings.department || '');
   const [draftAvatar, setDraftAvatar] = useState(settings.avatarUrl || '');
+  const [draftContact,setDraftContact]=useState(settings.contactNumber ?? settings.timesheetContact ?? '');
   const [draftDoj, setDraftDoj] = useState(settings.dateOfJoining || '');
   const [isSavedFeedback, setIsSavedFeedback] = useState(false);
 
@@ -65,10 +67,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
     setDraftDepartment(settings.department || '');
     setDraftAvatar(settings.avatarUrl || '');
     setDraftDoj(settings.dateOfJoining || '');
-  }, [settings.userName, settings.employeeId, settings.department, settings.avatarUrl, settings.dateOfJoining]);
+    setDraftContact(settings.contactNumber ?? settings.timesheetContact ?? '');
+  }, [settings.contactNumber, settings.timesheetContact, settings.userName, settings.employeeId, settings.department, settings.avatarUrl, settings.dateOfJoining]);
 
   // Check if profile was modified
   const isProfileModified =
+    draftContact !== (settings.contactNumber ?? settings.timesheetContact ?? '') ||
     draftName !== (settings.userName || '') ||
     draftEmpId !== (settings.employeeId || '') ||
     draftDepartment !== (settings.department || '') ||
@@ -77,9 +81,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
 
   const handleSaveProfile = (event: React.FormEvent) => {
     event.preventDefault();
-    const error = profileError({ userName: draftName, employeeId: draftEmpId, department: draftDepartment, dateOfJoining: draftDoj }, todayDateStr);
+    const error = profileError({ userName: draftName, employeeId: draftEmpId, department: draftDepartment, dateOfJoining: draftDoj, contactNumber: draftContact }, todayDateStr);
     if (error) { showToast(error); return; }
     updateSettings({
+      contactNumber: draftContact.trim(),
       userName: draftName.trim(),
       employeeId: draftEmpId.trim(),
       department: draftDepartment.trim().slice(0, 25),
@@ -323,6 +328,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
             </div>
 
             <div>
+              <label htmlFor="profile-contact" className="font-label-sm text-label-sm text-on-surface-variant font-semibold block mb-1">Contact Number</label>
+              <input id="profile-contact" type="tel" autoComplete="tel" required maxLength={24} value={draftContact} onChange={e=>setDraftContact(e.target.value.replace(/[^\d+ ()-]/g,''))} placeholder="Enter contact number" className="w-full px-3 h-10 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
+            <div>
               <DatePickerField
                 required
                 label="Date of Joining"
@@ -361,6 +370,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
           </div>
         </form>
       </section>
+
+      <TimesheetSettings />
 
       {/* 2. Leave Year Cycle */}
       <section className="space-y-space-xs">
