@@ -21,9 +21,9 @@
       "color": "emerald"
     }
   ],
-  "releaseNotes": "Clear amber weekend highlights in dark and light modes, weekend protection for special holidays, and streamlined cloud deployments.",
+  "releaseNotes": "Restore cross-platform lockfile for zero-failure GitHub Actions CI builds, clear amber weekend highlights in dark and light modes, and weekend protection for special holidays.",
   "notesReview": {
-    "sourceHash": "0124fad404e59d94cdbc1ff4e93bfbe847670b69a400a0cecddae8c259fddf7e",
-    "notesHash": "dd9e4318d41367bc24f87a970781d6a48c37c680df7a7902fa1988d30a62b075"
+    "sourceHash": "37679f9f3348d242faffeb2100f08d54431279cebedb300f6ce757417fdd1eea",
+    "notesHash": "72a70fcdb7315550d2c052b9deede363847760d7a39afcbc6901fc27c1fb0c7b"
   }
 }
