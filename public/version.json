@@ -3,27 +3,15 @@
   "releaseDate": "2026-10-26",
   "highlights": [
     {
-      "title": "Clear weekend highlights in dark mode",
-      "description": "Saturday and Sunday calendar days and column headers now feature warm, high-contrast amber styling with crisp borders in both dark and light modes.",
-      "icon": "calendar_month",
-      "color": "amber"
-    },
-    {
-      "title": "Weekend protection on special holidays",
-      "description": "Special holidays cannot be applied for weekends, keeping official non-working rest days properly excluded from leave applications.",
-      "icon": "event_busy",
-      "color": "rose"
-    },
-    {
-      "title": "Streamlined cloud deployments",
-      "description": "Removed package manager conflicts and configured robust npm installation for reliable Vercel builds.",
-      "icon": "cloud_done",
+      "title": "Reliable CI builds",
+      "description": "Restored full cross-platform dependency lockfile to ensure consistent, zero-failure GitHub Actions builds and automated tests.",
+      "icon": "verified",
       "color": "emerald"
     }
   ],
-  "releaseNotes": "Restore cross-platform lockfile for zero-failure GitHub Actions CI builds, clear amber weekend highlights in dark and light modes, and weekend protection for special holidays.",
+  "releaseNotes": "Restored full cross-platform dependency lockfile to ensure consistent, zero-failure GitHub Actions CI builds and automated tests.",
   "notesReview": {
     "sourceHash": "37679f9f3348d242faffeb2100f08d54431279cebedb300f6ce757417fdd1eea",
-    "notesHash": "72a70fcdb7315550d2c052b9deede363847760d7a39afcbc6901fc27c1fb0c7b"
+    "notesHash": "1ba8fb4448bbaf32e90baf9312a2d0ea8e666463d0e2a602dc40b7627fa73e41"
   }
 }
