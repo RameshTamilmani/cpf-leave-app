@@ -520,13 +520,16 @@ export const ApplyLeaveModal: React.FC = () => {
           </div>
 
           {(type==='CO'||type==='CL')&&<fieldset className="rounded-xl border border-surface-outline p-3 flex flex-col gap-3">
-            <legend className="px-1 text-sm font-semibold text-on-surface">Comp-Off Holiday Credit</legend>
-            <p className="text-xs text-on-surface-variant">Choose one credit for each leave date. A holiday credit covers 1 day, or two half days. Choose AM or PM for half-day leave.</p>
+            <legend className="px-1 text-sm font-semibold text-on-surface">Comp-Off Credit</legend>
+            <p className="text-xs text-on-surface-variant">Select a holiday for each leave date. Each credit covers 1 full day or two half days.</p>
             {workingDates.map(date=><label key={date} className="text-sm text-on-surface flex flex-col gap-1">For {formatDateDDMMYYYY(date)}
-              <select aria-label={'Comp-Off Credit for '+date} value={creditChoices[date]||''} required onChange={e=>setCreditChoices(prev=>({...prev,[date]:e.target.value}))} className="w-full h-11 min-w-0 rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface px-2 text-sm">
+              <div className="relative min-w-0">
+              <select aria-label={'Comp-Off Credit for '+date} value={creditChoices[date]||''} required onChange={e=>setCreditChoices(prev=>({...prev,[date]:e.target.value}))} className="block w-full h-12 min-w-0 appearance-none rounded-xl border border-surface-outline bg-surface-container-lowest text-on-surface pl-3 pr-11 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
                 <option value="">Select a holiday credit</option>
                 {availableCompOffCredits.filter(c=>c.date<=date&&c.end>=date).map(c=><option key={c.date} value={c.date} disabled={workingDates.filter(d=>d!==date&&creditChoices[d]===c.date).reduce((s,d)=>s+(halfDayOnDate(candidate,d)?0.5:1),0)+(halfDayOnDate(candidate,date)?0.5:1)>c.left}>{c.name} · {formatDateDDMMYYYY(c.date)} · {c.left} day{c.left===1?'':'s'} left</option>)}
               </select>
+              <span aria-hidden="true" className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant">expand_more</span>
+              </div>
             </label>)}
             {workingDates.length>0&&!availableCompOffCredits.some(c=>workingDates.some(d=>c.date<=d&&c.end>=d))&&<p className="text-xs text-error">No unused holiday credits cover these leave dates.</p>}
           </fieldset>}
@@ -537,11 +540,11 @@ export const ApplyLeaveModal: React.FC = () => {
               <label className="font-label-sm text-label-sm text-on-surface-variant font-semibold block">
                 Duration Selection
               </label>
-              <span className="text-[11px] text-on-surface-variant font-medium">
+              {(!isCompOff || isMultiDay) && <span className="text-[11px] text-on-surface-variant font-medium">
                 {isMultiDay
                   ? `${workingDays} working day${workingDays !== 1 ? 's' : ''} in range`
                   : 'Single day leave (1.0d or 0.5d)'}
-              </span>
+              </span>}
             </div>
 
             {isMultiDay ? (
@@ -646,8 +649,8 @@ export const ApplyLeaveModal: React.FC = () => {
             </fieldset>
           )}
 
-          {/* Interactive Days to Deduct Stepper strictly bound to Validation Rule */}
-          <div className="flex flex-col gap-1.5 p-3.5 rounded-xl bg-surface-container-low border border-surface-container">
+          {/* Duration buttons already set the Comp-Off deduction; avoid a duplicate control. */}
+          {!isCompOff && <div className="flex flex-col gap-1.5 p-3.5 rounded-xl bg-surface-container-low border border-surface-container">
             <div className="flex items-center justify-between">
               <div>
                 <span className="font-title-sm text-title-sm text-on-surface font-semibold block">
@@ -734,7 +737,7 @@ export const ApplyLeaveModal: React.FC = () => {
                 Allowed: <strong className="text-primary">{isMultiDay ? `${workingDays}d or ${(workingDays - 0.5).toFixed(1)}d` : '1.0d or 0.5d'}</strong>
               </span>
             </div>
-          </div>
+          </div>}
 
           {/* Comp-Off reason is generated from the selected credits. */}
           <div>
@@ -778,7 +781,7 @@ export const ApplyLeaveModal: React.FC = () => {
           {/* Statutory MOM Impact Calculation Card */}
           <div className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Leave Quota Impact</span>
+              <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">{isCompOff ? 'Comp-Off Deduction' : 'Leave Quota Impact'}</span>
               <span className="font-title-sm text-title-sm font-bold text-primary">
                 -{daysToDeduct.toFixed(1)} Day{daysToDeduct !== 1 ? 's' : ''} ({type})
               </span>
@@ -800,9 +803,9 @@ export const ApplyLeaveModal: React.FC = () => {
               </p>
             )}
             <div className="flex items-center justify-between pt-1 border-t border-surface-container text-label-sm">
-              <span className="text-on-surface-variant">Available for This Period: <strong>{getAvailableBalance()} Days</strong></span>
+              <span className="text-on-surface-variant">{isCompOff ? 'Available' : 'Available for This Period'}: <strong>{getAvailableBalance()} Days</strong></span>
               <span className={`font-semibold ${isExceedingQuota ? 'text-error' : isLOPApplicable ? 'text-error' : 'text-primary'}`}>
-                Remaining after: <strong>{remainingBalanceAfter.toFixed(1)} Days{isLOPApplicable ? ` (+${lopDays}d LOP)` : ''}</strong>
+                Remaining: <strong>{remainingBalanceAfter.toFixed(1)} Days{isLOPApplicable ? ` (+${lopDays}d LOP)` : ''}</strong>
               </span>
             </div>
 

@@ -140,3 +140,7 @@ This table links the current specification to the functions changed or used by t
 | src/hooks/useAppUpdate.ts, src/sw.js and src/release.ts | useAppUpdate, approved-release worker flow, APP_VERSION | Offer fully downloaded updates for explicit approval, support Later/manual checks and offline reopening, and share the canonical package version with Settings/About. |
 
 The Comp Off Credits CSV field stores the original holiday date, holiday name and actual leave date for each binding. Date-free remarks are a display/export format; these internal dates remain necessary for accounting and expiry validation. Phone/profile data is not added to the leave-record CSV. The Excel timesheet is a monthly HR report, not a restorable app backup.
+
+### Comp-Off booking presentation
+
+The holiday-credit selector uses a themed dropdown with a clear arrow and focus indicator. Short guidance explains that each credit covers one full day or two half days. Duration buttons set the deduction; Comp-Off does not repeat the days stepper or range captions. The generated reason and deduction summary remain visible. Credit eligibility, capacity, expiry, AM/PM and duplicate checks are unchanged.

@@ -13,11 +13,17 @@
       "description": "Full-day Comp-Off now uses L, with the selected holiday name followed by Comp-off in Remarks. Half days stay at 4.5 hours.",
       "icon": "event_available",
       "color": "emerald"
+    },
+    {
+      "title": "Simpler Comp-Off booking",
+      "description": "A cleaner holiday selector and shorter guidance make Comp-Off easier to apply for, with the same full-day and half-day choices.",
+      "icon": "update",
+      "color": "emerald"
     }
   ],
-  "releaseNotes": "Timesheets now mark weekday public holidays as L and use the holiday name followed by Holiday, without Substitute or Observed labels. HR leave totals include these L entries; app leave balances are unchanged. Full-day Comp-Off also uses L with the corresponding holiday name plus Comp-off; half-day working hours remain 4.5.",
+  "releaseNotes": "Timesheets now mark weekday public holidays as L and use the holiday name followed by Holiday, without Substitute or Observed labels. HR leave totals include these L entries; app leave balances are unchanged. Full-day Comp-Off also uses L with the corresponding holiday name plus Comp-off; half-day working hours remain 4.5. Comp-Off booking has a clearer dropdown and less repeated information; credit limits, half-day sessions and expiry checks stay the same.",
   "notesReview": {
-    "sourceHash": "7d68513d0f2155d3b53c20829d6668855b5815d441bf9ed86ccc5490ef125fb3",
-    "notesHash": "8dc09622c1c35d9e771b9d2b0dac4eb1f9f22adff7dc3597390d1e73746b468c"
+    "sourceHash": "4a0a7a8343b758701c231e8bfcf3f01fdc4f1e93d89952a1825a3bdaf1277ff6",
+    "notesHash": "ef1bad2f895c703aae9309b3130e968a2c9b01e0b3b1f91f9a89f5141e0b4c34"
   }
 }
