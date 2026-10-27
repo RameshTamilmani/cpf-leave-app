@@ -3,7 +3,6 @@ import { restoreFileError, restoreContentError } from '../utils/restoreValidatio
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useRef, useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
-import { TimesheetSettings } from '../components/TimesheetSettings';
 import { AboutModal } from '../components/AboutModal';
 import { ImageCropModal } from '../components/ImageCropModal';
 import { calculateExperience, isValidISODate, formatDateDDMMYYYY } from '../data/singaporeHolidays2026';
@@ -371,7 +370,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onCheckForUpdate
         </form>
       </section>
 
-      <TimesheetSettings />
+
 
       {/* 2. Leave Year Cycle */}
       <section className="space-y-space-xs">

@@ -1,3 +1,4 @@
+import { TimesheetExportModal } from '../components/TimesheetExportModal';
 import { LopIcon } from '../components/LopIcon';
 import React, { useState } from 'react';
 import { useLeave } from '../context/LeaveContext';
@@ -35,6 +36,7 @@ export const HomeScreen: React.FC = () => {
     setCurrentTab
   } = useLeave();
 
+  const [timesheetOpen,setTimesheetOpen]=useState(false);
   const [activeDetailCategory, setActiveDetailCategory] = useState<DetailCategory | null>(null);
   const coTotal = autoCompOffEarned + manualCompOffCredits;
 
@@ -245,8 +247,14 @@ export const HomeScreen: React.FC = () => {
               <p className="text-[10px] text-on-surface-variant truncate">Saturday credits</p>
             </div>
           </button>
+          <button type="button" aria-label="Timesheet" onClick={() => setTimesheetOpen(true)} className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-surface-container-lowest border border-surface-container hover:bg-surface-container transition-all cursor-pointer text-left shadow-2xs active:scale-[0.99]">
+            <div className="w-8 h-8 rounded-lg bg-primary-container text-on-primary-fixed flex items-center justify-center shrink-0"><span aria-hidden="true" className="material-symbols-outlined text-[18px]">table_view</span></div>
+            <div className="min-w-0"><p className="text-xs font-semibold text-on-surface">Timesheet</p><p className="text-[10px] text-on-surface-variant">Export monthly Excel</p></div>
+          </button>
         </div>
       </section>
+
+      {timesheetOpen && <TimesheetExportModal onClose={() => setTimesheetOpen(false)} />}
 
       {/* 5. Upcoming Public Holidays */}
       <section className="flex flex-col gap-2 mt-0.5">

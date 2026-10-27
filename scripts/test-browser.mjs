@@ -129,6 +129,8 @@ try {
   await page.getByText('Connect to the internet to check for updates.', { exact: true }).waitFor();
   assert.equal(await page.getByText("You're Up to Date", { exact: true }).count(), 0, 'failed checks must not claim up to date');
   assert.equal(await page.getByLabel('Contact Number',{exact:true}).inputValue(),'9000000000');
+  await page.locator('nav').getByText('Home',{exact:true}).click();
+  await page.getByRole('button',{name:'Timesheet',exact:true}).click();
   const downloadPromise=page.waitForEvent('download');
   await page.getByRole('button',{name:'Export Timesheet',exact:true}).click();
   const offlineDownload=await downloadPromise;

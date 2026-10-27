@@ -38,6 +38,7 @@ An installed Google Chrome is required; set TEST_BROWSER_CHANNEL=msedge to use M
 
 ~~~sh
 npm run test:timesheet-browser
+npm run test:edit-leave-browser
 npm run test:split-compoff-browser
 npm run test:logic-browser
 npm run test:profile-browser
@@ -93,3 +94,5 @@ Keep package-lock.json, regression scripts, icon generator, bundled fonts and re
 The manifest declares supported standalone launch and icons only; unsupported import/share/widget/query shortcuts have been removed. metadata.json remains minimal authoring metadata without advertising a Gemini backend. Unused notification helper modules and dormant popup UI have been removed; Home banners remain the supported wish flow. This app has no push delivery backend.
 
 Record persistence uses localStorage with Web Locks or an IndexedDB mutex fallback. Do not change stored keys or remove legacy settings/type compatibility as part of packaging cleanup. CSV exports cover leave records only, not complete profile/settings backups.
+
+- Edit regression: Home-only timesheet month popup and scroll lock; Start/End synchronization; identity-preserving category/session edits; multi-day half selection persistence; credit capacity and stale/overlapping saves; 320px and 390px layout. Run `npm run test:edit-leave-browser`.

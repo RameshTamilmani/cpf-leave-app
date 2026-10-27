@@ -4,7 +4,7 @@ import { LopIcon } from './LopIcon';
 import { useModalScrollLock } from '../hooks/useModalScrollLock';
 import React, { useState, useEffect } from 'react';
 import { useLeave } from '../context/LeaveContext';
-import { LeaveType, LeaveStatus } from '../types/leave';
+import { LeaveType, LeaveStatus, LeaveRecord } from '../types/leave';
 import { calculateWorkingDays, formatDateDDMMYYYY, isValidISODate, isWeekend, addDaysToDate } from '../data/singaporeHolidays2026';
 import { DatePickerField } from './DatePickerField';
 
@@ -14,8 +14,9 @@ export const ApplyLeaveModal: React.FC = () => {
     applyModalConfig,
     closeApplyModal,
     addRecord,
+    updateRecord,
+    getCompOffCredits,
     compOffError,
-    availableCompOffCredits,
     getQuotaImpact,
     records,
     allHolidays,
@@ -26,6 +27,9 @@ export const ApplyLeaveModal: React.FC = () => {
     crossedSaturdayHolidays
   } = useLeave();
 
+  const editingRecord=applyModalConfig.editingRecord;
+  const otherRecords=records.filter(r=>r.id!==editingRecord?.id);
+  const availableCompOffCredits=getCompOffCredits(editingRecord?.id);
   const [type, setType] = useState<LeaveType>('AL');
   const isCompOff=type==='CO'||type==='CL';
   const [saving, setSaving] = useState(false);
@@ -41,9 +45,7 @@ export const ApplyLeaveModal: React.FC = () => {
 
   const handleStartDateChange = (newStart: string) => {
     setStartDate(newStart);
-    if (newStart && (!endDate || endDate < newStart)) {
-      setEndDate(newStart);
-    }
+    setEndDate(newStart);
   };
 
   const handleEndDateChange = (newEnd: string) => {
@@ -56,20 +58,21 @@ export const ApplyLeaveModal: React.FC = () => {
   // When modal opens, initialize fields
   useEffect(() => {
     if (applyModalConfig.isOpen) {
-      const selectedType = applyModalConfig.initialType || 'AL';
+      const original=applyModalConfig.editingRecord;
+      const selectedType = original?.type || applyModalConfig.initialType || 'AL';
       setType(selectedType);
 
       // Default to initial date or current date
-      const initial = applyModalConfig.initialDate || todayDateStr || '2026-10-12';
+      const initial = original?.startDate || applyModalConfig.initialDate || todayDateStr;
       setStartDate(initial);
-      setEndDate(initial);
-      setDurationMode('full');
-      setHalfDayDate('');
-      setHalfDaySession('');
-      setDaysToDeduct(1.0);
+      setEndDate(original?.endDate || initial);
+      setDurationMode(original?.startDate===original?.endDate&&original?.halfDay==='am'?'half-am':original?.startDate===original?.endDate&&original?.halfDay==='pm'?'half-pm':'full');
+      setHalfDayDate(original?.halfDayDate || '');
+      setHalfDaySession(original?.halfDay==='am'||original?.halfDay==='pm'?original.halfDay:'');
+      setDaysToDeduct(original?.days || 1.0);
       setValidationError(null);
-      setRemarks('');
-      setCreditChoices({});
+      setRemarks(original?.notes || '');
+      setCreditChoices(Object.fromEntries((original?.compOffCredits || []).map(c=>[c.leaveDate,c.holidayDate])));
     }
   }, [applyModalConfig]);
 
@@ -128,8 +131,8 @@ export const ApplyLeaveModal: React.FC = () => {
     compOffCredits: type==='CO'||type==='CL' ? workingDates.filter(d=>creditChoices[d]).map(d=>({leaveDate:d,holidayDate:creditChoices[d],holidayName:availableCompOffCredits.find(c=>c.date===creditChoices[d])?.name||''})) : undefined,
   } as const;
   const requestRecord = {...candidate,id:'candidate',title:'Leave',status:'planned' as const,createdAt:''};
-  const creditError = halfDayChoiceError ? null : compOffError(requestRecord);
-  const duplicateConflict = records.find(record => leavePeriodsOverlap(candidate, record, allHolidays));
+  const creditError = halfDayChoiceError ? null : compOffError(requestRecord,otherRecords);
+  const duplicateConflict = otherRecords.find(record => leavePeriodsOverlap(candidate, record, allHolidays));
 
   const isDuplicate = Boolean(duplicateConflict);
 
@@ -265,7 +268,7 @@ export const ApplyLeaveModal: React.FC = () => {
   const holidayOnStart = allHolidays.find((h) => h.date === startDate || h.observedDate === startDate);
   const holidayOnEnd = allHolidays.find((h) => h.date === endDate || h.observedDate === endDate);
 
-  const quota = getQuotaImpact(requestRecord);
+  const quota = getQuotaImpact(requestRecord,otherRecords);
   const getAvailableBalance = () => quota.available;
 
   const isDeductionMismatch = isMultiDay
@@ -399,7 +402,7 @@ export const ApplyLeaveModal: React.FC = () => {
     const halfDay = needsHalfDayChoice ? halfDaySession as 'am' | 'pm' : durationMode === 'half-am' ? 'am' : durationMode === 'half-pm' ? 'pm' : 'full';
 
     setSaving(true);
-    const saved = await addRecord({
+    const details: Omit<LeaveRecord, 'id' | 'createdAt'> = {
       type,
       title: type==='CO'&&candidate.compOffCredits?.length===1 ? candidate.compOffCredits[0].holidayName+' Comp-off' : defaultTitle,
       compOffCredits: candidate.compOffCredits,
@@ -408,9 +411,10 @@ export const ApplyLeaveModal: React.FC = () => {
       days: finalDays,
       halfDay,
       halfDayDate: halfDay === 'full' ? undefined : needsHalfDayChoice ? halfDayDate : startDate,
-      status,
+      status: editingRecord?.status==='retroactive'?'retroactive' as const:status,
       notes: isCompOff ? compOffReason(candidate) : remarks.trim() || undefined
-    });
+    };
+    const saved = editingRecord ? await updateRecord(editingRecord.id,details,editingRecord) : await addRecord(details);
 
     setSaving(false);
     if(saved)closeApplyModal();
@@ -433,7 +437,7 @@ export const ApplyLeaveModal: React.FC = () => {
               <span className="material-symbols-outlined text-[20px]">event_note</span>
             </div>
             <div>
-              <h2 className="font-title-md text-title-md text-on-surface font-bold">Apply / Log Leave</h2>
+              <h2 className="font-title-md text-title-md text-on-surface font-bold">{editingRecord ? 'Edit Leave' : 'Apply / Log Leave'}</h2>
               <p className="font-body-sm text-body-sm text-on-surface-variant">Singapore MOM Statutory Compliant</p>
             </div>
           </div>
@@ -860,7 +864,7 @@ export const ApplyLeaveModal: React.FC = () => {
                 ? 'Exceeds Available Comp-Off'
                 : isCompOffBlocked
                 ? 'Check Comp-Off Credits'
-                : 'Confirm & Log Leave'}
+                : editingRecord ? 'Save Changes' : 'Confirm & Log Leave'}
             </button>
           </div>
         </form>

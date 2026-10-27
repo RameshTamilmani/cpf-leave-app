@@ -29,7 +29,8 @@
     "test:restore": "node --import tsx --test scripts/test-restore.mjs",
     "test:timesheet": "node --import tsx --test scripts/test-timesheet.mjs scripts/test-profile-compoff-policy.mjs",
     "test:timesheet-browser": "node scripts/test-timesheet-browser.mjs",
-    "test:split-compoff-browser": "node scripts/test-split-compoff-browser.mjs"
+    "test:split-compoff-browser": "node scripts/test-split-compoff-browser.mjs",
+    "test:edit-leave-browser": "node scripts/test-edit-leave-browser.mjs"
   },
   "dependencies": {
     "@fontsource-variable/material-symbols-outlined": "^5.2.0",

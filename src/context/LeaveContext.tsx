@@ -1,3 +1,4 @@
+import { bookingDetailsError } from '../utils/bookingValidation';
 import { compOffReason, compOffDurationError } from '../utils/compOff';
 import { cycleView, compOffAllocation, quotaImpact, validCycle, cycleFor } from '../utils/leaveAccounting';
 import { parseLeaveCSV } from '../utils/leaveCSV';
@@ -26,9 +27,10 @@ interface LeaveContextType {
   compOffCreditUsage: ReturnType<typeof compOffAllocation>['usage'];
   availableCompOffCredits: ReturnType<typeof compOffAllocation>['credits'];
   compOffError: (record: LeaveRecord, existing?: LeaveRecord[]) => string | null;
-  getQuotaImpact: (record: LeaveRecord) => ReturnType<typeof quotaImpact>;
+  getCompOffCredits: (excludeId?: string) => ReturnType<typeof compOffAllocation>['credits'];
+  getQuotaImpact: (record: LeaveRecord, existing?: LeaveRecord[]) => ReturnType<typeof quotaImpact>;
   deleteRecord: (id: string) => void;
-  updateRecord: (id: string, updated: Partial<LeaveRecord>) => void;
+  updateRecord: (id: string, updated: Partial<LeaveRecord>, expected?: LeaveRecord) => Promise<boolean>;
   
   settings: UserSettings;
   updateSettings: (newSettings: Partial<UserSettings>) => void;
@@ -89,8 +91,9 @@ interface LeaveContextType {
     initialType?: LeaveType;
     initialStatus?: LeaveStatus;
     initialDate?: string;
+    editingRecord?: LeaveRecord;
   };
-  openApplyModal: (config?: { initialType?: LeaveType; initialStatus?: LeaveStatus; initialDate?: string }) => void;
+  openApplyModal: (config?: { editingRecord?: LeaveRecord; initialType?: LeaveType; initialStatus?: LeaveStatus; initialDate?: string }) => void;
   closeApplyModal: () => void;
   
   isHolidaysModalOpen: boolean;
@@ -171,6 +174,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     initialType?: LeaveType;
     initialStatus?: LeaveStatus;
     initialDate?: string;
+    editingRecord?: LeaveRecord;
   }>({ isOpen: false });
 
   const [isHolidaysModalOpen, setIsHolidaysModalOpen] = useState(false);
@@ -358,9 +362,10 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setSettings((prev) => ({ ...prev, ...normalized }));
   };
 
-  const openApplyModal = (config?: { initialType?: LeaveType; initialStatus?: LeaveStatus; initialDate?: string }) => {
+  const openApplyModal = (config?: { editingRecord?: LeaveRecord; initialType?: LeaveType; initialStatus?: LeaveStatus; initialDate?: string }) => {
     setApplyModalConfig({
       isOpen: true,
+      editingRecord: config?.editingRecord,
       initialType: config?.initialType || 'AL',
       initialStatus: config?.initialStatus || 'planned',
       initialDate: config?.initialDate || selectedCalendarDate
@@ -380,6 +385,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if(newRecord.compOffCredits)newRecord.compOffCredits=newRecord.compOffCredits.map(c=>({...c,holidayName:allHolidays.find(h=>h.date===c.holidayDate)?.name || c.holidayName}));
     if(newRecord.type==='CO'||newRecord.type==='CL')newRecord.notes=compOffReason(newRecord);
     const saved = await commitRecords(latest => {
+      const detailsError=bookingDetailsError(newRecord,allHolidays);if(detailsError)throw Error(detailsError);
       if(latest.some(r=>leavePeriodsOverlap(r,newRecord,allHolidays)))throw Error('This leave overlaps a saved record. Check History and try again.');
       if(newRecord.type==='AL'||newRecord.type==='SL'){if(quotaImpact(newRecord,latest,settings,allHolidays).outsideCycle)throw Error('Some selected dates fall outside your configured leave-year window. Check the cycle dates in Settings.');}
       const error=compOffError(newRecord,latest);if(error)throw Error(error);
@@ -390,15 +396,20 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const deleteRecord = async (id:string) => {
     if(await commitRecords(latest=>latest.filter(r=>r.id!==id)))showToast('Leave record removed.');
   };
-  const updateRecord = async (id:string, updated:Partial<LeaveRecord>) => {
-    if(await commitRecords(latest=>{
+  const updateRecord = async (id:string, updated:Partial<LeaveRecord>, expected?:LeaveRecord) => {
+    const saved=await commitRecords(latest=>{
       const old=latest.find(r=>r.id===id);if(!old)throw Error('This leave record no longer exists.');
+      if(expected&&JSON.stringify(old)!==JSON.stringify(expected))throw Error('This leave changed in another window. Close and reopen Edit Leave to review the latest details.');
       const next={...old,...updated,id:old.id,createdAt:old.createdAt},others=latest.filter(r=>r.id!==id);
+      const detailsError=bookingDetailsError(next,allHolidays);if(detailsError)throw Error(detailsError);
+      if((next.type==='AL'||next.type==='SL')&&quotaImpact(next,others,settings,allHolidays).outsideCycle)throw Error('Some selected dates fall outside your configured leave-year window. Check the cycle dates in Settings.');
+      if(next.compOffCredits)next.compOffCredits=next.compOffCredits.map(c=>({...c,holidayName:allHolidays.find(h=>h.date===c.holidayDate)?.name||c.holidayName}));
       if(others.some(r=>leavePeriodsOverlap(r,next,allHolidays)))throw Error('This leave overlaps a saved record.');
       const error=compOffError(next,others);if(error)throw Error(error);
       if(next.type==='CO'||next.type==='CL')next.notes=compOffReason(next);
-      return latest.map(r=>r.id===id?next:r);
-    }))showToast('Leave details updated.');
+      return latest.map(r=>r.id===id?next:r).sort((a,b)=>b.startDate.localeCompare(a.startDate));
+    });
+    if(saved)showToast('Leave details updated.');return saved;
   };
 
   const holidaySync = useOfficialHolidays();
@@ -600,12 +611,13 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
   const ambiguousSpans=records.filter(r=>r.startDate!==r.endDate&&r.days%1===0.5&&!r.halfDayDate&&cycleFor(r.startDate,settings).start!==cycleFor(r.endDate,settings).start);
   const accountingWarning=records.some(r=>compOffDurationError(r))?'An older Comp-Off record needs its half-day date or AM/PM details reviewed. Export and restore will not guess missing details.':ambiguousSpans.length?'An older half-day record spans two leave years without a half-day date. Its balance is reserved conservatively. Export a backup, then re-enter it with the correct date.':allocation.unfunded.length?'Some older Comp-Off records need credit or half-day details reviewed before more Comp-Off leave can be added.':'';
-  const getQuotaImpact=(record:LeaveRecord)=>{
+  const getCompOffCredits=(excludeId?:string)=>compOffAllocation(records.filter(r=>r.id!==excludeId),settings.saturdayCompOffEnabled?allHolidays:[],todayDateStr,excludedHolidayDates).credits.filter(c=>c.left>0);
+  const getQuotaImpact=(record:LeaveRecord,existing:LeaveRecord[]=records)=>{
     if(record.type==='CO'||record.type==='CL'){
-      const available=availableCompOffCredits.filter(c=>c.date<=record.endDate&&c.end>=record.startDate).reduce((sum,c)=>sum+c.left,0);
+      const available=compOffAllocation(existing,settings.saturdayCompOffEnabled?allHolidays:[],todayDateStr,excludedHolidayDates).credits.filter(c=>c.left>0).filter(c=>c.date<=record.endDate&&c.end>=record.startDate).reduce((sum,c)=>sum+c.left,0);
       return {available,remaining:Math.max(0,available-record.days),lop:0,outsideCycle:false};
     }
-    return quotaImpact(record,records,settings,allHolidays);
+    return quotaImpact(record,existing,settings,allHolidays);
   };
 
 
@@ -745,6 +757,7 @@ export const LeaveProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         availableCompOffCredits,
         compOffError,
         getQuotaImpact,
+        getCompOffCredits,
         addRecord,
         deleteRecord,
         updateRecord,

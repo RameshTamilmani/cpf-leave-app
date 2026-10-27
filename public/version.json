@@ -3,27 +3,27 @@
   "releaseDate": "2026-10-27",
   "highlights": [
     {
-      "title": "Clearer public holidays in timesheets",
-      "description": "Public holidays now use L with remarks such as Deepavali Holiday. Substitute labels are removed, and weekends stay blank.",
-      "icon": "event",
-      "color": "teal"
+      "title": "Timesheet in Home",
+      "description": "Open Timesheet in Quick Actions, choose a month and year, then export your Excel file.",
+      "icon": "table_view",
+      "color": "blue"
     },
     {
-      "title": "Consistent Comp-Off timesheets",
-      "description": "Full-day Comp-Off now uses L, with the selected holiday name followed by Comp-off in Remarks. Half days stay at 4.5 hours.",
-      "icon": "event_available",
+      "title": "Edit saved leave",
+      "description": "Use Edit in History to change your leave. Dates, half days and Comp-Off credits are checked before saving.",
+      "icon": "edit",
       "color": "emerald"
     },
     {
-      "title": "Simpler Comp-Off booking",
-      "description": "A cleaner holiday selector and shorter guidance make Comp-Off easier to apply for, with the same full-day and half-day choices.",
-      "icon": "update",
-      "color": "emerald"
+      "title": "Easier date selection",
+      "description": "Choosing a Start Date also fills End Date. You can still change End Date separately.",
+      "icon": "date_range",
+      "color": "amber"
     }
   ],
-  "releaseNotes": "Timesheets now mark weekday public holidays as L and use the holiday name followed by Holiday, without Substitute or Observed labels. HR leave totals include these L entries; app leave balances are unchanged. Full-day Comp-Off also uses L with the corresponding holiday name plus Comp-off; half-day working hours remain 4.5. Comp-Off booking has a clearer dropdown and less repeated information; credit limits, half-day sessions and expiry checks stay the same.",
+  "releaseNotes": "Timesheet export moved from Settings to Home Quick Actions with a month/year popup. Saved leave can be edited from History with validation. Choosing Start Date automatically fills End Date, which remains independently editable.",
   "notesReview": {
-    "sourceHash": "4a0a7a8343b758701c231e8bfcf3f01fdc4f1e93d89952a1825a3bdaf1277ff6",
-    "notesHash": "ef1bad2f895c703aae9309b3130e968a2c9b01e0b3b1f91f9a89f5141e0b4c34"
+    "sourceHash": "3311333b6da9984784ea478860869210ff08c5bf0e0af2efc47b4f7d3cae77d0",
+    "notesHash": "18894353eae9ccee60034f7c908f64bc8455ded0523aad469e6109530dc882c2"
   }
 }

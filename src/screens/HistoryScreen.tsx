@@ -11,6 +11,7 @@ export const HistoryScreen: React.FC = () => {
   const {
     records,
     deleteRecord,
+    openApplyModal,
     exportCSV,
     alAvailable,
     slAvailable,
@@ -242,7 +243,10 @@ export const HistoryScreen: React.FC = () => {
                     <span className="px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm capitalize font-medium">
                       {effStatus}
                     </span>
-                    {/* Only delete option - editing is not allowed */}
+                    {/* Editing reuses the validated leave form. */}
+                    <button type="button" onClick={() => openApplyModal({editingRecord:record})} aria-label="Edit leave record" className="w-8 h-8 rounded-full flex items-center justify-center text-primary hover:bg-primary-container/20 cursor-pointer" title="Edit Leave">
+                      <span aria-hidden="true" className="material-symbols-outlined text-[18px]">edit</span>
+                    </button>
                     <button
                       onClick={() => setSelectedRecordForSheet(record)}
                       aria-label="Delete leave record"

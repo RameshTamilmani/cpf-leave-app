@@ -91,7 +91,7 @@ Reset Leave Records is disabled when history is empty. It clears leave history a
 
 ## 8. HR Timesheet Export
 
-Employee Profile contains the required Contact Number alongside ID, name, department and joining date. The Timesheet section shows only the labelled month selector, a themed calendar button matching the other date fields, and Export Timesheet. Company/manager and schedule explanation lines are omitted from the card; it reads the saved profile contact. The number is never displayed on Home. CPF, Chennai and Sujatha Sambavamurthy are built-in defaults. Employee ID/name come from the saved profile.
+Employee Profile contains the required Contact Number alongside ID, name, department and joining date. Home → Quick Actions → Timesheet opens a popup with the labelled month/year selector, a themed calendar button matching the other date fields, and Export Timesheet. Company/manager and schedule explanation lines are omitted; the exporter reads the saved profile contact. The number is never displayed on Home. CPF, Chennai and Sujatha Sambavamurthy are built-in defaults. Employee ID/name come from the saved profile.
 
 Downloads use Optimum India_Timesheet XXX YYYY.xlsx, where XXX is the selected English three-letter month (Jan–Dec) and YYYY is the selected year, for example Optimum India_Timesheet Oct 2026.xlsx. The employee ID is not included in the filename.
 
@@ -115,7 +115,7 @@ This table links the current specification to the functions changed or used by t
 | --- | --- | --- |
 | src/utils/profile.ts | profileError, validContact | Require all five profile fields, validate a 7–15-digit phone, accept the legacy timesheetContact key when the new field is absent, and reject an explicitly blank contact. |
 | src/components/OnboardingModal.tsx | OnboardingModal, handleSave | Require name, numeric ID, department, joining date and phone before continuing; keep the photo optional and save the contact with the profile. |
-| src/screens/SettingsScreen.tsx | SettingsScreen, handleSaveProfile, handleCsvUpload | Edit/save all profile fields together; show contact only here, outside the Timesheet section; validate restore files and ask before replacement. |
+| src/screens/SettingsScreen.tsx | SettingsScreen, handleSaveProfile, handleCsvUpload | Edit/save all profile fields together; show contact only here, without a separate Timesheet section; validate restore files and ask before replacement. |
 | src/context/LeaveContext.tsx | Settings initialization, updateSettings | Carry the old timesheet phone into contactNumber, normalize department to uppercase and trim the saved phone. |
 | src/utils/compOff.ts | compOffDurationError, compOffReason | Validate full/half-day metadata and required AM/PM; produce a deduplicated holiday-name-plus-Comp-off reason without dates. |
 | src/utils/leaveAccounting.ts | compOffAllocation | Start each eligible earned holiday with 1 day; preserve legacy allocation first, apply explicit bindings, subtract actual 1/0.5-day portions, and return balances, usage, assignments and unfunded records. Expiry/exclusion rules remain enforced. |
@@ -132,7 +132,7 @@ This table links the current specification to the functions changed or used by t
 | src/utils/timesheetRows.ts | buildTimesheet | Fill the whole selected month using Singapore holidays, blank weekends, 9-hour weekdays, booked leave, 4.5-hour half days and deduplicated Comp-Off remarks; retain HR's hours/leave-day counting convention. |
 | src/utils/timesheetExport.ts | fillTimesheet | Populate the original workbook, update valid calendar rows and cached formula results, validate monthly credit funding, fit the title font to D6:G7 and wrap long inputs while preserving original workbook features. |
 | src/utils/timesheetExport.ts | exportTimesheet | Fetch the bundled/offline-cached template and download Optimum India_Timesheet XXX YYYY.xlsx using the selected month/year, with no employee ID in the filename. |
-| src/components/TimesheetSettings.tsx | TimesheetSettings, openMonthPicker, download | Provide the themed calendar button (native month picker with focus fallback), the month selector and direct export button, read the saved profile phone, prevent repeated clicks while exporting and show any export warning. There is no contact input in this section. |
+| src/components/TimesheetExportModal.tsx | TimesheetExportModal, openMonthPicker, download | Provide the themed calendar button (native month picker with focus fallback), the month selector and direct export button, read the saved profile phone, prevent repeated clicks while exporting and show any export warning. The picker appears only after clicking Timesheet in Home Quick Actions; there is no contact input in this popup. |
 | src/utils/calendarEntries.ts and src/utils/leaveAccounting.ts | getMonthEntries, effectiveStatus | Show all monthly working-date sessions, retain weekend public holidays and use the same date-based Planned/Taken display status in Calendar, History and details. |
 | src/utils/officialHolidays.ts and src/hooks/useOfficialHolidays.ts | parseOfficialHolidays, mergeHolidaySources, useOfficialHolidays | Validate official holiday rows, merge/replace date sources, deduplicate special holidays and retain saved/built-in offline fallback. |
 | src/hooks/useModalScrollLock.ts | useModalScrollLock, lockPageScroll | Lock background movement while preserving internal scrolling, nested dialog locks and the page position after closing. |
@@ -144,3 +144,11 @@ The Comp Off Credits CSV field stores the original holiday date, holiday name an
 ### Comp-Off booking presentation
 
 The holiday-credit selector uses a themed dropdown with a clear arrow and focus indicator. Short guidance explains that each credit covers one full day or two half days. Duration buttons set the deduction; Comp-Off does not repeat the days stepper or range captions. The generated reason and deduction summary remain visible. Credit eligibility, capacity, expiry, AM/PM and duplicate checks are unchanged.
+
+## Leave Editing and Timesheet Access
+
+Home Quick Actions contains a Timesheet tile styled like the other actions. Clicking it opens an accessible, scroll-locked month/year popup defaulting to the current month. Export downloads the chosen month and closes the popup on success; errors remain visible for retry. Settings no longer contains timesheet controls.
+
+History provides an Edit action for each saved record, opening the existing leave form with its category, dates, duration, half-day metadata, remarks and selected credits. Start Date changes synchronize End Date, which remains independently editable. Cancellation never saves. Edits retain ID and creation timestamp; planned/taken status follows the new start date, while legacy retroactive status is preserved.
+
+`bookingDetailsError` in `src/utils/bookingValidation.ts` checks new/edited record shape, working endpoints, exact deduction and AM/PM date consistency at the locked save boundary. Context updateRecord also checks overlaps, AL/SL cycle limits and Comp-Off funding against fresh saved records with only the edited record excluded. The form uses the same exclusion for quota/credit previews, freeing its own credit portion rather than double-counting it. A changed/deleted original record blocks saving; the user must reopen the latest version. Comp-Off credit names and automatic remarks are normalized on save. Balances, Calendar, CSV and timesheets read the updated record.
